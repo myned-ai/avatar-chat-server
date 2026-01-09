@@ -1,0 +1,87 @@
+# ==============================================================================
+# Avatar Chat Server - Docker Compose Configuration
+# ==============================================================================
+#
+# Usage:
+#   Production:  docker-compose up -d
+#   Development: docker-compose --profile dev up
+#   Logs:        docker-compose logs -f
+#   Stop:        docker-compose down
+#
+# ==============================================================================
+
+services:
+  # ============================================================================
+  # Avatar Chat Server (Production)
+  # ============================================================================
+  server:
+    build:
+      context: .
+      target: production
+    container_name: avatar-chat-server
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-realtime-preview}
+      - OPENAI_VOICE=${OPENAI_VOICE:-alloy}
+      - ASSISTANT_INSTRUCTIONS=${ASSISTANT_INSTRUCTIONS:-You are a helpful and friendly AI assistant.}
+      - MODEL_PATH=/app/lam_audio2exp_streaming.tar
+      - IDENTITY_IDX=${IDENTITY_IDX:-10}
+      - USE_GPU=${USE_GPU:-true}
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=8080
+      - DEBUG=${DEBUG:-false}
+    volumes:
+      # Mount model file from host
+      - ./lam_audio2exp_streaming.tar:/app/lam_audio2exp_streaming.tar:ro
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ============================================================================
+  # Avatar Chat Server (Development with hot reload)
+  # ============================================================================
+  server-dev:
+    build:
+      context: .
+      target: development
+    container_name: avatar-chat-server-dev
+    profiles:
+      - dev
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-realtime-preview}
+      - OPENAI_VOICE=${OPENAI_VOICE:-alloy}
+      - ASSISTANT_INSTRUCTIONS=${ASSISTANT_INSTRUCTIONS:-You are a helpful and friendly AI assistant.}
+      - MODEL_PATH=/app/lam_audio2exp_streaming.tar
+      - IDENTITY_IDX=${IDENTITY_IDX:-10}
+      - USE_GPU=${USE_GPU:-true}
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=8080
+      - DEBUG=true
+    volumes:
+      # Mount source code for hot reload
+      - .:/app
+      # Mount model file
+      - ./lam_audio2exp_streaming.tar:/app/lam_audio2exp_streaming.tar:ro
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avatar Chat Widget - Test</title>
+</head>
+<body>
+    <h1>Avatar Chat Widget Test</h1>
+    <p>Server: <code>ws://localhost:8080</code></p>
+    <p>Make sure AUTH_ENABLED=false in your .env file</p>
+
+    <!-- Container for the widget -->
+    <div id="avatar-chat"></div>
+
+    <!-- Load from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@myned-ai/avatar-chat-widget"></script>
+
+    <script>
+        // Initialize the widget
+        AvatarChat.init({
+            container: '#avatar-chat',
+            serverUrl: 'ws://localhost:8080/ws',
+            authEnabled: false
+        });
+    </script>
+</body>
+</html>

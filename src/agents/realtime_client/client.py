@@ -93,6 +93,7 @@ class RealtimeClient(RealtimeEventHandler):
         self.tools: Dict[str, Dict[str, Any]] = {}  # name -> {definition, handler}
         self.session_created = False
         self.input_audio_buffer = np.array([], dtype=np.int16)
+        self._response_cancelled = False  # Flag to stop dispatching audio after interruption
         
         # Create underlying API and conversation handlers
         self.realtime = RealtimeAPI(url=url, api_key=api_key, debug=debug)
@@ -160,6 +161,11 @@ class RealtimeClient(RealtimeEventHandler):
         
         def handler_with_dispatch(event, *args):
             """Process event and dispatch conversation.updated."""
+            # Skip dispatching audio deltas if response was cancelled (interrupted)
+            event_type = event.get('type', '')
+            if self._response_cancelled and 'audio' in event_type and 'delta' in event_type:
+                return {'item': None, 'delta': None}
+
             result = handler(event, *args)
             item = result.get('item')
             delta = result.get('delta')
@@ -201,14 +207,29 @@ class RealtimeClient(RealtimeEventHandler):
             self.create_response()
         
         # Register handlers for conversation events
-        self.realtime.on('server.response.created', handler)
+        def on_response_created(event):
+            # Reset cancelled flag when new response starts
+            self._response_cancelled = False
+            handler(event)
+
+        self.realtime.on('server.response.created', on_response_created)
         self.realtime.on('server.response.output_item.added', handler)
         self.realtime.on('server.response.content_part.added', handler)
         
         def on_speech_started(event):
-            handler(event)
+            # IMMEDIATELY set cancelled flag to stop dispatching audio deltas
+            self._response_cancelled = True
+
+            # Dispatch interrupt FIRST so widget stops playback immediately
+            # This must happen before processing the event to minimize latency
             self.dispatch('conversation.interrupted')
-        
+
+            # Then cancel the response on OpenAI's side
+            self.realtime.send('response.cancel')
+
+            # Process the event last
+            handler(event)
+
         self.realtime.on('server.input_audio_buffer.speech_started', on_speech_started)
         
         def on_speech_stopped(event):

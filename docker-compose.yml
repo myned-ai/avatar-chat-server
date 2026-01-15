@@ -26,22 +26,15 @@ services:
       - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-realtime-preview}
       - OPENAI_VOICE=${OPENAI_VOICE:-alloy}
       - ASSISTANT_INSTRUCTIONS=${ASSISTANT_INSTRUCTIONS:-You are a helpful and friendly AI assistant.}
-      - MODEL_PATH=/app/lam_audio2exp_streaming.tar
-      - IDENTITY_IDX=${IDENTITY_IDX:-10}
-      - USE_GPU=${USE_GPU:-true}
+      - MODEL_PATH=/app/pretrained_models/wav2arkit_cpu.onnx
+      - USE_GPU=${USE_GPU:-false}
       - SERVER_HOST=0.0.0.0
       - SERVER_PORT=8080
       - DEBUG=${DEBUG:-false}
     volumes:
-      # Mount model file from host
-      - ./lam_audio2exp_streaming.tar:/app/lam_audio2exp_streaming.tar:ro
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+      # Mount ONNX model (new model structure)
+      - ./src/pretrained_models/wav2arkit_cpu.onnx:/app/pretrained_models/wav2arkit_cpu.onnx:ro
+    # No GPU needed for CPU-only model
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
@@ -67,21 +60,14 @@ services:
       - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-realtime-preview}
       - OPENAI_VOICE=${OPENAI_VOICE:-alloy}
       - ASSISTANT_INSTRUCTIONS=${ASSISTANT_INSTRUCTIONS:-You are a helpful and friendly AI assistant.}
-      - MODEL_PATH=/app/lam_audio2exp_streaming.tar
-      - IDENTITY_IDX=${IDENTITY_IDX:-10}
-      - USE_GPU=${USE_GPU:-true}
+      - MODEL_PATH=/app/pretrained_models/wav2arkit_cpu.onnx
+      - USE_GPU=${USE_GPU:-false}
       - SERVER_HOST=0.0.0.0
       - SERVER_PORT=8080
       - DEBUG=true
     volumes:
       # Mount source code for hot reload
       - .:/app
-      # Mount model file
-      - ./lam_audio2exp_streaming.tar:/app/lam_audio2exp_streaming.tar:ro
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+      # Mount ONNX model (new model structure)
+      - ./src/pretrained_models/wav2arkit_cpu.onnx:/app/pretrained_models/wav2arkit_cpu.onnx:ro
+    # No GPU needed for CPU-only model

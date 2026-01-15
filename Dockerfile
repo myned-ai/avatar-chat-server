@@ -1,20 +1,27 @@
 # ==============================================================================
-# Avatar Chat Server - Dockerfile
+# Avatar Chat Server - CPU-Only Dockerfile (Benchmark)
 # ==============================================================================
-# Multi-stage build for optimized production image with GPU support
-# Uses uv for fast, reliable Python package management
+# Multi-stage build optimized for CPU inference with PyTorch optimizations
+# This Dockerfile is designed for benchmarking CPU performance to help determine
+# if quantization or other optimization techniques are needed.
 #
 # Build:
-#   docker build -t avatar-chat-server .
+#   docker build -f Dockerfile.cpu -t avatar-chat-server:cpu .
 #
 # Run:
-#   docker run -p 8080:8080 --gpus all --env-file .env avatar-chat-server
+#   docker run -p 8080:8080 --env-file .env -e USE_GPU=false avatar-chat-server:cpu
+#
+# Benchmark notes:
+# - Uses PyTorch CPU-only builds (smaller, optimized)
+# - Enables Intel MKL for better CPU performance
+# - Sets optimal threading for inference
+# - Remove GPU dependencies entirely
 # ==============================================================================
 
 # ------------------------------------------------------------------------------
-# Stage 1: Base image with CUDA support
+# Stage 1: Base image without CUDA
 # ------------------------------------------------------------------------------
-FROM nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04 AS base
+FROM ubuntu:22.04 AS base
 
 # Prevent interactive prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
@@ -33,7 +40,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # ------------------------------------------------------------------------------
-# Stage 2: Dependencies installation with uv
+# Stage 2: Dependencies installation with uv (CPU-only PyTorch)
 # ------------------------------------------------------------------------------
 FROM base AS dependencies
 
@@ -41,13 +48,77 @@ FROM base AS dependencies
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 # Copy dependency files first for better caching
-COPY pyproject.toml uv.lock* ./
+COPY pyproject.toml ./
 
-# Install Python dependencies with uv (much faster than pip)
-RUN uv sync --frozen --no-dev || uv sync --no-dev
+# Create a CPU-only pyproject.toml override
+RUN cat > pyproject.cpu.toml << 'EOF'
+[project]
+name = "avatar-chat-server"
+version = "1.0.0"
+description = "Real-time voice-to-avatar interaction server combining OpenAI Realtime API with Audio to Expression model"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+
+dependencies = [
+    # FastAPI Framework
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+    "pydantic-settings>=2.1.0",
+
+    # WebSocket support (for OpenAI Realtime client)
+    "websockets>=12.0",
+
+    # Performance - Fast JSON serialization
+    "orjson>=3.9.0",
+
+    # Audio processing
+    "numpy>=1.24.0",
+    "librosa>=0.10.0",
+    "scipy>=1.10.0",
+
+    # Environment variables
+    "python-dotenv>=1.0.0",
+
+    # Audio2Expression model dependencies (CPU-only versions)
+    "torch>=2.1.0",
+    "torchaudio>=2.1.0",
+    "transformers==4.36.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "httpx>=0.25.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+# Use PyTorch CPU-only wheels for smaller image and CPU optimizations
+torch = { index = "pytorch-cpu" }
+torchaudio = { index = "pytorch-cpu" }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+EOF
+
+# Install Python dependencies with uv using CPU-only PyTorch
+RUN mv pyproject.cpu.toml pyproject.toml && \
+    uv sync --frozen --no-dev || uv sync --no-dev
 
 # ------------------------------------------------------------------------------
-# Stage 3: Production image
+# Stage 3: Production image with CPU optimizations
 # ------------------------------------------------------------------------------
 FROM dependencies AS production
 
@@ -57,11 +128,20 @@ RUN useradd --create-home --shell /bin/bash appuser
 # Copy application code
 COPY --chown=appuser:appuser . .
 
-# Set environment variables
+# CPU Optimization Environment Variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     SERVER_HOST=0.0.0.0 \
-    SERVER_PORT=8080
+    SERVER_PORT=8080 \
+    USE_GPU=false \
+    # PyTorch CPU optimizations
+    OMP_NUM_THREADS=4 \
+    MKL_NUM_THREADS=4 \
+    TORCH_NUM_THREADS=4 \
+    # Use Intel MKL for optimized math operations
+    MKL_THREADING_LAYER=GNU \
+    # Disable TensorFloat32 (not applicable for CPU but good practice)
+    TORCH_ALLOW_TF32_CUBLAS_OVERRIDE=0
 
 # Switch to non-root user
 USER appuser
@@ -86,10 +166,15 @@ WORKDIR /app
 # Mount point for source code
 VOLUME ["/app"]
 
+# CPU Optimization for development
 ENV PYTHONUNBUFFERED=1 \
     DEBUG=true \
     SERVER_HOST=0.0.0.0 \
-    SERVER_PORT=8080
+    SERVER_PORT=8080 \
+    USE_GPU=false \
+    OMP_NUM_THREADS=4 \
+    MKL_NUM_THREADS=4 \
+    TORCH_NUM_THREADS=4
 
 EXPOSE 8080
 

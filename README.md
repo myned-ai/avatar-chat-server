@@ -2,23 +2,23 @@
 
 **Sample backend server for the [Avatar Chat Widget](https://github.com/myned-ai/avatar-chat-widget)**
 
-Real-time voice-to-avatar interaction server combining OpenAI Realtime API for conversational AI with an Audio to Expression model for synchronized avatar facial animation. This is an example server that powers the [Avatar Chat Widget](https://github.com/myned-ai/avatar-chat-widget) by processing audio streams and generating ARKit blendshapes for realistic facial animations.
+Real-time voice-to-avatar interaction server combining AI agents (OpenAI Realtime API or Google Gemini Live API) with an Audio to Expression model for synchronized avatar facial animation. This is an example server that powers the [Avatar Chat Widget](https://github.com/myned-ai/avatar-chat-widget) by processing audio streams and generating ARKit blendshapes for realistic facial animations.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 
 ## Features
 
-- **Real-time Voice-to-Voice AI**: OpenAI Realtime API integration for natural conversation
+- **Real-time Voice-to-Voice AI**: OpenAI Realtime API or Google Gemini Live API integration for natural conversation
 - **Facial Animation Sync**: LAM Audio2Expression model for ARKit-compatible blendshapes
+- **Modular Agent System**: Pluggable agents (sample OpenAI/Gemini or custom implementations)
 - **WebSocket Communication**: Low-latency bidirectional streaming
-- **GPU Acceleration**: CUDA support for real-time inference
+- **CPU Acceleration**: ONNX-optimized inference for real-time performance without GPU
 - **Production Ready**: Docker support, health checks, logging, authentication
 - **Optimized Performance**: Model warmup, orjson serialization, bounded queues
 
 ## Table of Contents
 
-- [Architecture](#architecture)
 - [Prerequisites](#prerequisites)
 - [Quick Start](#quick-start)
   - [Local Development](#local-development)
@@ -30,40 +30,6 @@ Real-time voice-to-avatar interaction server combining OpenAI Realtime API for c
 - [Performance Best Practices](#performance-best-practices)
 - [License](#license)
 
-## Architecture
-
-```
-avatar_chat_server/
-├── src/
-│   ├── main.py                         # FastAPI application entry point
-│   ├── config.py                       # Pydantic settings & configuration
-│   ├── logger.py                       # Logging configuration
-│   ├── routers/
-│   │   ├── __init__.py
-│   │   └── chat.py                     # WebSocket endpoint for real-time chat
-│   ├── services/
-│   │   ├── __init__.py
-│   │   ├── audio2exp_service.py        # Audio2Expression inference service
-│   │   └── openai_service.py           # OpenAI Realtime API service
-│   ├── auth/
-│   │   ├── __init__.py
-│   │   └── middleware.py               # JWT authentication middleware
-│   ├── audio_to_expression/            # Model inference
-│   │   ├── inference.py
-│   │   ├── models/
-│   │   └── utils.py
-│   └── realtime_client/                # OpenAI Realtime client
-│       ├── client.py
-│       ├── api.py
-│       └── ...
-├── Dockerfile                          # Multi-stage Docker build with uv
-├── docker-compose.yml                  # Container orchestration
-├── pyproject.toml                      # Python project & dependencies (uv)
-├── uv.lock                             # Locked dependencies for reproducibility
-├── .env.example                        # Environment template
-├── .gitignore                          # Git ignore patterns
-└── README.md                           # This file
-```
 
 ## Prerequisites
 
@@ -71,16 +37,16 @@ avatar_chat_server/
 
 - Python 3.10 or higher
 - [uv](https://github.com/astral-sh/uv) package manager
-- NVIDIA GPU with CUDA support (recommended for real-time performance)
-- CUDA Toolkit 12.1+ (if using GPU)
-- OpenAI API key with Realtime API access
+- OpenAI API key with Realtime API access (for `sample_openai` agent)
+- Google Gemini API key (for `sample_gemini` agent)
+- ONNX Runtime (CPU-optimized, included in dependencies)
 
 ### Docker
 
 - Docker 20.10+
 - Docker Compose 2.0+
-- NVIDIA Docker runtime (for GPU support)
-- OpenAI API key with Realtime API access
+- OpenAI API key with Realtime API access (for `sample_openai` agent)
+- Google Gemini API key (for `sample_gemini` agent)
 
 ## Quick Start
 
@@ -101,11 +67,11 @@ cd avatar_chat_server
 # 3. Install dependencies
 uv sync
 
-# 4. Download the Audio2Expression model
+# 4. Download the Wav2Arkit model
 pip install -U "huggingface_hub[cli]"
-huggingface-cli download 3DAIGC/LAM_audio2exp --local-dir ./
-tar -xzvf LAM_audio2exp_streaming.tar && rm -f LAM_audio2exp_streaming.tar
-mv pretrained_models src/
+mkdir -p pretrained_models
+huggingface-cli download Myned/wav2arkit_cpu --local-dir pretrained_models
+mv pretrained_models/ src/
 
 # 5. Configure environment
 cp .env.example .env
@@ -155,21 +121,28 @@ All settings can be configured via environment variables or `.env` file.
 
 | Variable | Description |
 |----------|-------------|
-| `OPENAI_API_KEY` | Your OpenAI API key (required) |
+| `OPENAI_API_KEY` | Your OpenAI API key (required for `sample_openai` agent) |
+| `GEMINI_API_KEY` | Your Google Gemini API key (required for `sample_gemini` agent) |
 
 ### Optional Settings
 
 | Variable | Default | Description |
 |----------|---------|-------------|
+| **Agent Configuration** |
+| `AGENT_TYPE` | `sample_openai` | Agent type: `sample_openai`, `sample_gemini`, `remote` |
+| `AGENT_URL` | *(none)* | WebSocket URL for remote agent (e.g., `ws://agent-service:8080/ws`) |
 | **OpenAI Configuration** |
 | `OPENAI_MODEL` | `gpt-4o-realtime-preview` | Realtime API model |
 | `OPENAI_VOICE` | `alloy` | Voice for audio output (`alloy`, `echo`, `fable`, `onyx`, `nova`, `shimmer`) |
+| **Gemini Configuration** |
+| `GEMINI_MODEL` | `gemini-2.0-flash-exp` | Live API model |
+| `GEMINI_VOICE` | `Puck` | Voice for audio output (`Puck`, `Kore`, `Fenrir`, `Aoede`) |
 | **Assistant Configuration** |
 | `ASSISTANT_INSTRUCTIONS` | *see .env.example* | System prompt for the AI assistant |
 | **Model Configuration** |
 | `MODEL_PATH` | `./src/pretrained_models/lam_audio2exp_streaming.tar` | Path to model weights |
 | `IDENTITY_IDX` | `10` | Expression style (0-11, affects animation intensity) |
-| `USE_GPU` | `true` | Enable GPU acceleration (highly recommended) |
+| `USE_GPU` | `false` | Enable GPU acceleration (set to `false` for CPU-only) |
 | **Server Configuration** |
 | `SERVER_HOST` | `0.0.0.0` | Server bind address |
 | `SERVER_PORT` | `8080` | Server port |
@@ -355,10 +328,17 @@ When enabled, limits requests per IP:
 
 ### Hardware Recommendations
 
-- **GPU**: NVIDIA RTX 3060 or higher (12GB+ VRAM recommended)
-- **CPU**: 4+ cores for async operations
-- **RAM**: 8GB+ (16GB recommended with GPU)
-- **Network**: Low-latency connection to OpenAI API (< 100ms recommended)
+- **CPU**: 4+ cores recommended for real-time ONNX inference (8+ cores optimal)
+- **RAM**: 8GB+ (16GB recommended)
+- **Network**: Low-latency connection to AI API (< 100ms recommended)
+
+### CPU Optimization Notes
+
+The server uses ONNX Runtime for CPU-optimized inference. For best performance:
+- Use a CPU with AVX-512 support if available
+- Ensure sufficient RAM (16GB+ recommended)
+- Monitor RTF (Real-Time Factor) in debug logs; aim for <1.0
+- If audio drops occur, consider reducing `audio_chunk_duration` in config
 
 ### Optimizations
 
@@ -384,7 +364,47 @@ Key metrics:
 - Model inference time
 - Queue depths
 
-## License
+## Agent Modularity
+
+The server uses a modular agent system allowing different conversational AI backends:
+
+### Sample Agents
+
+- **sample_openai**: Uses OpenAI Realtime API (default)
+- **sample_gemini**: Uses Google Gemini Live API
+
+### Custom Agents
+
+Implement the `BaseAgent` interface for custom AI services:
+
+```python
+from agents import BaseAgent
+
+class MyCustomAgent(BaseAgent):
+    async def connect(self) -> None:
+        # Connect to your AI service
+        pass
+    
+    def send_text_message(self, text: str) -> None:
+        # Send text to AI
+        pass
+    
+    def append_audio(self, audio_bytes: bytes) -> None:
+        # Send audio to AI
+        pass
+    
+    # ... implement other methods
+```
+
+Set `AGENT_TYPE=remote` and `AGENT_URL=ws://your-agent-service/ws` for remote agents.
+
+### Switching Agents
+
+1. Set `AGENT_TYPE` in `.env`
+2. Provide required API keys
+3. Restart the server
+
+The core chat-server (WebSocket handling, blendshape generation) remains unchanged.
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
@@ -393,3 +413,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Apple ARKit](https://developer.apple.com/augmented-reality/arkit/) for the blendshape specification standard
 - [LAM Audio2Expression](https://github.com/aigc3d/LAM_Audio2Expression) for facial animation model
 - [Wav2Vec 2.0](https://ai.meta.com/blog/wav2vec-20-learning-the-structure-of-speech-from-raw-audio/) for speech representation learning
+- [OpenAI](https://openai.com/) for Realtime API
+- [Google](https://ai.google.dev/) for Gemini Live API

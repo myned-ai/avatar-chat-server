@@ -29,22 +29,39 @@ class Settings(BaseSettings):
         extra="ignore",
     )
     
-    # OpenAI Configuration
+    # OpenAI Configuration (for sample agent)
     openai_api_key: str
     openai_model: str = "gpt-4o-realtime-preview"
     openai_voice: Literal[
         "alloy", "ash", "ballad", "coral", "echo", "sage", "shimmer", "verse"
     ] = "alloy"
     
+    # Gemini Configuration (for sample agent)
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-2.0-flash-exp"
+    gemini_voice: Literal[
+        "Puck", "Charon", "Kore", "Fenrir", "Aoede", "Leda", "Orus", "Zephyr"
+    ] = "Puck"
+    # Thinking budget: 0=disabled, -1=dynamic, 1-32768=fixed token budget
+    gemini_thinking_budget: int = -1
+    # Enable Google Search grounding for real-time information
+    gemini_google_search_grounding: bool = False
+    # Proactive audio: model can decide not to respond if content is not relevant
+    gemini_proactive_audio: bool = False
+    # Context window compression: enables longer sessions (beyond 15min audio-only limit)
+    gemini_context_window_compression: bool = True
+
     # Assistant Configuration
     assistant_instructions: str = (
         "You are a helpful and friendly AI assistant. Be concise in your responses."
     )
     
     # Audio2Expression Model Configuration
-    model_path: str = "./pretrained_models/lam_audio2exp_streaming.tar"
-    identity_idx: int = 10  # 0-11, affects expression style
-    use_gpu: bool = True
+    model_path: str = "./pretrained_models/lam_audio2exp_streaming.tar"  # PyTorch model (legacy)
+    onnx_model_path: str = "./pretrained_models/wav2arkit_cpu.onnx"  # Combined ONNX model (CPU optimized)
+    identity_idx: int = 11  # 0-11, affects expression style (only used with PyTorch model)
+    use_gpu: bool = False  # CPU-only mode with ONNX model
+    use_onnx: bool = True  # Use ONNX model for CPU inference (recommended)
     
     # Server Configuration
     server_host: str = "0.0.0.0"
@@ -58,22 +75,27 @@ class Settings(BaseSettings):
     auth_allowed_origins: str = "http://localhost:5173,http://localhost:5174,http://localhost:5175"  # Comma-separated
     auth_enable_rate_limiting: bool = True
     
+    # Agent Configuration
+    agent_type: str = "sample_openai"  # "sample_openai", "sample_gemini", "remote"
+    agent_url: Optional[str] = None  # URL for remote agent (e.g., "ws://agent-service:8080/ws")
+    
     # Audio Configuration (constants, but configurable if needed)
-    openai_sample_rate: int = 24000    # OpenAI Realtime API uses 24kHz
+    # Note: Widget sends 24kHz audio. OpenAI uses 24kHz, Gemini expects 16kHz (resampled internally)
+    openai_sample_rate: int = 24000    # OpenAI Realtime API uses 24kHz (also widget format)
     audio2exp_sample_rate: int = 16000 # Audio2Expression model expects 16kHz
     blendshape_fps: int = 30           # Output blendshape frame rate
-    audio_chunk_duration: float = 1.0  # 1 second chunks for Audio2Expression processing
+    audio_chunk_duration: float = 0.5  # 0.5 second chunks for Audio2Expression processing (reduced for CPU)
 
 
 class AudioConstants:
     """Audio processing constants derived from settings."""
-    
+
     def __init__(self, settings: Settings):
         self.openai_sample_rate = settings.openai_sample_rate
         self.audio2exp_sample_rate = settings.audio2exp_sample_rate
         self.blendshape_fps = settings.blendshape_fps
         self.audio_chunk_duration = settings.audio_chunk_duration
-        
+
         # Derived values
         self.frame_interval_ms = 1000 / self.blendshape_fps
         self.samples_per_frame = self.openai_sample_rate // self.blendshape_fps

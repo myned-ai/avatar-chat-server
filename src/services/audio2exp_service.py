@@ -3,6 +3,7 @@ Audio2Expression Service
 
 Service layer for Audio2Expression model inference.
 Handles audio-to-blendshape conversion for facial animation.
+Supports both PyTorch (GPU/CPU) and ONNX (CPU-optimized) backends.
 """
 
 from typing import Dict, List, Optional, Tuple, Any
@@ -41,6 +42,48 @@ class Audio2ExpService:
     
     def _initialize_model(self) -> None:
         """Initialize the model if available."""
+        # Check if we should use ONNX (CPU-optimized) or PyTorch
+        if self.settings.use_onnx and not self.settings.use_gpu:
+            self._initialize_onnx_model()
+        else:
+            self._initialize_pytorch_model()
+    
+    def _initialize_onnx_model(self) -> None:
+        """Initialize the ONNX model for CPU inference."""
+        try:
+            from audio_to_expression import ONNXBlendshapeInference
+            
+            model_path = Path(self.settings.onnx_model_path)
+            if not model_path.exists():
+                logger.warning(f"ONNX model not found at: {model_path}")
+                logger.info("Falling back to PyTorch model...")
+                self._initialize_pytorch_model()
+                return
+            
+            self._inference = ONNXBlendshapeInference(
+                model_path=str(model_path),
+                audio_sr=self.audio_constants.audio2exp_sample_rate,
+                fps=self.audio_constants.blendshape_fps,
+                debug=self.settings.debug,
+            )
+            
+            self._available = True
+            logger.info("ONNX model loaded (CPU-optimized)")
+
+            # Warmup pass
+            self._warmup_model()
+
+        except ImportError as e:
+            logger.warning(f"ONNX Runtime not available: {e}")
+            logger.info("Falling back to PyTorch model...")
+            self._initialize_pytorch_model()
+        except Exception as e:
+            logger.warning(f"Failed to load ONNX model: {e}")
+            logger.info("Falling back to PyTorch model...")
+            self._initialize_pytorch_model()
+    
+    def _initialize_pytorch_model(self) -> None:
+        """Initialize the PyTorch model."""
         try:
             from audio_to_expression import BlendshapeInference
             
@@ -61,16 +104,15 @@ class Audio2ExpService:
             )
             
             self._available = True
-            logger.info(f"Model loaded (identity: {self.settings.identity_idx})")
+            logger.info(f"PyTorch model loaded (device: {device}, identity: {self.settings.identity_idx})")
 
-            # Warmup pass: Run inference once to initialize CUDA/GPU and compile kernels
-            # This eliminates the ~1-2 second delay on first conversation
+            # Warmup pass
             self._warmup_model()
 
         except ImportError:
             logger.warning("Audio2Expression not available. Install torch, transformers, librosa.")
         except Exception as e:
-            logger.warning(f"Failed to load model: {e}")
+            logger.warning(f"Failed to load PyTorch model: {e}")
     
     def _warmup_model(self) -> None:
         """

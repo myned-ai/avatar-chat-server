@@ -171,25 +171,35 @@ class SampleOpenAIAgent(BaseAgent):
 
     def _handle_conversation_updated(self, event: Dict) -> None:
         """Handle conversation updates (delta events)."""
+        # Early exit if cancelled - check FIRST before any processing
+        if self._response_cancelled:
+            return
+
         delta = event.get("delta", {})
 
-        # Stream audio delta
-        if delta and "audio" in delta and not self._response_cancelled:
+        # Stream audio delta - check cancelled flag again right before processing
+        if delta and "audio" in delta:
+            if self._response_cancelled:
+                return
+
             audio_data = delta["audio"]
             if isinstance(audio_data, bytes):
                 audio_bytes = audio_data
             else:
                 audio_bytes = audio_data.tobytes()
 
-            if self._on_audio_delta:
+            if self._on_audio_delta and not self._response_cancelled:
                 asyncio.create_task(self._on_audio_delta(audio_bytes))
 
         # Stream transcript delta
-        if delta and "transcript" in delta and not self._response_cancelled:
+        if delta and "transcript" in delta:
+            if self._response_cancelled:
+                return
+
             transcript_delta = delta["transcript"]
             self._state.transcript_buffer += transcript_delta
 
-            if self._on_transcript_delta:
+            if self._on_transcript_delta and not self._response_cancelled:
                 asyncio.create_task(self._on_transcript_delta(transcript_delta))
 
     def _handle_audio_done(self, event: Dict) -> None:
@@ -256,15 +266,22 @@ class SampleOpenAIAgent(BaseAgent):
 
     def _handle_interrupted(self, event: Dict) -> None:
         """Handle conversation interruption."""
-        logger.debug("Conversation interrupted - stopping audio processing")
+        logger.info("Conversation interrupted - stopping audio processing immediately")
 
         # Set cancelled flag IMMEDIATELY to stop processing any pending audio deltas
+        # This MUST be set before anything else to ensure no more audio is processed
         self._response_cancelled = True
         self._state.is_responding = False
+        self._state.audio_done = True  # Mark audio as done to prevent waiting
         self._current_item_id = None
 
+        # Call interrupt handler synchronously-ish (as a high-priority task)
+        # This ensures the ChatConnectionManager receives the interrupt ASAP
         if self._on_interrupted:
-            asyncio.create_task(self._on_interrupted())
+            # Create task but also try to run it immediately
+            task = asyncio.create_task(self._on_interrupted())
+            # Log for debugging
+            logger.debug(f"Interrupt handler task created: {task}")
 
     def _handle_error(self, error: Dict) -> None:
         """Handle errors from the Realtime API."""

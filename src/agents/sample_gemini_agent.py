@@ -225,12 +225,14 @@ class SampleGeminiAgent(BaseAgent):
             if not server_content:
                 return
 
-            # Check for interruption FIRST
+            # Check for interruption FIRST - this must be handled immediately
             if getattr(server_content, 'interrupted', False):
-                logger.debug("Gemini detected interruption")
+                logger.info("Gemini detected interruption - stopping immediately")
+                # Set cancelled flag FIRST to stop any pending processing
                 self._response_cancelled = True
                 self._state.is_responding = False
                 self._current_turn_id = None
+                # Call interrupt handler immediately
                 if self._on_interrupted:
                     await self._on_interrupted()
                 return

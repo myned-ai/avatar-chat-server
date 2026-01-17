@@ -36,38 +36,42 @@ class ClientState:
 class ChatConnectionManager:
     """
     Manages WebSocket connections and orchestrates real-time chat.
-    
+
     Coordinates between:
     - Frontend WebSocket clients
     - Agent service (voice-to-voice AI)
     - Audio2Expression model (audio-to-blendshape inference)
     """
-    
+
     def __init__(self):
         self.clients: Dict[WebSocket, ClientState] = {}
         self._settings = get_settings()
         self._audio_constants = get_audio_constants()
         self._audio2exp_service = get_audio2exp_service()
         self._agent = get_agent()
-        
+
         # Audio and frame processing state
         self._audio_buffer: bytearray = bytearray()
         # Bounded queues prevent memory exhaustion and provide backpressure
-        self._frame_queue: asyncio.Queue = asyncio.Queue(maxsize=120)  # 4 seconds @ 30 FPS (increased from 90)
-        self._audio_chunk_queue: asyncio.Queue = asyncio.Queue(maxsize=15)  # 15 chunks (~15 seconds, increased from 10)
-        
+        self._frame_queue: asyncio.Queue = asyncio.Queue(maxsize=120)  # 4 seconds @ 30 FPS
+        self._audio_chunk_queue: asyncio.Queue = asyncio.Queue(maxsize=15)  # 15 chunks (~15 seconds)
+
         # Tracking state
         self._current_session_id: Optional[str] = None
+        self._current_turn_id: Optional[str] = None  # Unique ID for each turn (for transcript correlation)
         self._speech_start_time: float = 0
+        self._actual_audio_start_time: float = 0  # Time when first audio actually arrives
         self._total_frames_emitted: int = 0
         self._total_audio_received: float = 0
         self._blendshape_frame_idx: int = 0
         self._speech_ended: bool = False
-        
+        self._is_interrupted: bool = False  # Synchronous flag to stop processing immediately
+        self._first_audio_received: bool = False  # Track if we've received any audio for this response
+
         # Background tasks
         self._frame_emit_task: Optional[asyncio.Task] = None
         self._inference_task: Optional[asyncio.Task] = None
-        
+
         # Setup agent event handlers
         self._setup_agent_handlers()
     
@@ -119,15 +123,19 @@ class ChatConnectionManager:
     async def _handle_response_start(self, session_id: str) -> None:
         """Handle AI response start."""
         self._current_session_id = session_id
+        self._current_turn_id = f"turn_{int(time.time() * 1000)}_{session_id[:8]}"
         self._speech_start_time = time.time()
+        self._actual_audio_start_time = 0  # Will be set when first audio arrives
         self._total_frames_emitted = 0
         self._total_audio_received = 0
         self._blendshape_frame_idx = 0
         self._speech_ended = False
+        self._is_interrupted = False  # Reset interrupt flag for new response
+        self._first_audio_received = False
 
         # DEBUG: Log response start
-        logger.info(f"Response started (session: {session_id})")
-        
+        logger.info(f"Response started (session: {session_id}, turn: {self._current_turn_id})")
+
         # Clear queues
         self._audio_buffer.clear()
         while not self._frame_queue.empty():
@@ -140,21 +148,22 @@ class ChatConnectionManager:
                 self._audio_chunk_queue.get_nowait()
             except asyncio.QueueEmpty:
                 break
-        
+
         # Reset Audio2Exp context
         if self._audio2exp_service.is_available:
             self._audio2exp_service.reset_context()
-        
+
         # Start background tasks
         if self._frame_emit_task is None or self._frame_emit_task.done():
             self._frame_emit_task = asyncio.create_task(self._emit_frames())
         if self._inference_task is None or self._inference_task.done():
             self._inference_task = asyncio.create_task(self._inference_worker())
-        
+
         await self.broadcast({"type": "avatar_state", "state": "Responding"})
         await self.broadcast({
             "type": "audio_start",
             "sessionId": session_id,
+            "turnId": self._current_turn_id,
             "sampleRate": self._audio_constants.openai_sample_rate,
             "format": "audio/pcm16",
             "timestamp": int(time.time() * 1000),
@@ -162,7 +171,17 @@ class ChatConnectionManager:
     
     async def _handle_audio_delta(self, audio_bytes: bytes) -> None:
         """Handle audio chunk from agent."""
+        # Early exit if interrupted - check synchronously before any processing
+        if self._is_interrupted:
+            return
+
         delta_time = time.time()
+
+        # Track when first audio actually arrives (for accurate frame timing)
+        if not self._first_audio_received:
+            self._first_audio_received = True
+            self._actual_audio_start_time = time.time()
+            logger.debug(f"First audio received, resetting speech start time")
 
         if not self._audio2exp_service.is_available:
             # No Audio2Exp - send audio directly (no blendshapes)
@@ -188,7 +207,8 @@ class ChatConnectionManager:
         # DEBUG: Log audio received (show total received so far)
         logger.debug(f"🎵 Audio: +{chunk_duration*1000:.0f}ms (total={self._total_audio_received:.2f}s, buffer={buffer_duration:.2f}s)")
 
-        # When we have 1 second, queue for processing
+        # When we have enough audio, queue for processing
+        # Use consistent chunk duration to maintain timing alignment
         if buffer_duration >= self._audio_constants.audio_chunk_duration:
             chunk_bytes_size = int(
                 self._audio_constants.audio_chunk_duration
@@ -198,24 +218,32 @@ class ChatConnectionManager:
             chunk_bytes = bytes(self._audio_buffer[:chunk_bytes_size])
             self._audio_buffer = bytearray(self._audio_buffer[chunk_bytes_size:])
 
-            queue_time = time.time()
+            # Check if interrupted before queuing
+            if self._is_interrupted:
+                return
+
+            # Queue for processing - use blocking put to ensure no audio is dropped
+            # The queue is sized to handle normal processing rates
             await self._audio_chunk_queue.put(chunk_bytes)
-            queue_wait = (time.time() - queue_time) * 1000
 
             # DEBUG: Log when we queue a chunk for inference
-            logger.debug(f"Queued 1.0s chunk for inference (queue_size={self._audio_chunk_queue.qsize()}, "
-                        f"queue_wait={queue_wait:.1f}ms)")
+            logger.debug(f"Queued {self._audio_constants.audio_chunk_duration:.1f}s chunk for inference (queue_size={self._audio_chunk_queue.qsize()})")
     
     async def _handle_response_end(self, transcript: str) -> None:
         """Handle AI response end."""
+        # Don't process response end if we were interrupted
+        if self._is_interrupted:
+            logger.debug("Skipping response end handling - was interrupted")
+            return
+
         # Wait for audio to stabilize (OpenAI Realtime API can send response.done
         # before all audio.delta events are received - this is a known issue)
         # Increased wait time and iterations to ensure we catch the final audio chunks
         last_audio = self._total_audio_received
         stable_count = 0
-        max_wait_iterations = 40  # Max 40 * 50ms = 2 seconds wait
+        max_wait_iterations = 60  # Max 60 * 50ms = 3 seconds wait
         iterations = 0
-        while stable_count < 10 and iterations < max_wait_iterations:  # Need 10 stable checks (500ms)
+        while stable_count < 15 and iterations < max_wait_iterations:  # Need 15 stable checks (750ms)
             await asyncio.sleep(0.05)
             iterations += 1
             if self._total_audio_received == last_audio:
@@ -223,7 +251,11 @@ class ChatConnectionManager:
             else:
                 stable_count = 0
                 last_audio = self._total_audio_received
-        
+
+        # Check if interrupted during wait
+        if self._is_interrupted:
+            return
+
         # Flush remaining audio - ensure ALL buffered audio is processed
         buffer_samples = len(self._audio_buffer) // 2
         if buffer_samples > 0 and self._audio2exp_service.is_available:
@@ -235,25 +267,42 @@ class ChatConnectionManager:
                 padding = bytes((min_samples - buffer_samples) * 2)
                 remaining_bytes = remaining_bytes + padding
             self._audio_buffer.clear()
+
+            # Queue final audio - use blocking put to ensure it's processed
             await self._audio_chunk_queue.put(remaining_bytes)
             logger.debug(f"Flushing final audio: {buffer_samples} samples ({buffer_samples / self._audio_constants.openai_sample_rate:.3f}s)")
-        
+
+        # Signal that speech has ended - but wait for queues to drain first
+        # Don't set _speech_ended until audio queue is empty to ensure all audio is processed
+        while not self._audio_chunk_queue.empty() and not self._is_interrupted:
+            await asyncio.sleep(0.05)
+
         self._speech_ended = True
-        
-        # Wait for workers to finish
+
+        # Wait for workers to finish with longer timeouts
         if self._inference_task and not self._inference_task.done():
             try:
-                await asyncio.wait_for(self._inference_task, timeout=5.0)
+                # Wait longer to ensure all frames are generated
+                await asyncio.wait_for(self._inference_task, timeout=8.0)
             except asyncio.TimeoutError:
+                logger.warning("Inference task timed out during response end")
                 self._inference_task.cancel()
-        
+            except asyncio.CancelledError:
+                pass
+
         if self._frame_emit_task and not self._frame_emit_task.done():
             try:
-                timeout = max(3.0, self._frame_queue.qsize() / self._audio_constants.blendshape_fps + 1.0)
+                # Dynamic timeout based on remaining frames
+                remaining_frames = self._frame_queue.qsize()
+                timeout = max(5.0, remaining_frames / self._audio_constants.blendshape_fps + 2.0)
                 await asyncio.wait_for(self._frame_emit_task, timeout=timeout)
             except asyncio.TimeoutError:
-                self._frame_emit_task.cancel()
-        
+                logger.warning(f"Frame emit task timed out with {self._frame_queue.qsize()} frames remaining")
+                # Don't cancel - let it drain remaining frames
+                pass
+            except asyncio.CancelledError:
+                pass
+
         # Log summary
         speech_duration = time.time() - self._speech_start_time if self._speech_start_time else 0
         expected_frames = int(self._total_audio_received * self._audio_constants.blendshape_fps)
@@ -262,25 +311,28 @@ class ChatConnectionManager:
                    f"audio_received={self._total_audio_received:.2f}s, "
                    f"frames_emitted={self._total_frames_emitted} (expected ~{expected_frames}, deficit={frame_deficit}), "
                    f"audio_queue={self._audio_chunk_queue.qsize()}, frame_queue={self._frame_queue.qsize()}")
-        
+
         await self.broadcast({
             "type": "audio_end",
             "sessionId": self._current_session_id,
+            "turnId": self._current_turn_id,
             "timestamp": int(time.time() * 1000),
         })
-        
+
         if transcript:
             await self.broadcast({
                 "type": "transcript_done",
                 "text": transcript,
                 "role": "assistant",
+                "turnId": self._current_turn_id,
                 "timestamp": int(time.time() * 1000),
             })
-        
+
         await self.broadcast({"type": "avatar_state", "state": "Listening"})
-        
+
         # Reset state
         self._current_session_id = None
+        self._current_turn_id = None
         self._speech_ended = False
         self._inference_task = None
         self._frame_emit_task = None
@@ -291,21 +343,33 @@ class ChatConnectionManager:
             "type": "transcript_delta",
             "text": text,
             "role": "assistant",
+            "turnId": self._current_turn_id,
+            "sessionId": self._current_session_id,
             "timestamp": int(time.time() * 1000),
         })
-    
+
     async def _handle_user_transcript(self, transcript: str) -> None:
         """Handle transcribed user speech."""
+        # Generate a unique turn ID for user transcript to help client correlate
+        user_turn_id = f"user_{int(time.time() * 1000)}"
         await self.broadcast({
             "type": "transcript_done",
             "text": transcript,
             "role": "user",
+            "turnId": user_turn_id,
             "timestamp": int(time.time() * 1000),
         })
     
     async def _handle_interrupted(self) -> None:
         """Handle conversation interruption."""
-        logger.debug("Handling interruption - clearing audio and frame queues")
+        logger.info("Handling interruption - stopping all processing immediately")
+
+        # Set interrupt flag FIRST to stop any in-flight processing immediately
+        # This is checked synchronously in _handle_audio_delta and workers
+        self._is_interrupted = True
+
+        # Clear audio buffer to prevent any buffered audio from being processed
+        self._audio_buffer.clear()
 
         # Clear any queued audio chunks to prevent further processing
         while not self._audio_chunk_queue.empty():
@@ -330,13 +394,28 @@ class ChatConnectionManager:
                 pass
             self._inference_task = None
 
+        # Cancel frame emission task to stop broadcasting immediately
+        if self._frame_emit_task and not self._frame_emit_task.done():
+            self._frame_emit_task.cancel()
+            try:
+                await self._frame_emit_task
+            except asyncio.CancelledError:
+                pass
+            self._frame_emit_task = None
+
+        # Reset state
+        self._speech_ended = True  # Signal to any remaining workers to stop
+        self._current_session_id = None
+        self._current_turn_id = None
+
         # Send interrupt signal to widget to stop playback immediately
-        # This is especially important for voice interruptions where there's
-        # a delay before the new response starts (while user finishes speaking)
+        # This tells the client to clear its audio buffers and stop playback
         await self.broadcast({
             "type": "interrupt",
             "timestamp": int(time.time() * 1000),
         })
+
+        await self.broadcast({"type": "avatar_state", "state": "Listening"})
     
     # ==================== Background Workers ====================
     
@@ -344,8 +423,15 @@ class ChatConnectionManager:
         """Process audio chunks through Audio2Expression model."""
         chunk_count = 0
         total_inference_time = 0.0
+        import concurrent.futures
+
         try:
             while True:
+                # Check for interruption at start of each iteration
+                if self._is_interrupted:
+                    logger.debug("Inference worker stopping due to interruption")
+                    break
+
                 try:
                     dequeue_start = time.time()
                     audio_bytes = await asyncio.wait_for(
@@ -361,18 +447,25 @@ class ChatConnectionManager:
                         break
                     continue
 
+                # Check for interruption after dequeue
+                if self._is_interrupted:
+                    break
+
                 chunk_count += 1
                 chunk_duration = len(audio_bytes) // 2 / self._audio_constants.openai_sample_rate
 
                 # DEBUG: Time the inference
                 inference_start = time.time()
                 # Run inference in thread pool to avoid blocking async loop
-                import concurrent.futures
                 loop = asyncio.get_event_loop()
                 with concurrent.futures.ThreadPoolExecutor() as executor:
                     frames = await loop.run_in_executor(executor, self._audio2exp_service.process_audio_chunk, audio_bytes)
                 inference_time = time.time() - inference_start
                 total_inference_time += inference_time
+
+                # Check for interruption after inference
+                if self._is_interrupted:
+                    break
 
                 # DEBUG: Log inference performance
                 rtf = inference_time / chunk_duration  # Real-Time Factor
@@ -384,20 +477,26 @@ class ChatConnectionManager:
                 if frames:
                     enqueue_start = time.time()
                     for frame in frames:
+                        # Check for interruption during frame enqueue
+                        if self._is_interrupted:
+                            break
+
+                        # Use blocking put to ensure no frames are dropped
                         await self._frame_queue.put(frame)
+
                     enqueue_time = (time.time() - enqueue_start) * 1000
 
                     # DEBUG: Warn if frame queue is getting full
                     queue_usage = self._frame_queue.qsize() / self._frame_queue.maxsize
-                    if queue_usage > 0.7:
-                        logger.warning(f"⚠ Frame queue filling up: {self._frame_queue.qsize()}/{self._frame_queue.maxsize} "
+                    if queue_usage > 0.8:
+                        logger.warning(f"⚠ Frame queue high: {self._frame_queue.qsize()}/{self._frame_queue.maxsize} "
                                      f"({queue_usage*100:.0f}% full)")
 
                     logger.debug(f"Enqueued {len(frames)} frames in {enqueue_time:.1f}ms "
                                f"(queue_size={self._frame_queue.qsize()})")
-                        
+
         except asyncio.CancelledError:
-            pass
+            logger.debug("Inference worker cancelled")
         except Exception as e:
             logger.warning(f"Inference worker error: {e}")
     
@@ -416,6 +515,11 @@ class ChatConnectionManager:
 
         try:
             while True:
+                # Check for interruption at start of each iteration
+                if self._is_interrupted:
+                    logger.debug("Frame emission stopping due to interruption")
+                    break
+
                 try:
                     # Calculate how many frames SHOULD have been emitted by now
                     elapsed_time = time.time() - self._speech_start_time
@@ -443,6 +547,10 @@ class ChatConnectionManager:
                         break
                     continue
 
+                # Check for interruption after dequeue
+                if self._is_interrupted:
+                    break
+
                 # DEBUG: Time the broadcast
                 broadcast_start = time.time()
                 await self.broadcast({
@@ -450,6 +558,7 @@ class ChatConnectionManager:
                     "weights": frame_data["weights"],
                     "audio": frame_data["audio"],  # Already base64 encoded
                     "sessionId": self._current_session_id,
+                    "turnId": self._current_turn_id,
                     "timestamp": int(time.time() * 1000),
                     "frameIndex": self._blendshape_frame_idx,
                 })
@@ -485,22 +594,27 @@ class ChatConnectionManager:
                                  f"dequeue_wait={dequeue_wait:.1f}ms, broadcast={broadcast_time:.1f}ms")
 
         except asyncio.CancelledError:
-            # Drain remaining frames
-            while not self._frame_queue.empty():
-                try:
-                    frame_data = self._frame_queue.get_nowait()
-                    await self.broadcast({
-                        "type": "sync_frame",
-                        "weights": frame_data["weights"],
-                        "audio": frame_data["audio"],  # Already base64 encoded
-                        "sessionId": self._current_session_id,
-                        "timestamp": int(time.time() * 1000),
-                        "frameIndex": self._blendshape_frame_idx,
-                    })
-                    self._blendshape_frame_idx += 1
-                    self._total_frames_emitted += 1
-                except asyncio.QueueEmpty:
-                    break
+            # Only drain remaining frames if NOT interrupted (interruption means stop immediately)
+            if not self._is_interrupted:
+                logger.debug(f"Frame emission cancelled, draining {self._frame_queue.qsize()} remaining frames")
+                while not self._frame_queue.empty():
+                    try:
+                        frame_data = self._frame_queue.get_nowait()
+                        await self.broadcast({
+                            "type": "sync_frame",
+                            "weights": frame_data["weights"],
+                            "audio": frame_data["audio"],  # Already base64 encoded
+                            "sessionId": self._current_session_id,
+                            "turnId": self._current_turn_id,
+                            "timestamp": int(time.time() * 1000),
+                            "frameIndex": self._blendshape_frame_idx,
+                        })
+                        self._blendshape_frame_idx += 1
+                        self._total_frames_emitted += 1
+                    except asyncio.QueueEmpty:
+                        break
+            else:
+                logger.debug("Frame emission cancelled due to interruption, discarding remaining frames")
         except Exception as e:
             logger.warning(f"Frame emission error: {e}")
     

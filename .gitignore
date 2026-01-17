@@ -109,3 +109,6 @@ dmypy.json
 
 # uv
 .uv_cache/
+
+# Claude
+.claude

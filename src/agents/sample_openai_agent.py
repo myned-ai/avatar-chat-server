@@ -197,10 +197,15 @@ class SampleOpenAIAgent(BaseAgent):
                 return
 
             transcript_delta = delta["transcript"]
+
+            # Get role from the item
+            item = event.get("item", {})
+            role = item.get("role", "assistant")
+
             self._state.transcript_buffer += transcript_delta
 
             if self._on_transcript_delta and not self._response_cancelled:
-                asyncio.create_task(self._on_transcript_delta(transcript_delta))
+                asyncio.create_task(self._on_transcript_delta(transcript_delta, role))
 
     def _handle_audio_done(self, event: Dict) -> None:
         """Handle response.audio.done event - all audio has been sent."""
@@ -238,9 +243,17 @@ class SampleOpenAIAgent(BaseAgent):
         role = item.get("role", "")
 
         if role == "assistant":
+
             # Wait for audio_done before triggering response_end
             async def wait_and_complete():
                 await self._wait_for_audio_done(timeout=3.0)
+
+                # Don't send response_end if:
+                # 1. We were interrupted (response_cancelled is True)
+                if self._response_cancelled:
+                    logger.debug("Skipping response_end - was interrupted")
+                    return
+
                 transcript = item.get("formatted", {}).get("transcript", "")
                 self._state.is_responding = False
                 self._current_item_id = None
@@ -257,12 +270,16 @@ class SampleOpenAIAgent(BaseAgent):
         """Handle user's transcribed speech."""
         transcript = event.get("transcript", "")
 
+        # Get role from the item
+        item = event.get("item", {})
+        role = item.get("role", "user")
+
         if transcript:
-            logger.debug(f"User: {transcript}")
+            logger.debug(f"{role.capitalize()}: {transcript}")
             # Note: Response cancellation is now handled in _handle_interrupted
             # which fires on speech_started (before transcript is available)
             if self._on_user_transcript:
-                asyncio.create_task(self._on_user_transcript(transcript))
+                asyncio.create_task(self._on_user_transcript(transcript, role))
 
     def _handle_interrupted(self, event: Dict) -> None:
         """Handle conversation interruption."""

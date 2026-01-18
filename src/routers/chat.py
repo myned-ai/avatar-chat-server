@@ -7,10 +7,12 @@ synchronized audio and facial animation blendshapes.
 
 import asyncio
 import base64
+import json
 import orjson
 import time
 import uuid
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Dict, List, Optional, Set
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
@@ -20,6 +22,36 @@ from services import get_audio2exp_service, get_agent
 from logger import get_logger
 
 logger = get_logger(__name__)
+
+# Transcript log file
+TRANSCRIPT_LOG_FILE = Path("transcript_log.json")
+
+
+def log_transcript(role: str, text: str, event_type: str, turn_id: Optional[str] = None) -> None:
+    """Log transcript to JSON file for debugging."""
+    entry = {
+        "timestamp": time.time(),
+        "datetime": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "role": role,
+        "text": text,
+        "event_type": event_type,
+        "turn_id": turn_id,
+    }
+
+    # Read existing log or create new
+    logs = []
+    if TRANSCRIPT_LOG_FILE.exists():
+        try:
+            with open(TRANSCRIPT_LOG_FILE, "r") as f:
+                logs = json.load(f)
+        except (json.JSONDecodeError, IOError):
+            logs = []
+
+    logs.append(entry)
+
+    # Write back
+    with open(TRANSCRIPT_LOG_FILE, "w") as f:
+        json.dump(logs, f, indent=2)
 
 
 router = APIRouter(tags=["chat"])
@@ -327,6 +359,8 @@ class ChatConnectionManager:
                 "turnId": self._current_turn_id,
                 "timestamp": int(time.time() * 1000),
             })
+            # Log AFTER broadcast to capture actual send time
+            log_transcript("assistant", transcript, "transcript_done", self._current_turn_id)
 
         await self.broadcast({"type": "avatar_state", "state": "Listening"})
 
@@ -337,28 +371,34 @@ class ChatConnectionManager:
         self._inference_task = None
         self._frame_emit_task = None
     
-    async def _handle_transcript_delta(self, text: str) -> None:
+    async def _handle_transcript_delta(self, text: str, role: str = "assistant") -> None:
         """Handle streaming transcript from AI."""
+        # Use appropriate turn ID based on role
+        turn_id = self._current_turn_id if role == "assistant" else f"user_{int(time.time() * 1000)}"
         await self.broadcast({
             "type": "transcript_delta",
             "text": text,
-            "role": "assistant",
-            "turnId": self._current_turn_id,
+            "role": role,
+            "turnId": turn_id,
             "sessionId": self._current_session_id,
             "timestamp": int(time.time() * 1000),
         })
+        # Log AFTER broadcast to capture actual send time
+        log_transcript(role, text, "transcript_delta", turn_id)
 
-    async def _handle_user_transcript(self, transcript: str) -> None:
+    async def _handle_user_transcript(self, transcript: str, role: str = "user") -> None:
         """Handle transcribed user speech."""
         # Generate a unique turn ID for user transcript to help client correlate
-        user_turn_id = f"user_{int(time.time() * 1000)}"
+        user_turn_id = f"{role}_{int(time.time() * 1000)}"
         await self.broadcast({
             "type": "transcript_done",
             "text": transcript,
-            "role": "user",
+            "role": role,
             "turnId": user_turn_id,
             "timestamp": int(time.time() * 1000),
         })
+        # Log AFTER broadcast to capture actual send time
+        log_transcript(role, transcript, "transcript_done", user_turn_id)
     
     async def _handle_interrupted(self) -> None:
         """Handle conversation interruption."""

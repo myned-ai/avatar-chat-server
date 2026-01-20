@@ -141,13 +141,19 @@ class RemoteAgent(BaseAgent):
             await self._on_audio_delta(audio_bytes)
 
         elif event_type == "transcript_delta" and self._on_transcript_delta:
-            await self._on_transcript_delta(event.get("delta", ""))
+            # Support itemId/previousItemId propagation from remote agents
+            await self._on_transcript_delta(
+                event.get("delta", ""),
+                event.get("role", "assistant"),
+                event.get("itemId"),
+                event.get("previousItemId"),
+            )
 
         elif event_type == "response_start" and self._on_response_start:
             await self._on_response_start(event.get("session_id", ""))
 
         elif event_type == "response_end" and self._on_response_end:
-            await self._on_response_end(event.get("transcript", ""))
+            await self._on_response_end(event.get("transcript", ""), event.get("itemId"))
 
         elif event_type == "user_transcript" and self._on_user_transcript:
             await self._on_user_transcript(event.get("transcript", ""))

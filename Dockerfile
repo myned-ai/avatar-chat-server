@@ -48,75 +48,13 @@ FROM base AS dependencies
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 # Copy dependency files first for better caching
+
+# Copy dependency files first for better caching
 COPY pyproject.toml ./
-
-# Create a CPU-only pyproject.toml override
-RUN cat > pyproject.cpu.toml << 'EOF'
-[project]
-name = "avatar-chat-server"
-version = "1.0.0"
-description = "Real-time voice-to-avatar interaction server combining OpenAI Realtime API with Audio to Expression model"
-readme = "README.md"
-requires-python = ">=3.10"
-license = { text = "MIT" }
-
-dependencies = [
-    # FastAPI Framework
-    "fastapi>=0.109.0",
-    "uvicorn[standard]>=0.27.0",
-    "pydantic-settings>=2.1.0",
-
-    # WebSocket support (for OpenAI Realtime client)
-    "websockets>=12.0",
-
-    # Performance - Fast JSON serialization
-    "orjson>=3.9.0",
-
-    # Audio processing
-    "numpy>=1.24.0",
-    "librosa>=0.10.0",
-    "scipy>=1.10.0",
-
-    # Environment variables
-    "python-dotenv>=1.0.0",
-
-    # Audio2Expression model dependencies (CPU-only versions)
-    "torch>=2.1.0",
-    "torchaudio>=2.1.0",
-    "transformers==4.36.2",
-]
-
-[project.optional-dependencies]
-dev = [
-    "pytest>=7.0.0",
-    "pytest-asyncio>=0.21.0",
-    "httpx>=0.25.0",
-]
-
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-[tool.uv]
-
-[[tool.uv.index]]
-name = "pytorch-cpu"
-url = "https://download.pytorch.org/whl/cpu"
-explicit = true
-
-[tool.uv.sources]
-# Use PyTorch CPU-only wheels for smaller image and CPU optimizations
-torch = { index = "pytorch-cpu" }
-torchaudio = { index = "pytorch-cpu" }
-
-[tool.hatch.build.targets.wheel]
-packages = ["src"]
-EOF
+COPY README.md ./
 
 # Install Python dependencies with uv using CPU-only PyTorch
-RUN mv pyproject.cpu.toml pyproject.toml && \
-    uv sync --frozen --no-dev || uv sync --no-dev
-
+RUN uv sync --frozen --no-dev || uv sync --no-dev
 # ------------------------------------------------------------------------------
 # Stage 3: Production image with CPU optimizations
 # ------------------------------------------------------------------------------
@@ -143,6 +81,10 @@ ENV PYTHONUNBUFFERED=1 \
     # Disable TensorFloat32 (not applicable for CPU but good practice)
     TORCH_ALLOW_TF32_CUBLAS_OVERRIDE=0
 
+
+# Fix permissions for appuser
+RUN chown -R appuser:appuser /app
+
 # Switch to non-root user
 USER appuser
 
@@ -154,7 +96,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')" || exit 1
 
 # Start the server (using uv run to use the managed environment)
-CMD ["uv", "run", "python", "main.py"]
+CMD ["uv", "run", "python", "src/main.py"]
 
 # ------------------------------------------------------------------------------
 # Alternative: Development image (with hot reload)

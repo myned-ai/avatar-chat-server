@@ -1,0 +1,4418 @@
+[
+  {
+    "timestamp": 1768859874.7756453,
+    "datetime": "2026-01-19 21:57:54",
+    "role": "assistant",
+    "text": "Hey",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859874763_session_"
+  },
+  {
+    "timestamp": 1768859874.8006747,
+    "datetime": "2026-01-19 21:57:54",
+    "role": "assistant",
+    "text": "!",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859874763_session_"
+  },
+  {
+    "timestamp": 1768859874.8469794,
+    "datetime": "2026-01-19 21:57:54",
+    "role": "assistant",
+    "text": " How",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859874763_session_"
+  },
+  {
+    "timestamp": 1768859875.036707,
+    "datetime": "2026-01-19 21:57:55",
+    "role": "assistant",
+    "text": "\u2019s",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859874763_session_"
+  },
+  {
+    "timestamp": 1768859875.1377044,
+    "datetime": "2026-01-19 21:57:55",
+    "role": "assistant",
+    "text": " it",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859874763_session_"
+  },
+  {
+    "timestamp": 1768859875.152717,
+    "datetime": "2026-01-19 21:57:55",
+    "role": "assistant",
+    "text": " going",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859874763_session_"
+  },
+  {
+    "timestamp": 1768859875.1736157,
+    "datetime": "2026-01-19 21:57:55",
+    "role": "assistant",
+    "text": "?",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859874763_session_"
+  },
+  {
+    "timestamp": 1768859876.4129355,
+    "datetime": "2026-01-19 21:57:56",
+    "role": "assistant",
+    "text": "Hey! How\u2019s it going?",
+    "event_type": "transcript_done",
+    "turn_id": "turn_1768859874763_session_"
+  },
+  {
+    "timestamp": 1768859880.8861055,
+    "datetime": "2026-01-19 21:58:00",
+    "role": "assistant",
+    "text": "Sure",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859880.9097254,
+    "datetime": "2026-01-19 21:58:00",
+    "role": "assistant",
+    "text": "!",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859881.0860822,
+    "datetime": "2026-01-19 21:58:01",
+    "role": "assistant",
+    "text": " Once",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859881.1009536,
+    "datetime": "2026-01-19 21:58:01",
+    "role": "assistant",
+    "text": " upon",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859881.122043,
+    "datetime": "2026-01-19 21:58:01",
+    "role": "assistant",
+    "text": " a",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859881.2241764,
+    "datetime": "2026-01-19 21:58:01",
+    "role": "assistant",
+    "text": " time",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859881.2405171,
+    "datetime": "2026-01-19 21:58:01",
+    "role": "assistant",
+    "text": ",",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859881.41865,
+    "datetime": "2026-01-19 21:58:01",
+    "role": "user",
+    "text": "Hey, tell me a story.",
+    "event_type": "transcript_delta",
+    "turn_id": "user_1768859881386"
+  },
+  {
+    "timestamp": 1768859881.4477887,
+    "datetime": "2026-01-19 21:58:01",
+    "role": "user",
+    "text": "Hey, tell me a story.",
+    "event_type": "transcript_done",
+    "turn_id": "user_1768859881386"
+  },
+  {
+    "timestamp": 1768859881.4775538,
+    "datetime": "2026-01-19 21:58:01",
+    "role": "assistant",
+    "text": " there",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859881.5098686,
+    "datetime": "2026-01-19 21:58:01",
+    "role": "assistant",
+    "text": " was",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859881.5313907,
+    "datetime": "2026-01-19 21:58:01",
+    "role": "assistant",
+    "text": " a",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859881.5523524,
+    "datetime": "2026-01-19 21:58:01",
+    "role": "assistant",
+    "text": " curious",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859881.5883267,
+    "datetime": "2026-01-19 21:58:01",
+    "role": "assistant",
+    "text": " young",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859881.6180646,
+    "datetime": "2026-01-19 21:58:01",
+    "role": "assistant",
+    "text": " explorer",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859881.846552,
+    "datetime": "2026-01-19 21:58:01",
+    "role": "assistant",
+    "text": " who",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859881.8663516,
+    "datetime": "2026-01-19 21:58:01",
+    "role": "assistant",
+    "text": " loved",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859881.8780954,
+    "datetime": "2026-01-19 21:58:01",
+    "role": "assistant",
+    "text": " discovering",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859881.9114509,
+    "datetime": "2026-01-19 21:58:01",
+    "role": "assistant",
+    "text": " hidden",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859881.9422257,
+    "datetime": "2026-01-19 21:58:01",
+    "role": "assistant",
+    "text": " places",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859881.9549506,
+    "datetime": "2026-01-19 21:58:01",
+    "role": "assistant",
+    "text": ".",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859882.6514091,
+    "datetime": "2026-01-19 21:58:02",
+    "role": "assistant",
+    "text": " One",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859882.6693523,
+    "datetime": "2026-01-19 21:58:02",
+    "role": "assistant",
+    "text": " day",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859882.707459,
+    "datetime": "2026-01-19 21:58:02",
+    "role": "assistant",
+    "text": ",",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859882.7350414,
+    "datetime": "2026-01-19 21:58:02",
+    "role": "assistant",
+    "text": " while",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859882.7584734,
+    "datetime": "2026-01-19 21:58:02",
+    "role": "assistant",
+    "text": " wandering",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859882.7816594,
+    "datetime": "2026-01-19 21:58:02",
+    "role": "assistant",
+    "text": " through",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859882.968319,
+    "datetime": "2026-01-19 21:58:02",
+    "role": "assistant",
+    "text": " a",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859882.9966297,
+    "datetime": "2026-01-19 21:58:02",
+    "role": "assistant",
+    "text": " dense",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859883.0225077,
+    "datetime": "2026-01-19 21:58:03",
+    "role": "assistant",
+    "text": " forest",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859883.0534542,
+    "datetime": "2026-01-19 21:58:03",
+    "role": "assistant",
+    "text": ",",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859883.0837197,
+    "datetime": "2026-01-19 21:58:03",
+    "role": "assistant",
+    "text": " they",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859883.1162083,
+    "datetime": "2026-01-19 21:58:03",
+    "role": "assistant",
+    "text": " stumbled",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859883.1462314,
+    "datetime": "2026-01-19 21:58:03",
+    "role": "assistant",
+    "text": " upon",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859883.3745205,
+    "datetime": "2026-01-19 21:58:03",
+    "role": "assistant",
+    "text": " an",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859883.406353,
+    "datetime": "2026-01-19 21:58:03",
+    "role": "assistant",
+    "text": " ancient",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859883.4253335,
+    "datetime": "2026-01-19 21:58:03",
+    "role": "assistant",
+    "text": " tree",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859883.4570324,
+    "datetime": "2026-01-19 21:58:03",
+    "role": "assistant",
+    "text": " with",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859883.4956982,
+    "datetime": "2026-01-19 21:58:03",
+    "role": "assistant",
+    "text": " a",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859883.526622,
+    "datetime": "2026-01-19 21:58:03",
+    "role": "assistant",
+    "text": " hidden",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859883.5415854,
+    "datetime": "2026-01-19 21:58:03",
+    "role": "assistant",
+    "text": " door",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859883.5568755,
+    "datetime": "2026-01-19 21:58:03",
+    "role": "assistant",
+    "text": " in",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859883.5826497,
+    "datetime": "2026-01-19 21:58:03",
+    "role": "assistant",
+    "text": " its",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859883.6099584,
+    "datetime": "2026-01-19 21:58:03",
+    "role": "assistant",
+    "text": " trunk",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859883.637168,
+    "datetime": "2026-01-19 21:58:03",
+    "role": "assistant",
+    "text": ".",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859883.8102374,
+    "datetime": "2026-01-19 21:58:03",
+    "role": "assistant",
+    "text": " Cur",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859883.8245857,
+    "datetime": "2026-01-19 21:58:03",
+    "role": "assistant",
+    "text": "iosity",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859883.8423784,
+    "datetime": "2026-01-19 21:58:03",
+    "role": "assistant",
+    "text": " got",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859883.8749778,
+    "datetime": "2026-01-19 21:58:03",
+    "role": "assistant",
+    "text": " the",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859883.910542,
+    "datetime": "2026-01-19 21:58:03",
+    "role": "assistant",
+    "text": " better",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859883.9416027,
+    "datetime": "2026-01-19 21:58:03",
+    "role": "assistant",
+    "text": " of",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859884.0893488,
+    "datetime": "2026-01-19 21:58:04",
+    "role": "assistant",
+    "text": " them",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859884.1227548,
+    "datetime": "2026-01-19 21:58:04",
+    "role": "assistant",
+    "text": ",",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859884.1362894,
+    "datetime": "2026-01-19 21:58:04",
+    "role": "assistant",
+    "text": " and",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859884.1684263,
+    "datetime": "2026-01-19 21:58:04",
+    "role": "assistant",
+    "text": " they",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859884.1978137,
+    "datetime": "2026-01-19 21:58:04",
+    "role": "assistant",
+    "text": " decided",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859884.2186298,
+    "datetime": "2026-01-19 21:58:04",
+    "role": "assistant",
+    "text": " to",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859884.2462585,
+    "datetime": "2026-01-19 21:58:04",
+    "role": "assistant",
+    "text": " step",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859884.3065991,
+    "datetime": "2026-01-19 21:58:04",
+    "role": "assistant",
+    "text": " inside",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859884.3369567,
+    "datetime": "2026-01-19 21:58:04",
+    "role": "assistant",
+    "text": ".",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859884.4789135,
+    "datetime": "2026-01-19 21:58:04",
+    "role": "assistant",
+    "text": "\n\n",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859884.5098727,
+    "datetime": "2026-01-19 21:58:04",
+    "role": "assistant",
+    "text": "To",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859884.5422986,
+    "datetime": "2026-01-19 21:58:04",
+    "role": "assistant",
+    "text": " their",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859884.5729837,
+    "datetime": "2026-01-19 21:58:04",
+    "role": "assistant",
+    "text": " surprise",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859884.5954897,
+    "datetime": "2026-01-19 21:58:04",
+    "role": "assistant",
+    "text": ",",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859884.6262388,
+    "datetime": "2026-01-19 21:58:04",
+    "role": "assistant",
+    "text": " the",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859884.6424062,
+    "datetime": "2026-01-19 21:58:04",
+    "role": "assistant",
+    "text": " tree",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859884.8563383,
+    "datetime": "2026-01-19 21:58:04",
+    "role": "assistant",
+    "text": " led",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859884.9023278,
+    "datetime": "2026-01-19 21:58:04",
+    "role": "assistant",
+    "text": " to",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859884.9355767,
+    "datetime": "2026-01-19 21:58:04",
+    "role": "assistant",
+    "text": " a",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859884.951607,
+    "datetime": "2026-01-19 21:58:04",
+    "role": "assistant",
+    "text": " magical",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859884.9998124,
+    "datetime": "2026-01-19 21:58:04",
+    "role": "assistant",
+    "text": " world",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859885.032584,
+    "datetime": "2026-01-19 21:58:05",
+    "role": "assistant",
+    "text": " filled",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859885.0834324,
+    "datetime": "2026-01-19 21:58:05",
+    "role": "assistant",
+    "text": " with",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859885.114562,
+    "datetime": "2026-01-19 21:58:05",
+    "role": "assistant",
+    "text": " glowing",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859885.279936,
+    "datetime": "2026-01-19 21:58:05",
+    "role": "assistant",
+    "text": " plants",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859885.3189013,
+    "datetime": "2026-01-19 21:58:05",
+    "role": "assistant",
+    "text": " and",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859885.3573003,
+    "datetime": "2026-01-19 21:58:05",
+    "role": "assistant",
+    "text": " creatures",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859885.4430292,
+    "datetime": "2026-01-19 21:58:05",
+    "role": "assistant",
+    "text": " they",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859885.509609,
+    "datetime": "2026-01-19 21:58:05",
+    "role": "assistant",
+    "text": " had",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859885.5939615,
+    "datetime": "2026-01-19 21:58:05",
+    "role": "assistant",
+    "text": " never",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859885.6122015,
+    "datetime": "2026-01-19 21:58:05",
+    "role": "assistant",
+    "text": " seen",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859885.76371,
+    "datetime": "2026-01-19 21:58:05",
+    "role": "assistant",
+    "text": " before",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859885.7947369,
+    "datetime": "2026-01-19 21:58:05",
+    "role": "assistant",
+    "text": ".",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859885.8115847,
+    "datetime": "2026-01-19 21:58:05",
+    "role": "assistant",
+    "text": " Each",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859885.8337033,
+    "datetime": "2026-01-19 21:58:05",
+    "role": "assistant",
+    "text": " step",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859885.8544455,
+    "datetime": "2026-01-19 21:58:05",
+    "role": "assistant",
+    "text": " they",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859885.897673,
+    "datetime": "2026-01-19 21:58:05",
+    "role": "assistant",
+    "text": " took",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859885.9137182,
+    "datetime": "2026-01-19 21:58:05",
+    "role": "assistant",
+    "text": " revealed",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859886.1868205,
+    "datetime": "2026-01-19 21:58:06",
+    "role": "assistant",
+    "text": " new",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859886.2519977,
+    "datetime": "2026-01-19 21:58:06",
+    "role": "assistant",
+    "text": " wonders",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859886.289311,
+    "datetime": "2026-01-19 21:58:06",
+    "role": "assistant",
+    "text": ",",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859886.308754,
+    "datetime": "2026-01-19 21:58:06",
+    "role": "assistant",
+    "text": " and",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859886.3554971,
+    "datetime": "2026-01-19 21:58:06",
+    "role": "assistant",
+    "text": " they",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859886.392248,
+    "datetime": "2026-01-19 21:58:06",
+    "role": "assistant",
+    "text": " soon",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859886.4283433,
+    "datetime": "2026-01-19 21:58:06",
+    "role": "assistant",
+    "text": " found",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859886.4933133,
+    "datetime": "2026-01-19 21:58:06",
+    "role": "assistant",
+    "text": " themselves",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859886.702514,
+    "datetime": "2026-01-19 21:58:06",
+    "role": "assistant",
+    "text": " on",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859886.7678115,
+    "datetime": "2026-01-19 21:58:06",
+    "role": "assistant",
+    "text": " an",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859886.7963126,
+    "datetime": "2026-01-19 21:58:06",
+    "role": "assistant",
+    "text": " adventure",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859886.8306396,
+    "datetime": "2026-01-19 21:58:06",
+    "role": "assistant",
+    "text": " they",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859886.8785608,
+    "datetime": "2026-01-19 21:58:06",
+    "role": "assistant",
+    "text": "\u2019d",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859886.923194,
+    "datetime": "2026-01-19 21:58:06",
+    "role": "assistant",
+    "text": " never",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859886.9540148,
+    "datetime": "2026-01-19 21:58:06",
+    "role": "assistant",
+    "text": " forget",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859887.012292,
+    "datetime": "2026-01-19 21:58:07",
+    "role": "assistant",
+    "text": ".",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859887.2467868,
+    "datetime": "2026-01-19 21:58:07",
+    "role": "assistant",
+    "text": "\n\n",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859887.3148458,
+    "datetime": "2026-01-19 21:58:07",
+    "role": "assistant",
+    "text": "What",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859887.3499455,
+    "datetime": "2026-01-19 21:58:07",
+    "role": "assistant",
+    "text": " do",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859887.3823926,
+    "datetime": "2026-01-19 21:58:07",
+    "role": "assistant",
+    "text": " you",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859887.4045756,
+    "datetime": "2026-01-19 21:58:07",
+    "role": "assistant",
+    "text": " think",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859887.4362345,
+    "datetime": "2026-01-19 21:58:07",
+    "role": "assistant",
+    "text": " they",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859887.508914,
+    "datetime": "2026-01-19 21:58:07",
+    "role": "assistant",
+    "text": " discovered",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859887.578683,
+    "datetime": "2026-01-19 21:58:07",
+    "role": "assistant",
+    "text": " next",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859887.6133437,
+    "datetime": "2026-01-19 21:58:07",
+    "role": "assistant",
+    "text": "?",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859888.0604296,
+    "datetime": "2026-01-19 21:58:08",
+    "role": "assistant",
+    "text": "",
+    "event_type": "transcript_interrupted",
+    "turn_id": "turn_1768859880871_session_"
+  },
+  {
+    "timestamp": 1768859888.642592,
+    "datetime": "2026-01-19 21:58:08",
+    "role": "assistant",
+    "text": "",
+    "event_type": "transcript_interrupted",
+    "turn_id": "turn_1768859888565_session_"
+  },
+  {
+    "timestamp": 1768859889.1364474,
+    "datetime": "2026-01-19 21:58:09",
+    "role": "user",
+    "text": "I'm sure.",
+    "event_type": "transcript_done",
+    "turn_id": "user_1768859889136"
+  },
+  {
+    "timestamp": 1768859889.8016632,
+    "datetime": "2026-01-19 21:58:09",
+    "role": "assistant",
+    "text": "Sure",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859889769_session_"
+  },
+  {
+    "timestamp": 1768859889.8723986,
+    "datetime": "2026-01-19 21:58:09",
+    "role": "assistant",
+    "text": "!",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859889769_session_"
+  },
+  {
+    "timestamp": 1768859889.9661357,
+    "datetime": "2026-01-19 21:58:09",
+    "role": "assistant",
+    "text": " Why",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859889769_session_"
+  },
+  {
+    "timestamp": 1768859890.1825838,
+    "datetime": "2026-01-19 21:58:10",
+    "role": "assistant",
+    "text": " did",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859889769_session_"
+  },
+  {
+    "timestamp": 1768859890.2786815,
+    "datetime": "2026-01-19 21:58:10",
+    "role": "assistant",
+    "text": " the",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859889769_session_"
+  },
+  {
+    "timestamp": 1768859890.315396,
+    "datetime": "2026-01-19 21:58:10",
+    "role": "assistant",
+    "text": " scare",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859889769_session_"
+  },
+  {
+    "timestamp": 1768859890.333375,
+    "datetime": "2026-01-19 21:58:10",
+    "role": "assistant",
+    "text": "crow",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859889769_session_"
+  },
+  {
+    "timestamp": 1768859890.429589,
+    "datetime": "2026-01-19 21:58:10",
+    "role": "user",
+    "text": "I'm making a joke.",
+    "event_type": "transcript_delta",
+    "turn_id": "user_1768859890371"
+  },
+  {
+    "timestamp": 1768859890.4666603,
+    "datetime": "2026-01-19 21:58:10",
+    "role": "user",
+    "text": "I'm making a joke.",
+    "event_type": "transcript_done",
+    "turn_id": "user_1768859890371"
+  },
+  {
+    "timestamp": 1768859890.532252,
+    "datetime": "2026-01-19 21:58:10",
+    "role": "assistant",
+    "text": " win",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859889769_session_"
+  },
+  {
+    "timestamp": 1768859890.5703466,
+    "datetime": "2026-01-19 21:58:10",
+    "role": "assistant",
+    "text": " an",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859889769_session_"
+  },
+  {
+    "timestamp": 1768859890.6070113,
+    "datetime": "2026-01-19 21:58:10",
+    "role": "assistant",
+    "text": " award",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859889769_session_"
+  },
+  {
+    "timestamp": 1768859890.6422224,
+    "datetime": "2026-01-19 21:58:10",
+    "role": "assistant",
+    "text": "?\n\n",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859889769_session_"
+  },
+  {
+    "timestamp": 1768859890.6644127,
+    "datetime": "2026-01-19 21:58:10",
+    "role": "assistant",
+    "text": "Because",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859889769_session_"
+  },
+  {
+    "timestamp": 1768859890.8266735,
+    "datetime": "2026-01-19 21:58:10",
+    "role": "assistant",
+    "text": " he",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859889769_session_"
+  },
+  {
+    "timestamp": 1768859890.8643568,
+    "datetime": "2026-01-19 21:58:10",
+    "role": "assistant",
+    "text": " was",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859889769_session_"
+  },
+  {
+    "timestamp": 1768859890.8963516,
+    "datetime": "2026-01-19 21:58:10",
+    "role": "assistant",
+    "text": " outstanding",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859889769_session_"
+  },
+  {
+    "timestamp": 1768859890.9273198,
+    "datetime": "2026-01-19 21:58:10",
+    "role": "assistant",
+    "text": " in",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859889769_session_"
+  },
+  {
+    "timestamp": 1768859890.9660037,
+    "datetime": "2026-01-19 21:58:10",
+    "role": "assistant",
+    "text": " his",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859889769_session_"
+  },
+  {
+    "timestamp": 1768859890.9991968,
+    "datetime": "2026-01-19 21:58:10",
+    "role": "assistant",
+    "text": " field",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859889769_session_"
+  },
+  {
+    "timestamp": 1768859891.0221326,
+    "datetime": "2026-01-19 21:58:11",
+    "role": "assistant",
+    "text": "!",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859889769_session_"
+  },
+  {
+    "timestamp": 1768859893.6364787,
+    "datetime": "2026-01-19 21:58:13",
+    "role": "assistant",
+    "text": "Sure! Why did the scarecrow win an award?\n\nBecause he was outstanding in his field!",
+    "event_type": "transcript_done",
+    "turn_id": null
+  },
+  {
+    "timestamp": 1768859931.6854875,
+    "datetime": "2026-01-19 21:58:51",
+    "role": "assistant",
+    "text": "C",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859931.729748,
+    "datetime": "2026-01-19 21:58:51",
+    "role": "assistant",
+    "text": "'",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859931.7584674,
+    "datetime": "2026-01-19 21:58:51",
+    "role": "assistant",
+    "text": "era",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859931.7981305,
+    "datetime": "2026-01-19 21:58:51",
+    "role": "assistant",
+    "text": " una",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859931.842494,
+    "datetime": "2026-01-19 21:58:51",
+    "role": "assistant",
+    "text": " volta",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859931.907707,
+    "datetime": "2026-01-19 21:58:51",
+    "role": "assistant",
+    "text": " un",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859931.93745,
+    "datetime": "2026-01-19 21:58:51",
+    "role": "assistant",
+    "text": " piccolo",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859932.0453558,
+    "datetime": "2026-01-19 21:58:52",
+    "role": "assistant",
+    "text": " vill",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859932.072927,
+    "datetime": "2026-01-19 21:58:52",
+    "role": "assistant",
+    "text": "aggio",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859932.2332113,
+    "datetime": "2026-01-19 21:58:52",
+    "role": "assistant",
+    "text": " cir",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859932.260999,
+    "datetime": "2026-01-19 21:58:52",
+    "role": "assistant",
+    "text": "cond",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859932.3345673,
+    "datetime": "2026-01-19 21:58:52",
+    "role": "assistant",
+    "text": "ato",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859932.3712313,
+    "datetime": "2026-01-19 21:58:52",
+    "role": "assistant",
+    "text": " da",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859932.4027123,
+    "datetime": "2026-01-19 21:58:52",
+    "role": "assistant",
+    "text": " bos",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859932.4251645,
+    "datetime": "2026-01-19 21:58:52",
+    "role": "assistant",
+    "text": "chi",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859932.4442458,
+    "datetime": "2026-01-19 21:58:52",
+    "role": "assistant",
+    "text": " f",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859932.6645107,
+    "datetime": "2026-01-19 21:58:52",
+    "role": "user",
+    "text": "Next, tell me a story.",
+    "event_type": "transcript_delta",
+    "turn_id": "user_1768859932629"
+  },
+  {
+    "timestamp": 1768859932.703033,
+    "datetime": "2026-01-19 21:58:52",
+    "role": "user",
+    "text": "Next, tell me a story.",
+    "event_type": "transcript_done",
+    "turn_id": "user_1768859932629"
+  },
+  {
+    "timestamp": 1768859932.7421587,
+    "datetime": "2026-01-19 21:58:52",
+    "role": "assistant",
+    "text": "itti",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859932.7813246,
+    "datetime": "2026-01-19 21:58:52",
+    "role": "assistant",
+    "text": ".",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859932.8003721,
+    "datetime": "2026-01-19 21:58:52",
+    "role": "assistant",
+    "text": " In",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859932.8514876,
+    "datetime": "2026-01-19 21:58:52",
+    "role": "assistant",
+    "text": " questo",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859932.872039,
+    "datetime": "2026-01-19 21:58:52",
+    "role": "assistant",
+    "text": " vill",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859932.8948088,
+    "datetime": "2026-01-19 21:58:52",
+    "role": "assistant",
+    "text": "aggio",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859932.9260027,
+    "datetime": "2026-01-19 21:58:52",
+    "role": "assistant",
+    "text": " vive",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859933.1560447,
+    "datetime": "2026-01-19 21:58:53",
+    "role": "assistant",
+    "text": "va",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859933.203331,
+    "datetime": "2026-01-19 21:58:53",
+    "role": "assistant",
+    "text": " un",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859933.2733107,
+    "datetime": "2026-01-19 21:58:53",
+    "role": "assistant",
+    "text": " giovane",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859933.3028758,
+    "datetime": "2026-01-19 21:58:53",
+    "role": "assistant",
+    "text": " fale",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859933.3452861,
+    "datetime": "2026-01-19 21:58:53",
+    "role": "assistant",
+    "text": "g",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859933.373592,
+    "datetime": "2026-01-19 21:58:53",
+    "role": "assistant",
+    "text": "name",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859933.393653,
+    "datetime": "2026-01-19 21:58:53",
+    "role": "assistant",
+    "text": " molto",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859933.4163718,
+    "datetime": "2026-01-19 21:58:53",
+    "role": "assistant",
+    "text": " ab",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859933.6715865,
+    "datetime": "2026-01-19 21:58:53",
+    "role": "assistant",
+    "text": "ile",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859933.7321472,
+    "datetime": "2026-01-19 21:58:53",
+    "role": "assistant",
+    "text": ".",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859933.7921164,
+    "datetime": "2026-01-19 21:58:53",
+    "role": "assistant",
+    "text": " Un",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859933.8234665,
+    "datetime": "2026-01-19 21:58:53",
+    "role": "assistant",
+    "text": " giorno",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859933.8570325,
+    "datetime": "2026-01-19 21:58:53",
+    "role": "assistant",
+    "text": ",",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859933.889249,
+    "datetime": "2026-01-19 21:58:53",
+    "role": "assistant",
+    "text": " mentre",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859934.2722251,
+    "datetime": "2026-01-19 21:58:54",
+    "role": "assistant",
+    "text": " espl",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859934.3103576,
+    "datetime": "2026-01-19 21:58:54",
+    "role": "assistant",
+    "text": "or",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859934.3788447,
+    "datetime": "2026-01-19 21:58:54",
+    "role": "assistant",
+    "text": "ava",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859934.4772606,
+    "datetime": "2026-01-19 21:58:54",
+    "role": "assistant",
+    "text": " un",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859934.52966,
+    "datetime": "2026-01-19 21:58:54",
+    "role": "assistant",
+    "text": " ang",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859934.5750785,
+    "datetime": "2026-01-19 21:58:54",
+    "role": "assistant",
+    "text": "olo",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859934.5964766,
+    "datetime": "2026-01-19 21:58:54",
+    "role": "assistant",
+    "text": " remoto",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859934.6295958,
+    "datetime": "2026-01-19 21:58:54",
+    "role": "assistant",
+    "text": " della",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859934.6669884,
+    "datetime": "2026-01-19 21:58:54",
+    "role": "assistant",
+    "text": " fore",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859934.8602648,
+    "datetime": "2026-01-19 21:58:54",
+    "role": "assistant",
+    "text": "sta",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859934.9121802,
+    "datetime": "2026-01-19 21:58:54",
+    "role": "assistant",
+    "text": ",",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859934.9486253,
+    "datetime": "2026-01-19 21:58:54",
+    "role": "assistant",
+    "text": " trov",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859934.9711823,
+    "datetime": "2026-01-19 21:58:54",
+    "role": "assistant",
+    "text": "\u00f2",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859935.0324242,
+    "datetime": "2026-01-19 21:58:55",
+    "role": "assistant",
+    "text": " un",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859935.06863,
+    "datetime": "2026-01-19 21:58:55",
+    "role": "assistant",
+    "text": " sem",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859935.1065102,
+    "datetime": "2026-01-19 21:58:55",
+    "role": "assistant",
+    "text": "e",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859935.1472442,
+    "datetime": "2026-01-19 21:58:55",
+    "role": "assistant",
+    "text": " luminos",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859935.1717696,
+    "datetime": "2026-01-19 21:58:55",
+    "role": "assistant",
+    "text": "o",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859935.4848208,
+    "datetime": "2026-01-19 21:58:55",
+    "role": "assistant",
+    "text": " che",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859935.613905,
+    "datetime": "2026-01-19 21:58:55",
+    "role": "assistant",
+    "text": "",
+    "event_type": "transcript_interrupted",
+    "turn_id": "turn_1768859931657_session_"
+  },
+  {
+    "timestamp": 1768859938.3539507,
+    "datetime": "2026-01-19 21:58:58",
+    "role": "assistant",
+    "text": "C",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859938327_session_"
+  },
+  {
+    "timestamp": 1768859938.429868,
+    "datetime": "2026-01-19 21:58:58",
+    "role": "assistant",
+    "text": "erto",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859938327_session_"
+  },
+  {
+    "timestamp": 1768859938.4929547,
+    "datetime": "2026-01-19 21:58:58",
+    "role": "assistant",
+    "text": "!",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859938327_session_"
+  },
+  {
+    "timestamp": 1768859938.5856447,
+    "datetime": "2026-01-19 21:58:58",
+    "role": "assistant",
+    "text": " All",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859938327_session_"
+  },
+  {
+    "timestamp": 1768859938.6499455,
+    "datetime": "2026-01-19 21:58:58",
+    "role": "assistant",
+    "text": "ora",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859938327_session_"
+  },
+  {
+    "timestamp": 1768859938.7152617,
+    "datetime": "2026-01-19 21:58:58",
+    "role": "assistant",
+    "text": ",",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859938327_session_"
+  },
+  {
+    "timestamp": 1768859938.917514,
+    "datetime": "2026-01-19 21:58:58",
+    "role": "assistant",
+    "text": " perch\u00e9",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859938327_session_"
+  },
+  {
+    "timestamp": 1768859939.0344186,
+    "datetime": "2026-01-19 21:58:59",
+    "role": "assistant",
+    "text": " gli",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859938327_session_"
+  },
+  {
+    "timestamp": 1768859939.0793366,
+    "datetime": "2026-01-19 21:58:59",
+    "role": "assistant",
+    "text": " astronaut",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859938327_session_"
+  },
+  {
+    "timestamp": 1768859939.1239362,
+    "datetime": "2026-01-19 21:58:59",
+    "role": "assistant",
+    "text": "i",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859938327_session_"
+  },
+  {
+    "timestamp": 1768859939.1634665,
+    "datetime": "2026-01-19 21:58:59",
+    "role": "assistant",
+    "text": " non",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859938327_session_"
+  },
+  {
+    "timestamp": 1768859939.199757,
+    "datetime": "2026-01-19 21:58:59",
+    "role": "assistant",
+    "text": " us",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859938327_session_"
+  },
+  {
+    "timestamp": 1768859939.2451766,
+    "datetime": "2026-01-19 21:58:59",
+    "role": "assistant",
+    "text": "ano",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859938327_session_"
+  },
+  {
+    "timestamp": 1768859939.2719324,
+    "datetime": "2026-01-19 21:58:59",
+    "role": "assistant",
+    "text": " mai",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859938327_session_"
+  },
+  {
+    "timestamp": 1768859939.438936,
+    "datetime": "2026-01-19 21:58:59",
+    "role": "assistant",
+    "text": " il",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859938327_session_"
+  },
+  {
+    "timestamp": 1768859939.486303,
+    "datetime": "2026-01-19 21:58:59",
+    "role": "assistant",
+    "text": " telefono",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859938327_session_"
+  },
+  {
+    "timestamp": 1768859939.532488,
+    "datetime": "2026-01-19 21:58:59",
+    "role": "assistant",
+    "text": " nello",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859938327_session_"
+  },
+  {
+    "timestamp": 1768859939.5804455,
+    "datetime": "2026-01-19 21:58:59",
+    "role": "assistant",
+    "text": " spazio",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859938327_session_"
+  },
+  {
+    "timestamp": 1768859939.6206422,
+    "datetime": "2026-01-19 21:58:59",
+    "role": "assistant",
+    "text": "?",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859938327_session_"
+  },
+  {
+    "timestamp": 1768859939.6611323,
+    "datetime": "2026-01-19 21:58:59",
+    "role": "assistant",
+    "text": " Per",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859938327_session_"
+  },
+  {
+    "timestamp": 1768859939.915177,
+    "datetime": "2026-01-19 21:58:59",
+    "role": "user",
+    "text": "Wait, wait, wait, tell me, tell me a joke.",
+    "event_type": "transcript_delta",
+    "turn_id": "user_1768859939794"
+  },
+  {
+    "timestamp": 1768859939.9602218,
+    "datetime": "2026-01-19 21:58:59",
+    "role": "user",
+    "text": "Wait, wait, wait, tell me, tell me a joke.",
+    "event_type": "transcript_done",
+    "turn_id": "user_1768859939794"
+  },
+  {
+    "timestamp": 1768859940.1634426,
+    "datetime": "2026-01-19 21:59:00",
+    "role": "assistant",
+    "text": "ch\u00e9",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859938327_session_"
+  },
+  {
+    "timestamp": 1768859940.2094223,
+    "datetime": "2026-01-19 21:59:00",
+    "role": "assistant",
+    "text": " hanno",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859938327_session_"
+  },
+  {
+    "timestamp": 1768859940.24816,
+    "datetime": "2026-01-19 21:59:00",
+    "role": "assistant",
+    "text": " paura",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859938327_session_"
+  },
+  {
+    "timestamp": 1768859940.2947829,
+    "datetime": "2026-01-19 21:59:00",
+    "role": "assistant",
+    "text": " di",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859938327_session_"
+  },
+  {
+    "timestamp": 1768859940.3391347,
+    "datetime": "2026-01-19 21:59:00",
+    "role": "assistant",
+    "text": " fin",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859938327_session_"
+  },
+  {
+    "timestamp": 1768859940.3878715,
+    "datetime": "2026-01-19 21:59:00",
+    "role": "assistant",
+    "text": "ire",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859938327_session_"
+  },
+  {
+    "timestamp": 1768859940.4137952,
+    "datetime": "2026-01-19 21:59:00",
+    "role": "assistant",
+    "text": " in",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859938327_session_"
+  },
+  {
+    "timestamp": 1768859940.437888,
+    "datetime": "2026-01-19 21:59:00",
+    "role": "assistant",
+    "text": " una",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859938327_session_"
+  },
+  {
+    "timestamp": 1768859940.6002798,
+    "datetime": "2026-01-19 21:59:00",
+    "role": "assistant",
+    "text": " zona",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859938327_session_"
+  },
+  {
+    "timestamp": 1768859940.6473608,
+    "datetime": "2026-01-19 21:59:00",
+    "role": "assistant",
+    "text": " senza",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859938327_session_"
+  },
+  {
+    "timestamp": 1768859940.6780515,
+    "datetime": "2026-01-19 21:59:00",
+    "role": "assistant",
+    "text": " campo",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859938327_session_"
+  },
+  {
+    "timestamp": 1768859940.7248163,
+    "datetime": "2026-01-19 21:59:00",
+    "role": "assistant",
+    "text": "!",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859938327_session_"
+  },
+  {
+    "timestamp": 1768859942.915512,
+    "datetime": "2026-01-19 21:59:02",
+    "role": "assistant",
+    "text": "",
+    "event_type": "transcript_interrupted",
+    "turn_id": "turn_1768859938327_session_"
+  },
+  {
+    "timestamp": 1768859942.9723196,
+    "datetime": "2026-01-19 21:59:02",
+    "role": "assistant",
+    "text": "Certo! Allora, perch\u00e9 gli astronauti non usano mai il telefono nello spazio? Perch\u00e9 hanno paura di finire in una zona senza campo!",
+    "event_type": "transcript_done",
+    "turn_id": null
+  },
+  {
+    "timestamp": 1768859953.5289729,
+    "datetime": "2026-01-19 21:59:13",
+    "role": "assistant",
+    "text": "Hab",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859953.5571694,
+    "datetime": "2026-01-19 21:59:13",
+    "role": "assistant",
+    "text": "\u00eda",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859953.5904214,
+    "datetime": "2026-01-19 21:59:13",
+    "role": "assistant",
+    "text": " una",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859953.614263,
+    "datetime": "2026-01-19 21:59:13",
+    "role": "assistant",
+    "text": " vez",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859953.7560325,
+    "datetime": "2026-01-19 21:59:13",
+    "role": "assistant",
+    "text": " un",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859953.8181968,
+    "datetime": "2026-01-19 21:59:13",
+    "role": "assistant",
+    "text": " peque\u00f1o",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859954.1038942,
+    "datetime": "2026-01-19 21:59:14",
+    "role": "assistant",
+    "text": " pueblo",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859954.1672256,
+    "datetime": "2026-01-19 21:59:14",
+    "role": "assistant",
+    "text": " escond",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859954.2153888,
+    "datetime": "2026-01-19 21:59:14",
+    "role": "assistant",
+    "text": "ido",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859954.2653828,
+    "datetime": "2026-01-19 21:59:14",
+    "role": "assistant",
+    "text": " entre",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859954.2979825,
+    "datetime": "2026-01-19 21:59:14",
+    "role": "assistant",
+    "text": " mont",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859954.321093,
+    "datetime": "2026-01-19 21:59:14",
+    "role": "assistant",
+    "text": "a\u00f1as",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859954.3436842,
+    "datetime": "2026-01-19 21:59:14",
+    "role": "assistant",
+    "text": ",",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859954.5332155,
+    "datetime": "2026-01-19 21:59:14",
+    "role": "assistant",
+    "text": " donde",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859954.5833955,
+    "datetime": "2026-01-19 21:59:14",
+    "role": "assistant",
+    "text": " todos",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859954.6325555,
+    "datetime": "2026-01-19 21:59:14",
+    "role": "assistant",
+    "text": " los",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859954.676709,
+    "datetime": "2026-01-19 21:59:14",
+    "role": "assistant",
+    "text": " d\u00edas",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859954.7003007,
+    "datetime": "2026-01-19 21:59:14",
+    "role": "assistant",
+    "text": " pas",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859954.728477,
+    "datetime": "2026-01-19 21:59:14",
+    "role": "assistant",
+    "text": "aba",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859954.7673767,
+    "datetime": "2026-01-19 21:59:14",
+    "role": "user",
+    "text": "Hey Nyx, tell me a story.",
+    "event_type": "transcript_delta",
+    "turn_id": "user_1768859954483"
+  },
+  {
+    "timestamp": 1768859954.7919517,
+    "datetime": "2026-01-19 21:59:14",
+    "role": "user",
+    "text": "Hey Nyx, tell me a story.",
+    "event_type": "transcript_done",
+    "turn_id": "user_1768859954483"
+  },
+  {
+    "timestamp": 1768859954.8275602,
+    "datetime": "2026-01-19 21:59:14",
+    "role": "assistant",
+    "text": " algo",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859955.014026,
+    "datetime": "2026-01-19 21:59:15",
+    "role": "assistant",
+    "text": " m\u00e1gico",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859955.0450468,
+    "datetime": "2026-01-19 21:59:15",
+    "role": "assistant",
+    "text": ".",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859955.0701208,
+    "datetime": "2026-01-19 21:59:15",
+    "role": "assistant",
+    "text": " Un",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859955.1121318,
+    "datetime": "2026-01-19 21:59:15",
+    "role": "assistant",
+    "text": " d\u00eda",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859955.1462688,
+    "datetime": "2026-01-19 21:59:15",
+    "role": "assistant",
+    "text": ",",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859955.3002577,
+    "datetime": "2026-01-19 21:59:15",
+    "role": "assistant",
+    "text": " una",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859955.3275106,
+    "datetime": "2026-01-19 21:59:15",
+    "role": "assistant",
+    "text": " ni\u00f1a",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859955.366127,
+    "datetime": "2026-01-19 21:59:15",
+    "role": "assistant",
+    "text": " llamada",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859955.40379,
+    "datetime": "2026-01-19 21:59:15",
+    "role": "assistant",
+    "text": " Sof",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859955.442951,
+    "datetime": "2026-01-19 21:59:15",
+    "role": "assistant",
+    "text": "\u00eda",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859955.4807374,
+    "datetime": "2026-01-19 21:59:15",
+    "role": "assistant",
+    "text": " encontr\u00f3",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859955.754334,
+    "datetime": "2026-01-19 21:59:15",
+    "role": "assistant",
+    "text": " una",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859955.8100867,
+    "datetime": "2026-01-19 21:59:15",
+    "role": "assistant",
+    "text": " llave",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859955.8511744,
+    "datetime": "2026-01-19 21:59:15",
+    "role": "assistant",
+    "text": " dor",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859955.892879,
+    "datetime": "2026-01-19 21:59:15",
+    "role": "assistant",
+    "text": "ada",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859955.9294584,
+    "datetime": "2026-01-19 21:59:15",
+    "role": "assistant",
+    "text": " en",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859955.958063,
+    "datetime": "2026-01-19 21:59:15",
+    "role": "assistant",
+    "text": " el",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859955.9971514,
+    "datetime": "2026-01-19 21:59:15",
+    "role": "assistant",
+    "text": " bosque",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859956.0302136,
+    "datetime": "2026-01-19 21:59:16",
+    "role": "assistant",
+    "text": ".",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859956.227308,
+    "datetime": "2026-01-19 21:59:16",
+    "role": "assistant",
+    "text": " Esa",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859956.2643836,
+    "datetime": "2026-01-19 21:59:16",
+    "role": "assistant",
+    "text": " llave",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859956.3067513,
+    "datetime": "2026-01-19 21:59:16",
+    "role": "assistant",
+    "text": " no",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859956.3489418,
+    "datetime": "2026-01-19 21:59:16",
+    "role": "assistant",
+    "text": " abr",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859956.3850255,
+    "datetime": "2026-01-19 21:59:16",
+    "role": "assistant",
+    "text": "\u00eda",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859956.4222639,
+    "datetime": "2026-01-19 21:59:16",
+    "role": "assistant",
+    "text": " ninguna",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859956.445322,
+    "datetime": "2026-01-19 21:59:16",
+    "role": "assistant",
+    "text": " puerta",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859956.6352954,
+    "datetime": "2026-01-19 21:59:16",
+    "role": "assistant",
+    "text": " normal",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859956.68036,
+    "datetime": "2026-01-19 21:59:16",
+    "role": "assistant",
+    "text": ",",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859956.7048433,
+    "datetime": "2026-01-19 21:59:16",
+    "role": "assistant",
+    "text": " sino",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859956.748542,
+    "datetime": "2026-01-19 21:59:16",
+    "role": "assistant",
+    "text": " que",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859956.785184,
+    "datetime": "2026-01-19 21:59:16",
+    "role": "assistant",
+    "text": " pod\u00eda",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859956.8121548,
+    "datetime": "2026-01-19 21:59:16",
+    "role": "assistant",
+    "text": " abrir",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859956.9795196,
+    "datetime": "2026-01-19 21:59:16",
+    "role": "assistant",
+    "text": " la",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859957.0264232,
+    "datetime": "2026-01-19 21:59:17",
+    "role": "assistant",
+    "text": " imaginaci\u00f3n",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859957.0705554,
+    "datetime": "2026-01-19 21:59:17",
+    "role": "assistant",
+    "text": ".",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859957.1086643,
+    "datetime": "2026-01-19 21:59:17",
+    "role": "assistant",
+    "text": " Al",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859957.1473985,
+    "datetime": "2026-01-19 21:59:17",
+    "role": "assistant",
+    "text": " gir",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859957.1848233,
+    "datetime": "2026-01-19 21:59:17",
+    "role": "assistant",
+    "text": "arla",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859957.3944979,
+    "datetime": "2026-01-19 21:59:17",
+    "role": "assistant",
+    "text": " en",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859957.4387143,
+    "datetime": "2026-01-19 21:59:17",
+    "role": "assistant",
+    "text": " el",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859957.4778302,
+    "datetime": "2026-01-19 21:59:17",
+    "role": "assistant",
+    "text": " aire",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859957.5249562,
+    "datetime": "2026-01-19 21:59:17",
+    "role": "assistant",
+    "text": ",",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859957.568648,
+    "datetime": "2026-01-19 21:59:17",
+    "role": "assistant",
+    "text": " se",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859957.605254,
+    "datetime": "2026-01-19 21:59:17",
+    "role": "assistant",
+    "text": " abr",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859957.6674504,
+    "datetime": "2026-01-19 21:59:17",
+    "role": "assistant",
+    "text": "\u00edan",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859957.7305481,
+    "datetime": "2026-01-19 21:59:17",
+    "role": "assistant",
+    "text": " puertas",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859957.7694345,
+    "datetime": "2026-01-19 21:59:17",
+    "role": "assistant",
+    "text": " a",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859957.981581,
+    "datetime": "2026-01-19 21:59:17",
+    "role": "assistant",
+    "text": " mundos",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859958.0274978,
+    "datetime": "2026-01-19 21:59:18",
+    "role": "assistant",
+    "text": " llen",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859958.0677035,
+    "datetime": "2026-01-19 21:59:18",
+    "role": "assistant",
+    "text": "os",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859958.1111386,
+    "datetime": "2026-01-19 21:59:18",
+    "role": "assistant",
+    "text": " de",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859958.137609,
+    "datetime": "2026-01-19 21:59:18",
+    "role": "assistant",
+    "text": " aventuras",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859958.1632187,
+    "datetime": "2026-01-19 21:59:18",
+    "role": "assistant",
+    "text": " incre\u00edbles",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859958.1994443,
+    "datetime": "2026-01-19 21:59:18",
+    "role": "assistant",
+    "text": ".",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859958.351302,
+    "datetime": "2026-01-19 21:59:18",
+    "role": "assistant",
+    "text": " Desde",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859958.3871837,
+    "datetime": "2026-01-19 21:59:18",
+    "role": "assistant",
+    "text": " entonces",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859958.4426243,
+    "datetime": "2026-01-19 21:59:18",
+    "role": "assistant",
+    "text": ",",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859958.480056,
+    "datetime": "2026-01-19 21:59:18",
+    "role": "assistant",
+    "text": " Sof",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859958.5264175,
+    "datetime": "2026-01-19 21:59:18",
+    "role": "assistant",
+    "text": "\u00eda",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859958.6176524,
+    "datetime": "2026-01-19 21:59:18",
+    "role": "assistant",
+    "text": " y",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859958.6774411,
+    "datetime": "2026-01-19 21:59:18",
+    "role": "assistant",
+    "text": " sus",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859958.7164733,
+    "datetime": "2026-01-19 21:59:18",
+    "role": "assistant",
+    "text": " amigos",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859958.7634966,
+    "datetime": "2026-01-19 21:59:18",
+    "role": "assistant",
+    "text": " explor",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859958.8196468,
+    "datetime": "2026-01-19 21:59:18",
+    "role": "assistant",
+    "text": "aban",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859958.8724065,
+    "datetime": "2026-01-19 21:59:18",
+    "role": "assistant",
+    "text": " esos",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859958.9176116,
+    "datetime": "2026-01-19 21:59:18",
+    "role": "assistant",
+    "text": " mundos",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859959.006506,
+    "datetime": "2026-01-19 21:59:19",
+    "role": "assistant",
+    "text": " cada",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859959.0405123,
+    "datetime": "2026-01-19 21:59:19",
+    "role": "assistant",
+    "text": " tarde",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859959.0762954,
+    "datetime": "2026-01-19 21:59:19",
+    "role": "assistant",
+    "text": ",",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859959.107483,
+    "datetime": "2026-01-19 21:59:19",
+    "role": "assistant",
+    "text": " viviendo",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859959.141156,
+    "datetime": "2026-01-19 21:59:19",
+    "role": "assistant",
+    "text": " historias",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859959.2499485,
+    "datetime": "2026-01-19 21:59:19",
+    "role": "assistant",
+    "text": " que",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859959.3047202,
+    "datetime": "2026-01-19 21:59:19",
+    "role": "assistant",
+    "text": " los",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859959.354354,
+    "datetime": "2026-01-19 21:59:19",
+    "role": "assistant",
+    "text": " acompa\u00f1",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859959.4075031,
+    "datetime": "2026-01-19 21:59:19",
+    "role": "assistant",
+    "text": "ar",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859959.4445724,
+    "datetime": "2026-01-19 21:59:19",
+    "role": "assistant",
+    "text": "\u00edan",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859959.4878309,
+    "datetime": "2026-01-19 21:59:19",
+    "role": "assistant",
+    "text": " para",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859959.5332053,
+    "datetime": "2026-01-19 21:59:19",
+    "role": "assistant",
+    "text": " siempre",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859959.5823355,
+    "datetime": "2026-01-19 21:59:19",
+    "role": "assistant",
+    "text": ".",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859959.678023,
+    "datetime": "2026-01-19 21:59:19",
+    "role": "assistant",
+    "text": " Y",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859959.7346785,
+    "datetime": "2026-01-19 21:59:19",
+    "role": "assistant",
+    "text": " as\u00ed",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859959.7865205,
+    "datetime": "2026-01-19 21:59:19",
+    "role": "assistant",
+    "text": ",",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859959.8322237,
+    "datetime": "2026-01-19 21:59:19",
+    "role": "assistant",
+    "text": " cada",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859959.871615,
+    "datetime": "2026-01-19 21:59:19",
+    "role": "assistant",
+    "text": " d\u00eda",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859959.9112566,
+    "datetime": "2026-01-19 21:59:19",
+    "role": "assistant",
+    "text": " termin",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859960.1110146,
+    "datetime": "2026-01-19 21:59:20",
+    "role": "assistant",
+    "text": "aba",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859960.1522598,
+    "datetime": "2026-01-19 21:59:20",
+    "role": "assistant",
+    "text": " con",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859960.2010505,
+    "datetime": "2026-01-19 21:59:20",
+    "role": "assistant",
+    "text": " una",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859960.229519,
+    "datetime": "2026-01-19 21:59:20",
+    "role": "assistant",
+    "text": " nueva",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859960.2613168,
+    "datetime": "2026-01-19 21:59:20",
+    "role": "assistant",
+    "text": " historia",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859960.3364754,
+    "datetime": "2026-01-19 21:59:20",
+    "role": "assistant",
+    "text": " que",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859960.3804195,
+    "datetime": "2026-01-19 21:59:20",
+    "role": "assistant",
+    "text": " cont",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859960.423154,
+    "datetime": "2026-01-19 21:59:20",
+    "role": "assistant",
+    "text": "arse",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859960.6064727,
+    "datetime": "2026-01-19 21:59:20",
+    "role": "assistant",
+    "text": "",
+    "event_type": "transcript_interrupted",
+    "turn_id": "turn_1768859953511_session_"
+  },
+  {
+    "timestamp": 1768859963.348168,
+    "datetime": "2026-01-19 21:59:23",
+    "role": "user",
+    "text": "English plays English.",
+    "event_type": "transcript_done",
+    "turn_id": "user_1768859963347"
+  },
+  {
+    "timestamp": 1768859963.9974096,
+    "datetime": "2026-01-19 21:59:23",
+    "role": "assistant",
+    "text": "Got",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859963974_session_"
+  },
+  {
+    "timestamp": 1768859964.0511568,
+    "datetime": "2026-01-19 21:59:24",
+    "role": "assistant",
+    "text": " it",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859963974_session_"
+  },
+  {
+    "timestamp": 1768859964.094922,
+    "datetime": "2026-01-19 21:59:24",
+    "role": "assistant",
+    "text": ",",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859963974_session_"
+  },
+  {
+    "timestamp": 1768859964.1351633,
+    "datetime": "2026-01-19 21:59:24",
+    "role": "assistant",
+    "text": " I",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859963974_session_"
+  },
+  {
+    "timestamp": 1768859964.2537441,
+    "datetime": "2026-01-19 21:59:24",
+    "role": "assistant",
+    "text": "'ll",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859963974_session_"
+  },
+  {
+    "timestamp": 1768859964.297209,
+    "datetime": "2026-01-19 21:59:24",
+    "role": "assistant",
+    "text": " speak",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859963974_session_"
+  },
+  {
+    "timestamp": 1768859964.3264022,
+    "datetime": "2026-01-19 21:59:24",
+    "role": "assistant",
+    "text": " only",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859963974_session_"
+  },
+  {
+    "timestamp": 1768859964.4949706,
+    "datetime": "2026-01-19 21:59:24",
+    "role": "user",
+    "text": "Only English.",
+    "event_type": "transcript_delta",
+    "turn_id": "user_1768859964432"
+  },
+  {
+    "timestamp": 1768859964.5390556,
+    "datetime": "2026-01-19 21:59:24",
+    "role": "user",
+    "text": "Only English.",
+    "event_type": "transcript_done",
+    "turn_id": "user_1768859964432"
+  },
+  {
+    "timestamp": 1768859964.5694897,
+    "datetime": "2026-01-19 21:59:24",
+    "role": "assistant",
+    "text": " in",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859963974_session_"
+  },
+  {
+    "timestamp": 1768859964.612043,
+    "datetime": "2026-01-19 21:59:24",
+    "role": "assistant",
+    "text": " English",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859963974_session_"
+  },
+  {
+    "timestamp": 1768859964.655268,
+    "datetime": "2026-01-19 21:59:24",
+    "role": "assistant",
+    "text": " from",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859963974_session_"
+  },
+  {
+    "timestamp": 1768859964.8885093,
+    "datetime": "2026-01-19 21:59:24",
+    "role": "assistant",
+    "text": " now",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859963974_session_"
+  },
+  {
+    "timestamp": 1768859964.9278398,
+    "datetime": "2026-01-19 21:59:24",
+    "role": "assistant",
+    "text": " on",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859963974_session_"
+  },
+  {
+    "timestamp": 1768859964.9598126,
+    "datetime": "2026-01-19 21:59:24",
+    "role": "assistant",
+    "text": ".",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859963974_session_"
+  },
+  {
+    "timestamp": 1768859965.0051692,
+    "datetime": "2026-01-19 21:59:25",
+    "role": "assistant",
+    "text": " Let",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859963974_session_"
+  },
+  {
+    "timestamp": 1768859965.0542488,
+    "datetime": "2026-01-19 21:59:25",
+    "role": "assistant",
+    "text": " me",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859963974_session_"
+  },
+  {
+    "timestamp": 1768859965.0964544,
+    "datetime": "2026-01-19 21:59:25",
+    "role": "assistant",
+    "text": " know",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859963974_session_"
+  },
+  {
+    "timestamp": 1768859965.1346774,
+    "datetime": "2026-01-19 21:59:25",
+    "role": "assistant",
+    "text": " if",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859963974_session_"
+  },
+  {
+    "timestamp": 1768859965.1751595,
+    "datetime": "2026-01-19 21:59:25",
+    "role": "assistant",
+    "text": " there's",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859963974_session_"
+  },
+  {
+    "timestamp": 1768859965.2941108,
+    "datetime": "2026-01-19 21:59:25",
+    "role": "assistant",
+    "text": " anything",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859963974_session_"
+  },
+  {
+    "timestamp": 1768859965.3223338,
+    "datetime": "2026-01-19 21:59:25",
+    "role": "assistant",
+    "text": " else",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859963974_session_"
+  },
+  {
+    "timestamp": 1768859965.4010763,
+    "datetime": "2026-01-19 21:59:25",
+    "role": "assistant",
+    "text": " you'd",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859963974_session_"
+  },
+  {
+    "timestamp": 1768859965.4443681,
+    "datetime": "2026-01-19 21:59:25",
+    "role": "assistant",
+    "text": " like",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859963974_session_"
+  },
+  {
+    "timestamp": 1768859965.4846275,
+    "datetime": "2026-01-19 21:59:25",
+    "role": "assistant",
+    "text": " to",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859963974_session_"
+  },
+  {
+    "timestamp": 1768859965.5760496,
+    "datetime": "2026-01-19 21:59:25",
+    "role": "assistant",
+    "text": " hear",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859963974_session_"
+  },
+  {
+    "timestamp": 1768859965.622712,
+    "datetime": "2026-01-19 21:59:25",
+    "role": "assistant",
+    "text": " or",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859963974_session_"
+  },
+  {
+    "timestamp": 1768859965.6491466,
+    "datetime": "2026-01-19 21:59:25",
+    "role": "assistant",
+    "text": " talk",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859963974_session_"
+  },
+  {
+    "timestamp": 1768859965.727624,
+    "datetime": "2026-01-19 21:59:25",
+    "role": "assistant",
+    "text": " about",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859963974_session_"
+  },
+  {
+    "timestamp": 1768859965.7761047,
+    "datetime": "2026-01-19 21:59:25",
+    "role": "assistant",
+    "text": "!",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859963974_session_"
+  },
+  {
+    "timestamp": 1768859968.475095,
+    "datetime": "2026-01-19 21:59:28",
+    "role": "assistant",
+    "text": "",
+    "event_type": "transcript_interrupted",
+    "turn_id": "turn_1768859963974_session_"
+  },
+  {
+    "timestamp": 1768859968.5374098,
+    "datetime": "2026-01-19 21:59:28",
+    "role": "assistant",
+    "text": "Got it, I'll speak only in English from now on. Let me know if there's anything else you'd like to hear or talk about!",
+    "event_type": "transcript_done",
+    "turn_id": null
+  },
+  {
+    "timestamp": 1768859972.7874656,
+    "datetime": "2026-01-19 21:59:32",
+    "role": "assistant",
+    "text": "Absolutely",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859972779_session_"
+  },
+  {
+    "timestamp": 1768859972.8624568,
+    "datetime": "2026-01-19 21:59:32",
+    "role": "assistant",
+    "text": ",",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859972779_session_"
+  },
+  {
+    "timestamp": 1768859972.9694014,
+    "datetime": "2026-01-19 21:59:32",
+    "role": "assistant",
+    "text": " I",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859972779_session_"
+  },
+  {
+    "timestamp": 1768859973.0097415,
+    "datetime": "2026-01-19 21:59:33",
+    "role": "assistant",
+    "text": "\u2019ll",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859972779_session_"
+  },
+  {
+    "timestamp": 1768859973.053974,
+    "datetime": "2026-01-19 21:59:33",
+    "role": "assistant",
+    "text": " keep",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859972779_session_"
+  },
+  {
+    "timestamp": 1768859973.177479,
+    "datetime": "2026-01-19 21:59:33",
+    "role": "assistant",
+    "text": " it",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859972779_session_"
+  },
+  {
+    "timestamp": 1768859973.2213678,
+    "datetime": "2026-01-19 21:59:33",
+    "role": "assistant",
+    "text": " to",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859972779_session_"
+  },
+  {
+    "timestamp": 1768859973.2671833,
+    "datetime": "2026-01-19 21:59:33",
+    "role": "assistant",
+    "text": " English",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859972779_session_"
+  },
+  {
+    "timestamp": 1768859973.2960906,
+    "datetime": "2026-01-19 21:59:33",
+    "role": "assistant",
+    "text": " only",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859972779_session_"
+  },
+  {
+    "timestamp": 1768859973.3285143,
+    "datetime": "2026-01-19 21:59:33",
+    "role": "assistant",
+    "text": ".",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859972779_session_"
+  },
+  {
+    "timestamp": 1768859973.5299904,
+    "datetime": "2026-01-19 21:59:33",
+    "role": "assistant",
+    "text": " What",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859972779_session_"
+  },
+  {
+    "timestamp": 1768859973.586352,
+    "datetime": "2026-01-19 21:59:33",
+    "role": "assistant",
+    "text": " would",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859972779_session_"
+  },
+  {
+    "timestamp": 1768859973.6373887,
+    "datetime": "2026-01-19 21:59:33",
+    "role": "assistant",
+    "text": " you",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859972779_session_"
+  },
+  {
+    "timestamp": 1768859973.6854825,
+    "datetime": "2026-01-19 21:59:33",
+    "role": "assistant",
+    "text": " like",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859972779_session_"
+  },
+  {
+    "timestamp": 1768859973.7267303,
+    "datetime": "2026-01-19 21:59:33",
+    "role": "assistant",
+    "text": " to",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859972779_session_"
+  },
+  {
+    "timestamp": 1768859973.7712579,
+    "datetime": "2026-01-19 21:59:33",
+    "role": "assistant",
+    "text": " talk",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859972779_session_"
+  },
+  {
+    "timestamp": 1768859973.8000333,
+    "datetime": "2026-01-19 21:59:33",
+    "role": "assistant",
+    "text": " about",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859972779_session_"
+  },
+  {
+    "timestamp": 1768859974.0785234,
+    "datetime": "2026-01-19 21:59:34",
+    "role": "assistant",
+    "text": " next",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859972779_session_"
+  },
+  {
+    "timestamp": 1768859974.1279366,
+    "datetime": "2026-01-19 21:59:34",
+    "role": "assistant",
+    "text": "?",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859972779_session_"
+  },
+  {
+    "timestamp": 1768859974.177042,
+    "datetime": "2026-01-19 21:59:34",
+    "role": "user",
+    "text": "Eggs. English only. Speak to me English.",
+    "event_type": "transcript_delta",
+    "turn_id": "user_1768859973980"
+  },
+  {
+    "timestamp": 1768859974.2211313,
+    "datetime": "2026-01-19 21:59:34",
+    "role": "user",
+    "text": "Eggs. English only. Speak to me English.",
+    "event_type": "transcript_done",
+    "turn_id": "user_1768859973980"
+  },
+  {
+    "timestamp": 1768859977.9446945,
+    "datetime": "2026-01-19 21:59:37",
+    "role": "assistant",
+    "text": "Absolutely, I\u2019ll keep it to English only. What would you like to talk about next?",
+    "event_type": "transcript_done",
+    "turn_id": "turn_1768859972779_session_"
+  },
+  {
+    "timestamp": 1768859981.3481584,
+    "datetime": "2026-01-19 21:59:41",
+    "role": "assistant",
+    "text": "Once",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859981.414531,
+    "datetime": "2026-01-19 21:59:41",
+    "role": "assistant",
+    "text": " upon",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859981.4886465,
+    "datetime": "2026-01-19 21:59:41",
+    "role": "assistant",
+    "text": " a",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859981.5296078,
+    "datetime": "2026-01-19 21:59:41",
+    "role": "assistant",
+    "text": " time",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859981.5743253,
+    "datetime": "2026-01-19 21:59:41",
+    "role": "assistant",
+    "text": ",",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859981.6396198,
+    "datetime": "2026-01-19 21:59:41",
+    "role": "assistant",
+    "text": " in",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859981.6875277,
+    "datetime": "2026-01-19 21:59:41",
+    "role": "assistant",
+    "text": " a",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859981.7314377,
+    "datetime": "2026-01-19 21:59:41",
+    "role": "assistant",
+    "text": " small",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859981.804291,
+    "datetime": "2026-01-19 21:59:41",
+    "role": "assistant",
+    "text": " village",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859981.8501015,
+    "datetime": "2026-01-19 21:59:41",
+    "role": "assistant",
+    "text": ",",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859982.0058968,
+    "datetime": "2026-01-19 21:59:42",
+    "role": "assistant",
+    "text": " there",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859982.0536566,
+    "datetime": "2026-01-19 21:59:42",
+    "role": "assistant",
+    "text": " was",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859982.081747,
+    "datetime": "2026-01-19 21:59:42",
+    "role": "assistant",
+    "text": " a",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859982.1106033,
+    "datetime": "2026-01-19 21:59:42",
+    "role": "assistant",
+    "text": " young",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859982.1597598,
+    "datetime": "2026-01-19 21:59:42",
+    "role": "assistant",
+    "text": " inventor",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859982.2114694,
+    "datetime": "2026-01-19 21:59:42",
+    "role": "assistant",
+    "text": " named",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859982.5379586,
+    "datetime": "2026-01-19 21:59:42",
+    "role": "assistant",
+    "text": " Leo",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859982.5694013,
+    "datetime": "2026-01-19 21:59:42",
+    "role": "assistant",
+    "text": ".",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859982.6145635,
+    "datetime": "2026-01-19 21:59:42",
+    "role": "assistant",
+    "text": " He",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859982.6690733,
+    "datetime": "2026-01-19 21:59:42",
+    "role": "assistant",
+    "text": " loved",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859982.7211254,
+    "datetime": "2026-01-19 21:59:42",
+    "role": "assistant",
+    "text": " creating",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859982.76184,
+    "datetime": "2026-01-19 21:59:42",
+    "role": "assistant",
+    "text": " things",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859982.8725288,
+    "datetime": "2026-01-19 21:59:42",
+    "role": "user",
+    "text": "Tell me a story.",
+    "event_type": "transcript_delta",
+    "turn_id": "user_1768859982469"
+  },
+  {
+    "timestamp": 1768859982.9161448,
+    "datetime": "2026-01-19 21:59:42",
+    "role": "user",
+    "text": "Tell me a story.",
+    "event_type": "transcript_done",
+    "turn_id": "user_1768859982469"
+  },
+  {
+    "timestamp": 1768859983.109762,
+    "datetime": "2026-01-19 21:59:43",
+    "role": "assistant",
+    "text": " that",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859983.1595113,
+    "datetime": "2026-01-19 21:59:43",
+    "role": "assistant",
+    "text": " made",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859983.2046251,
+    "datetime": "2026-01-19 21:59:43",
+    "role": "assistant",
+    "text": " people",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859983.2582054,
+    "datetime": "2026-01-19 21:59:43",
+    "role": "assistant",
+    "text": "\u2019s",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859983.3014727,
+    "datetime": "2026-01-19 21:59:43",
+    "role": "assistant",
+    "text": " lives",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859983.3638408,
+    "datetime": "2026-01-19 21:59:43",
+    "role": "assistant",
+    "text": " easier",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859983.4296064,
+    "datetime": "2026-01-19 21:59:43",
+    "role": "assistant",
+    "text": ".",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859983.5420234,
+    "datetime": "2026-01-19 21:59:43",
+    "role": "assistant",
+    "text": " One",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859983.5891857,
+    "datetime": "2026-01-19 21:59:43",
+    "role": "assistant",
+    "text": " day",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859983.6684117,
+    "datetime": "2026-01-19 21:59:43",
+    "role": "assistant",
+    "text": ",",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859983.710059,
+    "datetime": "2026-01-19 21:59:43",
+    "role": "assistant",
+    "text": " he",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859983.749434,
+    "datetime": "2026-01-19 21:59:43",
+    "role": "assistant",
+    "text": " discovered",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859983.7916968,
+    "datetime": "2026-01-19 21:59:43",
+    "role": "assistant",
+    "text": " a",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859984.0072987,
+    "datetime": "2026-01-19 21:59:44",
+    "role": "assistant",
+    "text": " hidden",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859984.0465336,
+    "datetime": "2026-01-19 21:59:44",
+    "role": "assistant",
+    "text": " workshop",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859984.0926807,
+    "datetime": "2026-01-19 21:59:44",
+    "role": "assistant",
+    "text": " filled",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859984.14437,
+    "datetime": "2026-01-19 21:59:44",
+    "role": "assistant",
+    "text": " with",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859984.1920094,
+    "datetime": "2026-01-19 21:59:44",
+    "role": "assistant",
+    "text": " old",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859984.2376618,
+    "datetime": "2026-01-19 21:59:44",
+    "role": "assistant",
+    "text": " tools",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859984.4441564,
+    "datetime": "2026-01-19 21:59:44",
+    "role": "assistant",
+    "text": " and",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859984.487966,
+    "datetime": "2026-01-19 21:59:44",
+    "role": "assistant",
+    "text": " mysterious",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859984.528618,
+    "datetime": "2026-01-19 21:59:44",
+    "role": "assistant",
+    "text": " blue",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859984.5699222,
+    "datetime": "2026-01-19 21:59:44",
+    "role": "assistant",
+    "text": "prints",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859984.6125681,
+    "datetime": "2026-01-19 21:59:44",
+    "role": "assistant",
+    "text": ".",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859984.8001451,
+    "datetime": "2026-01-19 21:59:44",
+    "role": "assistant",
+    "text": " As",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859984.8648274,
+    "datetime": "2026-01-19 21:59:44",
+    "role": "assistant",
+    "text": " he",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859984.9150088,
+    "datetime": "2026-01-19 21:59:44",
+    "role": "assistant",
+    "text": " explored",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859984.9637573,
+    "datetime": "2026-01-19 21:59:44",
+    "role": "assistant",
+    "text": ",",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859985.017212,
+    "datetime": "2026-01-19 21:59:45",
+    "role": "assistant",
+    "text": " he",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859985.0701427,
+    "datetime": "2026-01-19 21:59:45",
+    "role": "assistant",
+    "text": " found",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859985.111274,
+    "datetime": "2026-01-19 21:59:45",
+    "role": "assistant",
+    "text": " plans",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859985.3448267,
+    "datetime": "2026-01-19 21:59:45",
+    "role": "assistant",
+    "text": " for",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859985.391995,
+    "datetime": "2026-01-19 21:59:45",
+    "role": "assistant",
+    "text": " a",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859985.4206314,
+    "datetime": "2026-01-19 21:59:45",
+    "role": "assistant",
+    "text": " machine",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859985.492886,
+    "datetime": "2026-01-19 21:59:45",
+    "role": "assistant",
+    "text": " that",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859985.5395625,
+    "datetime": "2026-01-19 21:59:45",
+    "role": "assistant",
+    "text": " could",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859985.58697,
+    "datetime": "2026-01-19 21:59:45",
+    "role": "assistant",
+    "text": " help",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859985.6285834,
+    "datetime": "2026-01-19 21:59:45",
+    "role": "assistant",
+    "text": " crops",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859985.6690516,
+    "datetime": "2026-01-19 21:59:45",
+    "role": "assistant",
+    "text": " grow",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859985.7034714,
+    "datetime": "2026-01-19 21:59:45",
+    "role": "assistant",
+    "text": " faster",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859985.8168335,
+    "datetime": "2026-01-19 21:59:45",
+    "role": "assistant",
+    "text": ".",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859985.8664854,
+    "datetime": "2026-01-19 21:59:45",
+    "role": "assistant",
+    "text": " Leo",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859985.9145508,
+    "datetime": "2026-01-19 21:59:45",
+    "role": "assistant",
+    "text": " worked",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859985.9597068,
+    "datetime": "2026-01-19 21:59:45",
+    "role": "assistant",
+    "text": " day",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859986.3575444,
+    "datetime": "2026-01-19 21:59:46",
+    "role": "assistant",
+    "text": " and",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859986.396415,
+    "datetime": "2026-01-19 21:59:46",
+    "role": "assistant",
+    "text": " night",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859986.4404132,
+    "datetime": "2026-01-19 21:59:46",
+    "role": "assistant",
+    "text": " until",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859986.4945853,
+    "datetime": "2026-01-19 21:59:46",
+    "role": "assistant",
+    "text": " he",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859986.5432029,
+    "datetime": "2026-01-19 21:59:46",
+    "role": "assistant",
+    "text": " built",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859986.5882652,
+    "datetime": "2026-01-19 21:59:46",
+    "role": "assistant",
+    "text": " the",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859986.6363735,
+    "datetime": "2026-01-19 21:59:46",
+    "role": "assistant",
+    "text": " machine",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859986.6854677,
+    "datetime": "2026-01-19 21:59:46",
+    "role": "assistant",
+    "text": ".",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859986.729138,
+    "datetime": "2026-01-19 21:59:46",
+    "role": "assistant",
+    "text": " When",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859986.7674234,
+    "datetime": "2026-01-19 21:59:46",
+    "role": "assistant",
+    "text": " he",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859986.8113425,
+    "datetime": "2026-01-19 21:59:46",
+    "role": "assistant",
+    "text": " finally",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859986.842409,
+    "datetime": "2026-01-19 21:59:46",
+    "role": "assistant",
+    "text": " tested",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859986.8805017,
+    "datetime": "2026-01-19 21:59:46",
+    "role": "assistant",
+    "text": " it",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859986.9266112,
+    "datetime": "2026-01-19 21:59:46",
+    "role": "assistant",
+    "text": ",",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859986.9695096,
+    "datetime": "2026-01-19 21:59:46",
+    "role": "assistant",
+    "text": " the",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859987.3123693,
+    "datetime": "2026-01-19 21:59:47",
+    "role": "assistant",
+    "text": " entire",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859987.3665483,
+    "datetime": "2026-01-19 21:59:47",
+    "role": "assistant",
+    "text": " village",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859987.4122174,
+    "datetime": "2026-01-19 21:59:47",
+    "role": "assistant",
+    "text": "\u2019s",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859987.4633396,
+    "datetime": "2026-01-19 21:59:47",
+    "role": "assistant",
+    "text": " fields",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859987.510599,
+    "datetime": "2026-01-19 21:59:47",
+    "role": "assistant",
+    "text": " blo",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859987.5508726,
+    "datetime": "2026-01-19 21:59:47",
+    "role": "assistant",
+    "text": "omed",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859987.5965707,
+    "datetime": "2026-01-19 21:59:47",
+    "role": "assistant",
+    "text": " like",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859987.6398437,
+    "datetime": "2026-01-19 21:59:47",
+    "role": "assistant",
+    "text": " never",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859987.6819508,
+    "datetime": "2026-01-19 21:59:47",
+    "role": "assistant",
+    "text": " before",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859987.7288265,
+    "datetime": "2026-01-19 21:59:47",
+    "role": "assistant",
+    "text": ".",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859987.7594283,
+    "datetime": "2026-01-19 21:59:47",
+    "role": "assistant",
+    "text": " The",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859987.7932959,
+    "datetime": "2026-01-19 21:59:47",
+    "role": "assistant",
+    "text": " villagers",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859987.837537,
+    "datetime": "2026-01-19 21:59:47",
+    "role": "assistant",
+    "text": " were",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859988.0042098,
+    "datetime": "2026-01-19 21:59:48",
+    "role": "assistant",
+    "text": " amazed",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859988.0433342,
+    "datetime": "2026-01-19 21:59:48",
+    "role": "assistant",
+    "text": " and",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859988.0881915,
+    "datetime": "2026-01-19 21:59:48",
+    "role": "assistant",
+    "text": " grateful",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859988.1353252,
+    "datetime": "2026-01-19 21:59:48",
+    "role": "assistant",
+    "text": ",",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859988.169736,
+    "datetime": "2026-01-19 21:59:48",
+    "role": "assistant",
+    "text": " and",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859988.23951,
+    "datetime": "2026-01-19 21:59:48",
+    "role": "assistant",
+    "text": " from",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859988.3132718,
+    "datetime": "2026-01-19 21:59:48",
+    "role": "assistant",
+    "text": " that",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859988.550234,
+    "datetime": "2026-01-19 21:59:48",
+    "role": "assistant",
+    "text": " day",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859988.7323098,
+    "datetime": "2026-01-19 21:59:48",
+    "role": "assistant",
+    "text": " on",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859988.7835262,
+    "datetime": "2026-01-19 21:59:48",
+    "role": "assistant",
+    "text": ",",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859988.8335967,
+    "datetime": "2026-01-19 21:59:48",
+    "role": "assistant",
+    "text": " Leo",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859988.879242,
+    "datetime": "2026-01-19 21:59:48",
+    "role": "assistant",
+    "text": "\u2019s",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859988.9195797,
+    "datetime": "2026-01-19 21:59:48",
+    "role": "assistant",
+    "text": " invention",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859988.968352,
+    "datetime": "2026-01-19 21:59:48",
+    "role": "assistant",
+    "text": " helped",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859989.1033897,
+    "datetime": "2026-01-19 21:59:49",
+    "role": "assistant",
+    "text": " feed",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859989.1580865,
+    "datetime": "2026-01-19 21:59:49",
+    "role": "assistant",
+    "text": " everyone",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859989.2087114,
+    "datetime": "2026-01-19 21:59:49",
+    "role": "assistant",
+    "text": " and",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859989.254149,
+    "datetime": "2026-01-19 21:59:49",
+    "role": "assistant",
+    "text": " brought",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859989.309413,
+    "datetime": "2026-01-19 21:59:49",
+    "role": "assistant",
+    "text": " the",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859989.3580298,
+    "datetime": "2026-01-19 21:59:49",
+    "role": "assistant",
+    "text": " community",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859989.405347,
+    "datetime": "2026-01-19 21:59:49",
+    "role": "assistant",
+    "text": " closer",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859989.5646353,
+    "datetime": "2026-01-19 21:59:49",
+    "role": "assistant",
+    "text": " together",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859989.6044934,
+    "datetime": "2026-01-19 21:59:49",
+    "role": "assistant",
+    "text": ".",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859992.5197387,
+    "datetime": "2026-01-19 21:59:52",
+    "role": "assistant",
+    "text": "",
+    "event_type": "transcript_interrupted",
+    "turn_id": "turn_1768859981347_session_"
+  },
+  {
+    "timestamp": 1768859995.022273,
+    "datetime": "2026-01-19 21:59:55",
+    "role": "assistant",
+    "text": "Sure",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859994968_session_"
+  },
+  {
+    "timestamp": 1768859995.088737,
+    "datetime": "2026-01-19 21:59:55",
+    "role": "assistant",
+    "text": "!",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859994968_session_"
+  },
+  {
+    "timestamp": 1768859995.1933198,
+    "datetime": "2026-01-19 21:59:55",
+    "role": "assistant",
+    "text": " Why",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859994968_session_"
+  },
+  {
+    "timestamp": 1768859995.2466965,
+    "datetime": "2026-01-19 21:59:55",
+    "role": "assistant",
+    "text": " don",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859994968_session_"
+  },
+  {
+    "timestamp": 1768859995.2978008,
+    "datetime": "2026-01-19 21:59:55",
+    "role": "assistant",
+    "text": "\u2019t",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859994968_session_"
+  },
+  {
+    "timestamp": 1768859995.341331,
+    "datetime": "2026-01-19 21:59:55",
+    "role": "assistant",
+    "text": " scientists",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859994968_session_"
+  },
+  {
+    "timestamp": 1768859995.4819608,
+    "datetime": "2026-01-19 21:59:55",
+    "role": "assistant",
+    "text": " trust",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859994968_session_"
+  },
+  {
+    "timestamp": 1768859995.5751522,
+    "datetime": "2026-01-19 21:59:55",
+    "role": "assistant",
+    "text": " atoms",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859994968_session_"
+  },
+  {
+    "timestamp": 1768859995.6240702,
+    "datetime": "2026-01-19 21:59:55",
+    "role": "assistant",
+    "text": "?...",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859994968_session_"
+  },
+  {
+    "timestamp": 1768859995.6610408,
+    "datetime": "2026-01-19 21:59:55",
+    "role": "assistant",
+    "text": " Because",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859994968_session_"
+  },
+  {
+    "timestamp": 1768859995.7567327,
+    "datetime": "2026-01-19 21:59:55",
+    "role": "user",
+    "text": "Stop, stop, tell me a joke.",
+    "event_type": "transcript_delta",
+    "turn_id": "user_1768859995571"
+  },
+  {
+    "timestamp": 1768859995.792135,
+    "datetime": "2026-01-19 21:59:55",
+    "role": "user",
+    "text": "Stop, stop, tell me a joke.",
+    "event_type": "transcript_done",
+    "turn_id": "user_1768859995571"
+  },
+  {
+    "timestamp": 1768859995.9121807,
+    "datetime": "2026-01-19 21:59:55",
+    "role": "assistant",
+    "text": " they",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859994968_session_"
+  },
+  {
+    "timestamp": 1768859995.9749327,
+    "datetime": "2026-01-19 21:59:55",
+    "role": "assistant",
+    "text": " make",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859994968_session_"
+  },
+  {
+    "timestamp": 1768859996.046049,
+    "datetime": "2026-01-19 21:59:56",
+    "role": "assistant",
+    "text": " up",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859994968_session_"
+  },
+  {
+    "timestamp": 1768859996.1096694,
+    "datetime": "2026-01-19 21:59:56",
+    "role": "assistant",
+    "text": " everything",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859994968_session_"
+  },
+  {
+    "timestamp": 1768859996.1578183,
+    "datetime": "2026-01-19 21:59:56",
+    "role": "assistant",
+    "text": "!",
+    "event_type": "transcript_delta",
+    "turn_id": "turn_1768859994968_session_"
+  },
+  {
+    "timestamp": 1768860005.4961507,
+    "datetime": "2026-01-19 22:00:05",
+    "role": "assistant",
+    "text": "Once upon a time, in a small village, there was a young inventor named Leo. He loved creating things that made people\u2019s lives easier. One day, he discovered a hidden workshop filled with old tools and mysterious blueprints. As he explored, he found plans for a machine that could help crops grow faster. Leo worked day and night until he built the machine. When he finally tested it, the entire village\u2019s fields bloomed like never before. The villagers were amazed and grateful, and from that day on, Leo\u2019s invention helped feed everyone and brought the community closer together.",
+    "event_type": "transcript_done",
+    "turn_id": null
+  },
+  {
+    "timestamp": 1768860005.5404336,
+    "datetime": "2026-01-19 22:00:05",
+    "role": "assistant",
+    "text": "Sure! Why don\u2019t scientists trust atoms?... Because they make up everything!",
+    "event_type": "transcript_done",
+    "turn_id": null
+  }
+]

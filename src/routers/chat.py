@@ -82,6 +82,8 @@ class ChatConnectionManager:
         self._audio2exp_service = get_audio2exp_service()
         self._agent = get_agent()
 
+        
+
         # Audio and frame processing state
         self._audio_buffer: bytearray = bytearray()
         # Bounded queues prevent memory exhaustion and provide backpressure
@@ -129,18 +131,73 @@ class ChatConnectionManager:
 
         logger.info(f"Client connected: {websocket.client}")
     
-    def disconnect(self, websocket: WebSocket) -> None:
-        """Handle client disconnection."""
+    async def disconnect(self, websocket: WebSocket) -> None:
+        """Handle client disconnection. If this was the last client,
+        gracefully shut down background workers and disconnect the agent
+        (closing the OpenAI Realtime connection).
+        """
         if websocket in self.clients:
             del self.clients[websocket]
             logger.info(f"Client disconnected: {websocket.client}")
+
+        # If no clients remain, perform graceful shutdown of agent and workers
+        if not self.clients:
+            logger.info("No clients remain — shutting down agent connection and workers")
+
+            # Signal interruption to stop any in-flight processing
+            self._is_interrupted = True
+
+            # Clear audio buffer and queues
+            try:
+                self._audio_buffer.clear()
+            except Exception:
+                pass
+
+            while not self._audio_chunk_queue.empty():
+                try:
+                    self._audio_chunk_queue.get_nowait()
+                except asyncio.QueueEmpty:
+                    break
+
+            while not self._frame_queue.empty():
+                try:
+                    self._frame_queue.get_nowait()
+                except asyncio.QueueEmpty:
+                    break
+
+            # Cancel background tasks
+            if self._inference_task and not self._inference_task.done():
+                self._inference_task.cancel()
+                try:
+                    await self._inference_task
+                except asyncio.CancelledError:
+                    pass
+                self._inference_task = None
+
+            if self._frame_emit_task and not self._frame_emit_task.done():
+                self._frame_emit_task.cancel()
+                try:
+                    await self._frame_emit_task
+                except asyncio.CancelledError:
+                    pass
+                self._frame_emit_task = None
+
+            # Reset state fields
+            self._speech_ended = True
+            self._current_session_id = None
+            self._current_turn_id = None
+
+            # Disconnect the agent (closes OpenAI connection)
+            try:
+                await self._agent.disconnect()
+            except Exception as e:
+                logger.warning(f"Error disconnecting agent: {e}")
     
     async def broadcast(self, message: Dict) -> None:
         """Broadcast message to all connected clients."""
         if not self.clients:
             return
-
-        # Use orjson for 3-5x faster JSON serialization
+        # Use orjson for faster JSON serialization
         message_str = orjson.dumps(message).decode('utf-8')
         tasks = [
             client.websocket.send_text(message_str)
@@ -261,7 +318,7 @@ class ChatConnectionManager:
             # DEBUG: Log when we queue a chunk for inference
             logger.debug(f"Queued {self._audio_constants.audio_chunk_duration:.1f}s chunk for inference (queue_size={self._audio_chunk_queue.qsize()})")
     
-    async def _handle_response_end(self, transcript: str) -> None:
+    async def _handle_response_end(self, transcript: str, item_id: Optional[str] = None) -> None:
         """Handle AI response end."""
         # Don't process response end if we were interrupted
         if self._is_interrupted:
@@ -352,13 +409,17 @@ class ChatConnectionManager:
         })
 
         if transcript:
-            await self.broadcast({
+            msg = {
                 "type": "transcript_done",
                 "text": transcript,
                 "role": "assistant",
                 "turnId": self._current_turn_id,
                 "timestamp": int(time.time() * 1000),
-            })
+            }
+            if item_id:
+                msg["itemId"] = item_id
+
+            await self.broadcast(msg)
             # Log AFTER broadcast to capture actual send time
             log_transcript("assistant", transcript, "transcript_done", self._current_turn_id)
 
@@ -371,18 +432,37 @@ class ChatConnectionManager:
         self._inference_task = None
         self._frame_emit_task = None
     
-    async def _handle_transcript_delta(self, text: str, role: str = "assistant") -> None:
-        """Handle streaming transcript from AI."""
+    async def _handle_transcript_delta(
+        self,
+        text: str,
+        role: str = "assistant",
+        item_id: Optional[str] = None,
+        previous_item_id: Optional[str] = None,
+    ) -> None:
+        """Handle streaming transcript from AI.
+
+        Supports optional `item_id` and `previous_item_id` so clients can
+        correlate completions to the correct input item as recommended by
+        realtime transcription docs.
+        """
         # Use appropriate turn ID based on role
         turn_id = self._current_turn_id if role == "assistant" else f"user_{int(time.time() * 1000)}"
-        await self.broadcast({
+
+        msg = {
             "type": "transcript_delta",
             "text": text,
             "role": role,
             "turnId": turn_id,
             "sessionId": self._current_session_id,
             "timestamp": int(time.time() * 1000),
-        })
+        }
+
+        if item_id:
+            msg["itemId"] = item_id
+        if previous_item_id:
+            msg["previousItemId"] = previous_item_id
+
+        await self.broadcast(msg)
         # Log AFTER broadcast to capture actual send time
         log_transcript(role, text, "transcript_delta", turn_id)
 
@@ -407,6 +487,9 @@ class ChatConnectionManager:
         # Set interrupt flag FIRST to stop any in-flight processing immediately
         # This is checked synchronously in _handle_audio_delta and workers
         self._is_interrupted = True
+
+        # Capture current turn id so we can tell clients which assistant turn ended
+        interrupted_turn_id = self._current_turn_id
 
         # Clear audio buffer to prevent any buffered audio from being processed
         self._audio_buffer.clear()
@@ -447,6 +530,19 @@ class ChatConnectionManager:
         self._speech_ended = True  # Signal to any remaining workers to stop
         self._current_session_id = None
         self._current_turn_id = None
+
+        # Emit explicit transcript_done for assistant to ensure clients finalize bubbles
+        if interrupted_turn_id:
+            await self.broadcast({
+                "type": "transcript_done",
+                "text": "",
+                "role": "assistant",
+                "turnId": interrupted_turn_id,
+                "interrupted": True,
+                "timestamp": int(time.time() * 1000),
+            })
+            # Log the interrupted finalization event
+            log_transcript("assistant", "", "transcript_interrupted", interrupted_turn_id)
 
         # Send interrupt signal to widget to stop playback immediately
         # This tells the client to clear its audio buffers and stop playback
@@ -730,7 +826,7 @@ async def websocket_endpoint(websocket: WebSocket):
             data = await websocket.receive_json()
             await manager.handle_message(websocket, data)
     except WebSocketDisconnect:
-        manager.disconnect(websocket)
+        await manager.disconnect(websocket)
     except Exception as e:
         logger.warning(f"WebSocket error: {e}")
-        manager.disconnect(websocket)
+        await manager.disconnect(websocket)

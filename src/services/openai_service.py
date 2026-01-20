@@ -191,10 +191,16 @@ class OpenAIRealtimeService:
         # Stream transcript delta
         if delta and "transcript" in delta:
             transcript_delta = delta["transcript"]
+
+            # Get item metadata if available
+            item = event.get("item", {})
+            item_id = item.get("id")
+            previous_item_id = item.get("previous_item_id") or event.get("previous_item_id")
+
             self._state.transcript_buffer += transcript_delta
             
             if self._on_transcript_delta:
-                asyncio.create_task(self._on_transcript_delta(transcript_delta))
+                asyncio.create_task(self._on_transcript_delta(transcript_delta, item.get("role", "assistant"), item_id, previous_item_id))
     
     def _handle_audio_done(self, event: Dict) -> None:
         """Handle response.audio.done event - all audio has been sent."""
@@ -240,7 +246,7 @@ class OpenAIRealtimeService:
                     logger.debug(f"Assistant: {transcript}")
 
                 if self._on_response_end:
-                    await self._on_response_end(transcript)
+                    await self._on_response_end(transcript, item.get("id"))
             
             asyncio.create_task(wait_and_complete())
     
@@ -299,7 +305,27 @@ class OpenAIRealtimeService:
     async def disconnect(self) -> None:
         """Disconnect from OpenAI Realtime API."""
         if self._client and self._connected:
-            self._client.disconnect()
+            # Ask the client to disconnect (schedules close)
+            try:
+                self._client.disconnect()
+            except Exception as e:
+                logger.warning(f"Error requesting client disconnect: {e}")
+
+            # Wait for underlying realtime websocket to actually close
+            try:
+                # Poll for up to 3 seconds for the realtime connection to close
+                timeout = 3.0
+                poll_interval = 0.05
+                waited = 0.0
+                realtime_api = getattr(self._client, 'realtime', None)
+                while realtime_api and getattr(realtime_api, 'is_connected', lambda: False)() and waited < timeout:
+                    await asyncio.sleep(poll_interval)
+                    waited += poll_interval
+                if realtime_api and getattr(realtime_api, 'is_connected', lambda: False)():
+                    logger.warning('Realtime API did not close within timeout')
+            except Exception as e:
+                logger.warning(f"Error while waiting for realtime disconnect: {e}")
+
             self._connected = False
             logger.info("Disconnected from OpenAI Realtime API")
 

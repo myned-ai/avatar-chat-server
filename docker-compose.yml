@@ -30,10 +30,12 @@ services:
       - USE_GPU=${USE_GPU:-false}
       - SERVER_HOST=0.0.0.0
       - SERVER_PORT=8080
+      - AUTH_ENABLED=false
       - DEBUG=${DEBUG:-false}
     volumes:
       # Mount ONNX model (new model structure)
       - ./src/pretrained_models/wav2arkit_cpu.onnx:/app/pretrained_models/wav2arkit_cpu.onnx:ro
+      - ./src/pretrained_models/wav2arkit_cpu.onnx.data:/app/pretrained_models/wav2arkit_cpu.onnx.data:ro
     # No GPU needed for CPU-only model
     restart: unless-stopped
     healthcheck:
@@ -64,10 +66,12 @@ services:
       - USE_GPU=${USE_GPU:-false}
       - SERVER_HOST=0.0.0.0
       - SERVER_PORT=8080
+      - AUTH_ENABLED=false
       - DEBUG=true
     volumes:
       # Mount source code for hot reload
       - .:/app
       # Mount ONNX model (new model structure)
       - ./src/pretrained_models/wav2arkit_cpu.onnx:/app/pretrained_models/wav2arkit_cpu.onnx:ro
+      - ./src/pretrained_models/wav2arkit_cpu.onnx.data:/app/pretrained_models/wav2arkit_cpu.onnx.data:ro
     # No GPU needed for CPU-only model

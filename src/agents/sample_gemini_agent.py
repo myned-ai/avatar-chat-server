@@ -269,7 +269,8 @@ class SampleGeminiAgent(BaseAgent):
                     if text:
                         self._state.transcript_buffer += text
                         if self._on_transcript_delta and not self._response_cancelled:
-                            await self._on_transcript_delta(text)
+                            # Use current turn id as item id so router can correlate events
+                            await self._on_transcript_delta(text, "assistant", self._current_turn_id, None)
 
             # Handle output transcription (assistant's speech as text)
             output_transcription = getattr(server_content, 'output_transcription', None)
@@ -278,7 +279,7 @@ class SampleGeminiAgent(BaseAgent):
                 if text:
                     self._state.transcript_buffer += text
                     if self._on_transcript_delta and not self._response_cancelled:
-                        await self._on_transcript_delta(text)
+                        await self._on_transcript_delta(text, "assistant", self._current_turn_id, None)
 
             # Handle input transcription (user's speech as text)
             input_transcription = getattr(server_content, 'input_transcription', None)
@@ -295,7 +296,7 @@ class SampleGeminiAgent(BaseAgent):
                 self._state.is_responding = False
                 self._current_turn_id = None
                 if self._on_response_end:
-                    await self._on_response_end(transcript)
+                    await self._on_response_end(transcript, self._current_turn_id)
                 logger.debug(f"Assistant: {transcript}")
 
         except Exception as e:

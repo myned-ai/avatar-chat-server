@@ -26,17 +26,15 @@ services:
       - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-realtime-preview}
       - OPENAI_VOICE=${OPENAI_VOICE:-alloy}
       - ASSISTANT_INSTRUCTIONS=${ASSISTANT_INSTRUCTIONS:-You are a helpful and friendly AI assistant.}
-      - MODEL_PATH=/app/pretrained_models/wav2arkit_cpu.onnx
-      - USE_GPU=${USE_GPU:-false}
+      - ONNX_MODEL_PATH=/app/pretrained_models/wav2arkit_cpu.onnx
       - SERVER_HOST=0.0.0.0
       - SERVER_PORT=8080
       - AUTH_ENABLED=false
       - DEBUG=${DEBUG:-false}
     volumes:
-      # Mount ONNX model (new model structure)
+      # Mount ONNX model (CPU-only)
       - ./src/pretrained_models/wav2arkit_cpu.onnx:/app/pretrained_models/wav2arkit_cpu.onnx:ro
       - ./src/pretrained_models/wav2arkit_cpu.onnx.data:/app/pretrained_models/wav2arkit_cpu.onnx.data:ro
-    # No GPU needed for CPU-only model
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
@@ -62,8 +60,7 @@ services:
       - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-realtime-preview}
       - OPENAI_VOICE=${OPENAI_VOICE:-alloy}
       - ASSISTANT_INSTRUCTIONS=${ASSISTANT_INSTRUCTIONS:-You are a helpful and friendly AI assistant.}
-      - MODEL_PATH=/app/pretrained_models/wav2arkit_cpu.onnx
-      - USE_GPU=${USE_GPU:-false}
+      - ONNX_MODEL_PATH=/app/pretrained_models/wav2arkit_cpu.onnx
       - SERVER_HOST=0.0.0.0
       - SERVER_PORT=8080
       - AUTH_ENABLED=false
@@ -71,7 +68,6 @@ services:
     volumes:
       # Mount source code for hot reload
       - .:/app
-      # Mount ONNX model (new model structure)
+      # Mount ONNX model (CPU-only)
       - ./src/pretrained_models/wav2arkit_cpu.onnx:/app/pretrained_models/wav2arkit_cpu.onnx:ro
       - ./src/pretrained_models/wav2arkit_cpu.onnx.data:/app/pretrained_models/wav2arkit_cpu.onnx.data:ro
-    # No GPU needed for CPU-only model

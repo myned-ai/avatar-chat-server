@@ -18,7 +18,7 @@ from typing import Dict, List, Optional, Set
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from config import get_settings, get_audio_constants
-from services import get_audio2exp_service, get_agent
+from services import get_wav2arkit_service, get_agent
 from logger import get_logger
 
 logger = get_logger(__name__)
@@ -72,14 +72,14 @@ class ChatConnectionManager:
     Coordinates between:
     - Frontend WebSocket clients
     - Agent service (voice-to-voice AI)
-    - Audio2Expression model (audio-to-blendshape inference)
+    - Wav2Arkit model (audio-to-blendshape inference)
     """
 
     def __init__(self):
         self.clients: Dict[WebSocket, ClientState] = {}
         self._settings = get_settings()
         self._audio_constants = get_audio_constants()
-        self._audio2exp_service = get_audio2exp_service()
+        self._wav2arkit_service = get_wav2arkit_service()
         self._agent = get_agent()
 
         
@@ -238,9 +238,9 @@ class ChatConnectionManager:
             except asyncio.QueueEmpty:
                 break
 
-        # Reset Audio2Exp context
-        if self._audio2exp_service.is_available:
-            self._audio2exp_service.reset_context()
+        # Reset Wav2Arkit context
+        if self._wav2arkit_service.is_available:
+            self._wav2arkit_service.reset_context()
 
         # Start background tasks
         if self._frame_emit_task is None or self._frame_emit_task.done():
@@ -272,8 +272,8 @@ class ChatConnectionManager:
             self._actual_audio_start_time = time.time()
             logger.debug(f"First audio received, resetting speech start time")
 
-        if not self._audio2exp_service.is_available:
-            # No Audio2Exp - send audio directly (no blendshapes)
+        if not self._wav2arkit_service.is_available:
+            # No Wav2Arkit - send audio directly (no blendshapes)
             await self.broadcast({
                 "type": "audio_chunk",
                 "data": base64.b64encode(audio_bytes).decode("utf-8"),
@@ -282,7 +282,7 @@ class ChatConnectionManager:
             })
             return
 
-        # Buffer audio for Audio2Expression inference
+        # Buffer audio for Wav2Arkit inference
         self._audio_buffer.extend(audio_bytes)
 
         chunk_samples = len(audio_bytes) // 2
@@ -347,7 +347,7 @@ class ChatConnectionManager:
 
         # Flush remaining audio - ensure ALL buffered audio is processed
         buffer_samples = len(self._audio_buffer) // 2
-        if buffer_samples > 0 and self._audio2exp_service.is_available:
+        if buffer_samples > 0 and self._wav2arkit_service.is_available:
             # Use a longer minimum sample threshold to ensure we don't lose short final words
             min_samples = int(0.3 * self._audio_constants.openai_sample_rate)  # 300ms minimum
             remaining_bytes = bytes(self._audio_buffer)
@@ -556,7 +556,7 @@ class ChatConnectionManager:
     # ==================== Background Workers ====================
     
     async def _inference_worker(self) -> None:
-        """Process audio chunks through Audio2Expression model."""
+        """Process audio chunks through Wav2Arkit model."""
         chunk_count = 0
         total_inference_time = 0.0
         import concurrent.futures
@@ -595,7 +595,7 @@ class ChatConnectionManager:
                 # Run inference in thread pool to avoid blocking async loop
                 loop = asyncio.get_event_loop()
                 with concurrent.futures.ThreadPoolExecutor() as executor:
-                    frames = await loop.run_in_executor(executor, self._audio2exp_service.process_audio_chunk, audio_bytes)
+                    frames = await loop.run_in_executor(executor, self._wav2arkit_service.process_audio_chunk, audio_bytes)
                 inference_time = time.time() - inference_start
                 total_inference_time += inference_time
 
@@ -802,7 +802,7 @@ async def websocket_endpoint(websocket: WebSocket):
     WebSocket endpoint for real-time voice chat.
 
     Handles bidirectional communication between the frontend
-    and AI services (OpenAI + Audio2Expression).
+    and AI services (OpenAI + Wav2Arkit).
     """
     # Import here to avoid circular dependency
     from main import auth_middleware

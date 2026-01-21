@@ -2,7 +2,7 @@
 Avatar Chat Server
 
 FastAPI application for real-time voice-to-avatar interaction.
-Combines OpenAI Realtime API for voice AI with an Audio2Expression
+Combines OpenAI Realtime API for voice AI with Wav2Arkit
 model for synchronized facial animation.
 
 Usage:
@@ -24,7 +24,7 @@ from typing import Optional
 
 from config import get_settings, get_allowed_origins
 from routers import chat_router
-from services import get_audio2exp_service, get_openai_service
+from services import get_wav2arkit_service, get_openai_service
 from auth import AuthMiddleware
 from logger import setup_logging, get_logger
 
@@ -50,7 +50,7 @@ async def lifespan(app: FastAPI):
     logger.info(f"WebSocket endpoint: ws://{settings.server_host}:{settings.server_port}/ws")
     logger.info(f"Voice: {settings.openai_voice}")
     logger.info(f"Model: {settings.openai_model}")
-    logger.info(f"Identity: {settings.identity_idx}")
+    logger.info(f"Wav2Arkit model: {settings.onnx_model_path}")
     logger.info(f"Debug: {settings.debug}")
     logger.info(f"Auth: {'Enabled' if settings.auth_enabled else 'Disabled'}")
     if settings.auth_enabled:
@@ -59,7 +59,7 @@ async def lifespan(app: FastAPI):
     logger.info("=" * 60)
 
     # Initialize services (lazy loading - will connect on first request)
-    get_audio2exp_service()
+    get_wav2arkit_service()
     
     yield
 
@@ -78,7 +78,7 @@ app = FastAPI(
     ## Features
     
     - **Voice AI**: OpenAI Realtime API for natural voice conversations
-    - **Facial Animation**: Audio2Expression model for synchronized blendshapes
+    - **Facial Animation**: Wav2Arkit model for synchronized blendshapes
     - **WebSocket Streaming**: Real-time audio and animation data
     
     ## WebSocket Protocol
@@ -192,13 +192,13 @@ async def root():
 @app.get("/health")
 async def health_check():
     """Health check endpoint for container orchestration."""
-    audio2exp_service = get_audio2exp_service()
+    wav2arkit_service = get_wav2arkit_service()
     openai_service = get_openai_service()
     
     return {
         "status": "healthy",
         "services": {
-            "audio2exp": "available" if audio2exp_service.is_available else "unavailable",
+            "wav2arkit": "available" if wav2arkit_service.is_available else "unavailable",
             "openai": "connected" if openai_service.is_connected else "disconnected",
         },
     }

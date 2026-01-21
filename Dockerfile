@@ -1,124 +1,96 @@
 # ==============================================================================
-# Avatar Chat Server - CPU-Only Dockerfile (Benchmark)
+# Avatar Chat Server - CPU-Only Dockerfile
 # ==============================================================================
-# Multi-stage build optimized for CPU inference with PyTorch optimizations
-# This Dockerfile is designed for benchmarking CPU performance to help determine
-# if quantization or other optimization techniques are needed.
+# Multi-stage build optimized for ONNX CPU inference.
 #
 # Build:
-#   docker build -f Dockerfile.cpu -t avatar-chat-server:cpu .
+#   docker build -t avatar-chat-server .
 #
 # Run:
-#   docker run -p 8080:8080 --env-file .env -e USE_GPU=false avatar-chat-server:cpu
-#
-# Benchmark notes:
-# - Uses PyTorch CPU-only builds (smaller, optimized)
-# - Enables Intel MKL for better CPU performance
-# - Sets optimal threading for inference
-# - Remove GPU dependencies entirely
+#   docker run -p 8080:8080 --env-file .env avatar-chat-server
 # ==============================================================================
 
 # ------------------------------------------------------------------------------
-# Stage 1: Base image without CUDA
+# Stage 1: Base image with non-root user
 # ------------------------------------------------------------------------------
-FROM ubuntu:22.04 AS base
+FROM python:3.10-slim AS base
 
-# Prevent interactive prompts during package installation
-ENV DEBIAN_FRONTEND=noninteractive
+# Prevent interactive prompts and set Python to not buffer output
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
 
-# Install Python and system dependencies
+# Install system dependencies and clean up in same layer
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3.10 \
-    python3-pip \
-    python3.10-venv \
     libsndfile1 \
-    ffmpeg \
-    && rm -rf /var/lib/apt/lists/* \
-    && ln -s /usr/bin/python3.10 /usr/bin/python
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Set working directory
+# Create non-root user early so all subsequent files are owned by them
+RUN useradd --create-home --shell /bin/bash appuser
+
+# Set working directory and give ownership to appuser
 WORKDIR /app
+RUN chown appuser:appuser /app
 
 # ------------------------------------------------------------------------------
-# Stage 2: Dependencies installation with uv (CPU-only PyTorch)
+# Stage 2: Dependencies installation with uv (as appuser)
 # ------------------------------------------------------------------------------
 FROM base AS dependencies
 
 # Install uv for fast package management
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-# Copy dependency files first for better caching
+# Switch to non-root user BEFORE installing dependencies
+# This ensures .venv is owned by appuser from the start
+USER appuser
 
 # Copy dependency files first for better caching
-COPY pyproject.toml ./
-COPY README.md ./
+COPY --chown=appuser:appuser pyproject.toml README.md ./
 
-# Install Python dependencies with uv using CPU-only PyTorch
-RUN uv sync --frozen --no-dev || uv sync --no-dev
+# Install Python dependencies and clean uv cache in same layer
+RUN uv sync --frozen --no-dev || uv sync --no-dev \
+    && rm -rf ~/.cache/uv
+
 # ------------------------------------------------------------------------------
-# Stage 3: Production image with CPU optimizations
+# Stage 3: Production image
 # ------------------------------------------------------------------------------
 FROM dependencies AS production
 
-# Create non-root user for security
-RUN useradd --create-home --shell /bin/bash appuser
+# Copy application code (already running as appuser)
+COPY --chown=appuser:appuser ./src ./src
 
-# Copy application code
-COPY --chown=appuser:appuser . .
-
-# CPU Optimization Environment Variables
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    SERVER_HOST=0.0.0.0 \
-    SERVER_PORT=8080 \
-    USE_GPU=false \
-    # PyTorch CPU optimizations
-    OMP_NUM_THREADS=4 \
-    MKL_NUM_THREADS=4 \
-    TORCH_NUM_THREADS=4 \
-    # Use Intel MKL for optimized math operations
-    MKL_THREADING_LAYER=GNU \
-    # Disable TensorFloat32 (not applicable for CPU but good practice)
-    TORCH_ALLOW_TF32_CUBLAS_OVERRIDE=0
-
-
-# Fix permissions for appuser
-RUN chown -R appuser:appuser /app
-
-# Switch to non-root user
-USER appuser
+# Environment variables
+ENV SERVER_HOST=0.0.0.0 \
+    SERVER_PORT=8080
 
 # Expose port
 EXPOSE 8080
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')" || exit 1
 
-# Start the server (using uv run to use the managed environment)
+# Start the server
 CMD ["uv", "run", "python", "src/main.py"]
 
 # ------------------------------------------------------------------------------
-# Alternative: Development image (with hot reload)
+# Stage 4: Development image (with hot reload)
 # ------------------------------------------------------------------------------
 FROM dependencies AS development
 
-WORKDIR /app
+# Copy application code
+COPY --chown=appuser:appuser ./src ./src
 
-# Mount point for source code
+# Mount point for source code (overrides the COPY above when mounted)
 VOLUME ["/app"]
 
-# CPU Optimization for development
-ENV PYTHONUNBUFFERED=1 \
-    DEBUG=true \
+# Environment variables for development
+ENV DEBUG=true \
     SERVER_HOST=0.0.0.0 \
-    SERVER_PORT=8080 \
-    USE_GPU=false \
-    OMP_NUM_THREADS=4 \
-    MKL_NUM_THREADS=4 \
-    TORCH_NUM_THREADS=4
+    SERVER_PORT=8080
 
+# Expose port
 EXPOSE 8080
 
-# Start with hot reload (using uv run)
+# Start with hot reload
 CMD ["uv", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080", "--reload"]

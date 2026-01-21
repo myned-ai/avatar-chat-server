@@ -1,7 +1,7 @@
 [project]
 name = "avatar-chat-server"
 version = "1.0.0"
-description = "Real-time voice-to-avatar interaction server combining OpenAI Realtime API with Audio to Expression model"
+description = "Real-time voice-to-avatar interaction server combining OpenAI Realtime API with Wav2Arkit model"
 readme = "README.md"
 requires-python = "==3.10.*"
 license = { text = "MIT" }
@@ -26,10 +26,7 @@ dependencies = [
     # Environment variables
     "python-dotenv>=1.0.0",
 
-    # Audio2Expression model dependencies (CPU-only versions)
-    "torch>=2.1.0",
-    "torchaudio>=2.1.0",
-    "transformers==4.36.2",
+    # Wav2Arkit model dependencies (ONNX CPU-only)
     "onnxruntime>=1.23.2",
     # AI Agent dependencies
     "google-genai>=1.0.0",  # Google GenAI SDK for Gemini Live API
@@ -45,18 +42,6 @@ dev = [
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
-
-[tool.uv]
-
-[[tool.uv.index]]
-name = "pytorch-cpu"
-url = "https://download.pytorch.org/whl/cpu"
-explicit = true
-
-[tool.uv.sources]
-# Use PyTorch CPU-only wheels for smaller image and CPU optimizations
-torch = { index = "pytorch-cpu" }
-torchaudio = { index = "pytorch-cpu" }
 
 [tool.hatch.build.targets.wheel]
 packages = ["src"]

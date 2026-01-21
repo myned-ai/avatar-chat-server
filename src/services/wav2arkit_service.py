@@ -1,9 +1,9 @@
 """
-Audio2Expression Service
+Wav2Arkit Service
 
-Service layer for Audio2Expression model inference.
+Service layer for Wav2Arkit model inference.
 Handles audio-to-blendshape conversion for facial animation.
-Supports both PyTorch (GPU/CPU) and ONNX (CPU-optimized) backends.
+Uses ONNX runtime for CPU-optimized inference.
 """
 
 from typing import Dict, List, Optional, Tuple, Any
@@ -17,18 +17,18 @@ from logger import get_logger
 logger = get_logger(__name__)
 
 
-class Audio2ExpService:
+class Wav2ArkitService:
     """
-    Service for Audio2Expression blendshape inference.
-    
-    Wraps the BlendshapeInference class to provide a clean service interface
-    for converting audio to ARKit-compatible facial blendshapes.
+    Service for Wav2Arkit blendshape inference.
+
+    Uses ONNX runtime for CPU-optimized inference to convert
+    audio to ARKit-compatible facial blendshapes.
     """
-    
+
     def __init__(self, settings: Settings, audio_constants: AudioConstants):
         """
-        Initialize the Audio2Expression service.
-        
+        Initialize the Wav2Arkit service.
+
         Args:
             settings: Application settings
             audio_constants: Audio processing constants
@@ -37,88 +37,44 @@ class Audio2ExpService:
         self.audio_constants = audio_constants
         self._inference: Optional[Any] = None
         self._available = False
-        
+
         self._initialize_model()
-    
+
     def _initialize_model(self) -> None:
-        """Initialize the model if available."""
-        # Check if we should use ONNX (CPU-optimized) or PyTorch
-        if self.settings.use_onnx and not self.settings.use_gpu:
-            self._initialize_onnx_model()
-        else:
-            self._initialize_pytorch_model()
-    
-    def _initialize_onnx_model(self) -> None:
         """Initialize the ONNX model for CPU inference."""
         try:
-            from audio_to_expression import ONNXBlendshapeInference
-            
+            from wav2arkit import Wav2ArkitInference
+
             model_path = Path(self.settings.onnx_model_path)
             if not model_path.exists():
-                logger.warning(f"ONNX model not found at: {model_path}")
-                logger.info("Falling back to PyTorch model...")
-                self._initialize_pytorch_model()
+                logger.warning(f"Wav2Arkit model not found at: {model_path}")
+                logger.warning("Wav2Arkit will be unavailable")
                 return
-            
-            self._inference = ONNXBlendshapeInference(
+
+            self._inference = Wav2ArkitInference(
                 model_path=str(model_path),
-                audio_sr=self.audio_constants.audio2exp_sample_rate,
+                audio_sr=self.audio_constants.wav2arkit_sample_rate,
                 fps=self.audio_constants.blendshape_fps,
                 debug=self.settings.debug,
             )
-            
+
             self._available = True
-            logger.info("ONNX model loaded (CPU-optimized)")
+            logger.info("Wav2Arkit model loaded (CPU-optimized)")
 
             # Warmup pass
             self._warmup_model()
 
         except ImportError as e:
             logger.warning(f"ONNX Runtime not available: {e}")
-            logger.info("Falling back to PyTorch model...")
-            self._initialize_pytorch_model()
+            logger.warning("Install onnxruntime: pip install onnxruntime")
         except Exception as e:
-            logger.warning(f"Failed to load ONNX model: {e}")
-            logger.info("Falling back to PyTorch model...")
-            self._initialize_pytorch_model()
-    
-    def _initialize_pytorch_model(self) -> None:
-        """Initialize the PyTorch model."""
-        try:
-            from audio_to_expression import BlendshapeInference
-            
-            model_path = Path(self.settings.model_path)
-            if not model_path.exists():
-                logger.warning(f"Model not found at: {model_path}")
-                return
-            
-            device = "cuda" if self.settings.use_gpu else "cpu"
-            
-            self._inference = BlendshapeInference(
-                model_path=str(model_path),
-                device=device,
-                identity_idx=self.settings.identity_idx,
-                audio_sr=self.audio_constants.audio2exp_sample_rate,
-                fps=self.audio_constants.blendshape_fps,
-                debug=self.settings.debug,
-            )
-            
-            self._available = True
-            logger.info(f"PyTorch model loaded (device: {device}, identity: {self.settings.identity_idx})")
+            logger.warning(f"Failed to load Wav2Arkit model: {e}")
 
-            # Warmup pass
-            self._warmup_model()
-
-        except ImportError:
-            logger.warning("Audio2Expression not available. Install torch, transformers, librosa.")
-        except Exception as e:
-            logger.warning(f"Failed to load PyTorch model: {e}")
-    
     def _warmup_model(self) -> None:
         """
-        Run a warmup inference pass to initialize GPU/CUDA and compile kernels.
+        Run a warmup inference pass to initialize ONNX runtime.
 
-        This eliminates the 1-2 second delay on the first real inference call.
+        This eliminates the delay on the first real inference call.
         """
         if not self._inference:
             return
@@ -126,12 +82,12 @@ class Audio2ExpService:
         try:
             logger.info("Running model warmup pass...")
             # Create dummy audio: 1 second of silence at model sample rate
-            dummy_audio = np.zeros(self.audio_constants.audio2exp_sample_rate, dtype=np.float32)
+            dummy_audio = np.zeros(self.audio_constants.wav2arkit_sample_rate, dtype=np.float32)
 
-            # Run inference (will trigger CUDA initialization, kernel compilation, etc.)
+            # Run inference (will trigger ONNX runtime initialization)
             result, _ = self.infer_streaming(
                 dummy_audio,
-                sample_rate=self.audio_constants.audio2exp_sample_rate,
+                sample_rate=self.audio_constants.wav2arkit_sample_rate,
             )
 
             if result.get("code") == 0:
@@ -144,14 +100,14 @@ class Audio2ExpService:
 
     @property
     def is_available(self) -> bool:
-        """Check if Audio2Expression inference is available."""
+        """Check if Wav2Arkit inference is available."""
         return self._available and self._inference is not None
 
     def reset_context(self) -> None:
         """Reset inference context for new speech session."""
         if self._inference:
             self._inference.reset_context()
-    
+
     def infer_streaming(
         self,
         audio_data: np.ndarray,
@@ -159,47 +115,47 @@ class Audio2ExpService:
     ) -> Tuple[Dict, Optional[Any]]:
         """
         Run streaming inference on audio chunk.
-        
+
         Args:
             audio_data: Audio samples as float32 numpy array
             sample_rate: Sample rate of the audio
-            
+
         Returns:
             Tuple of (result dict, timing info)
             Result contains 'code' (0=success) and 'expression' array
         """
         if not self.is_available:
-            return {"code": -1, "error": "Audio2Expression model not available"}, None
-        
+            return {"code": -1, "error": "Wav2Arkit model not available"}, None
+
         return self._inference.infer_streaming(audio_data, sample_rate=sample_rate)
-    
+
     def weights_to_dict(self, frame_weights: np.ndarray) -> Dict[str, float]:
         """
         Convert frame weights array to named dictionary.
-        
+
         Args:
             frame_weights: Array of 52 blendshape weights
-            
+
         Returns:
             Dictionary mapping blendshape names to weights
         """
         if not self.is_available:
             return {}
-        
+
         return self._inference.weights_to_dict(frame_weights)
-    
+
     def process_audio_chunk(
         self,
         audio_bytes: bytes,
     ) -> List[Dict[str, Any]]:
         """
         Process audio chunk and return paired audio+blendshape frames.
-        
+
         This is the main processing method that:
         1. Converts audio bytes to numpy array
-        2. Runs Audio2Expression inference to get blendshapes
+        2. Runs Wav2Arkit inference to get blendshapes
         3. Pairs each blendshape frame with its audio slice
-        
+
         Args:
             audio_bytes: PCM16 audio at OpenAI sample rate (24kHz)
 
@@ -208,24 +164,24 @@ class Audio2ExpService:
         """
         if not self.is_available:
             return []
-        
+
         # Convert to numpy array (PCM16 to float32)
         audio_int16 = np.frombuffer(audio_bytes, dtype=np.int16)
         audio_float = audio_int16.astype(np.float32) / 32768.0
-        
+
         # Run inference
         result, _ = self.infer_streaming(
             audio_float,
             sample_rate=self.audio_constants.openai_sample_rate,
         )
-        
+
         if result.get("code") != 0:
             return []
-        
+
         expression = result.get("expression")
         if expression is None or len(expression) == 0:
             return []
-        
+
         # Pair each blendshape frame with its corresponding audio
         frames = []
         bytes_per_frame = self.audio_constants.bytes_per_frame
@@ -252,30 +208,30 @@ class Audio2ExpService:
 
 
 # Singleton instance (created on first import if needed)
-_audio2exp_service: Optional[Audio2ExpService] = None
+_wav2arkit_service: Optional[Wav2ArkitService] = None
 
 
-def get_audio2exp_service(
+def get_wav2arkit_service(
     settings: Optional[Settings] = None,
     audio_constants: Optional[AudioConstants] = None,
-) -> Audio2ExpService:
+) -> Wav2ArkitService:
     """
-    Get or create the Audio2ExpService singleton.
-    
+    Get or create the Wav2ArkitService singleton.
+
     Args:
         settings: Application settings (uses defaults if not provided)
         audio_constants: Audio constants (uses defaults if not provided)
-        
+
     Returns:
-        Audio2ExpService instance
+        Wav2ArkitService instance
     """
-    global _audio2exp_service
-    
-    if _audio2exp_service is None:
+    global _wav2arkit_service
+
+    if _wav2arkit_service is None:
         from config import get_settings, get_audio_constants
-        
+
         settings = settings or get_settings()
         audio_constants = audio_constants or get_audio_constants()
-        _audio2exp_service = Audio2ExpService(settings, audio_constants)
-    
-    return _audio2exp_service
+        _wav2arkit_service = Wav2ArkitService(settings, audio_constants)
+
+    return _wav2arkit_service

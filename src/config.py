@@ -56,12 +56,8 @@ class Settings(BaseSettings):
         "You are a helpful and friendly AI assistant. Be concise in your responses."
     )
     
-    # Audio2Expression Model Configuration
-    model_path: str = "./pretrained_models/lam_audio2exp_streaming.tar"  # PyTorch model (legacy)
-    onnx_model_path: str = "./pretrained_models/wav2arkit_cpu.onnx"  # Combined ONNX model (CPU optimized)
-    identity_idx: int = 11  # 0-11, affects expression style (only used with PyTorch model)
-    use_gpu: bool = False  # CPU-only mode with ONNX model
-    use_onnx: bool = True  # Use ONNX model for CPU inference (recommended)
+    # Wav2Arkit Model Configuration (ONNX CPU-only)
+    onnx_model_path: str = "./pretrained_models/wav2arkit_cpu.onnx"  # ONNX model (CPU optimized)
     
     # Server Configuration
     server_host: str = "0.0.0.0"
@@ -81,10 +77,10 @@ class Settings(BaseSettings):
     
     # Audio Configuration (constants, but configurable if needed)
     # Note: Widget sends 24kHz audio. OpenAI uses 24kHz, Gemini expects 16kHz (resampled internally)
-    openai_sample_rate: int = 24000    # OpenAI Realtime API uses 24kHz (also widget format)
-    audio2exp_sample_rate: int = 16000 # Audio2Expression model expects 16kHz
-    blendshape_fps: int = 30           # Output blendshape frame rate
-    audio_chunk_duration: float = 0.5  # 0.5 second chunks for Audio2Expression processing (reduced for CPU)
+    openai_sample_rate: int = 24000     # OpenAI Realtime API uses 24kHz (also widget format)
+    wav2arkit_sample_rate: int = 16000  # Wav2Arkit model expects 16kHz
+    blendshape_fps: int = 30            # Output blendshape frame rate
+    audio_chunk_duration: float = 0.5   # 0.5 second chunks for Wav2Arkit processing
 
 
 class AudioConstants:
@@ -92,7 +88,7 @@ class AudioConstants:
 
     def __init__(self, settings: Settings):
         self.openai_sample_rate = settings.openai_sample_rate
-        self.audio2exp_sample_rate = settings.audio2exp_sample_rate
+        self.wav2arkit_sample_rate = settings.wav2arkit_sample_rate
         self.blendshape_fps = settings.blendshape_fps
         self.audio_chunk_duration = settings.audio_chunk_duration
 

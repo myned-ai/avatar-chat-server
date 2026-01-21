@@ -2,7 +2,7 @@
 
 **Sample backend server for the [Avatar Chat Widget](https://github.com/myned-ai/avatar-chat-widget)**
 
-Real-time voice-to-avatar interaction server combining AI agents (OpenAI Realtime API or Google Gemini Live API) with an Audio to Expression model for synchronized avatar facial animation. This is an example server that powers the [Avatar Chat Widget](https://github.com/myned-ai/avatar-chat-widget) by processing audio streams and generating ARKit blendshapes for realistic facial animations.
+Real-time voice-to-avatar interaction server combining AI agents (OpenAI Realtime API or Google Gemini Live API) with the Wav2Arkit model for synchronized avatar facial animation. This is an example server that powers the [Avatar Chat Widget](https://github.com/myned-ai/avatar-chat-widget) by processing audio streams and generating ARKit blendshapes for realistic facial animations.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
@@ -10,7 +10,7 @@ Real-time voice-to-avatar interaction server combining AI agents (OpenAI Realtim
 ## Features
 
 - **Real-time Voice-to-Voice AI**: OpenAI Realtime API or Google Gemini Live API integration for natural conversation
-- **Facial Animation Sync**: LAM Audio2Expression model for ARKit-compatible blendshapes
+- **Facial Animation Sync**: Wav2Arkit model for ARKit-compatible blendshapes
 - **Modular Agent System**: Pluggable agents (sample OpenAI/Gemini or custom implementations)
 - **WebSocket Communication**: Low-latency bidirectional streaming
 - **CPU Acceleration**: ONNX-optimized inference for real-time performance without GPU
@@ -70,7 +70,7 @@ uv sync
 # 4. Download the Wav2Arkit model
 pip install -U "huggingface_hub[cli]"
 mkdir -p pretrained_models
-huggingface-cli download Myned/wav2arkit_cpu --local-dir pretrained_models
+huggingface-cli download myned-ai/wav2arkit_cpu --local-dir pretrained_models
 mv pretrained_models/ src/
 
 # 5. Configure environment
@@ -94,11 +94,11 @@ cd avatar_chat_server
 cp .env.example .env
 # Edit .env with your settings
 
-# 2. Download model
+# 2. Download the ONNX model
 pip install -U "huggingface_hub[cli]"
-huggingface-cli download 3DAIGC/LAM_audio2exp --local-dir ./
-tar -xzvf LAM_audio2exp_streaming.tar && rm -f LAM_audio2exp_streaming.tar
-mv pretrained_models src/
+mkdir -p pretrained_models
+huggingface-cli download myned-ai/wav2arkit_cpu --local-dir pretrained_models
+mv pretrained_models/ src/
 
 # 3. Build and run (production)
 docker-compose up -d
@@ -140,9 +140,7 @@ All settings can be configured via environment variables or `.env` file.
 | **Assistant Configuration** |
 | `ASSISTANT_INSTRUCTIONS` | *see .env.example* | System prompt for the AI assistant |
 | **Model Configuration** |
-| `MODEL_PATH` | `./src/pretrained_models/lam_audio2exp_streaming.tar` | Path to model weights |
-| `IDENTITY_IDX` | `10` | Expression style (0-11, affects animation intensity) |
-| `USE_GPU` | `false` | Enable GPU acceleration (set to `false` for CPU-only) |
+| `ONNX_MODEL_PATH` | `./pretrained_models/wav2arkit_cpu.onnx` | Path to ONNX model weights (CPU-only) |
 | **Server Configuration** |
 | `SERVER_HOST` | `0.0.0.0` | Server bind address |
 | `SERVER_PORT` | `8080` | Server port |
@@ -221,9 +219,9 @@ See [ARKit Blendshape Documentation](https://developer.apple.com/documentation/a
 
 ### Multi-Stage Build
 
-The Dockerfile uses a multi-stage build optimized for production:
+The Dockerfile uses a multi-stage build optimized for CPU-only production:
 
-1. **Base Stage**: NVIDIA CUDA 12.1 runtime with Python 3.10
+1. **Base Stage**: Ubuntu 22.04 with Python 3.10
 2. **Dependencies Stage**: Fast dependency installation with uv
 3. **Production Stage**: Minimal image with non-root user, health checks
 4. **Development Stage**: Hot reload support for development
@@ -234,13 +232,12 @@ The Dockerfile uses a multi-stage build optimized for production:
 # Build image
 docker build -t avatar-chat-server .
 
-# Run with GPU support
+# Run (CPU-only)
 docker run -d \
   --name avatar-chat-server \
-  --gpus all \
   -p 8080:8080 \
   --env-file .env \
-  -v $(pwd)/lam_audio2exp_streaming.tar:/app/lam_audio2exp_streaming.tar:ro \
+  -v $(pwd)/src/pretrained_models:/app/pretrained_models:ro \
   --restart unless-stopped \
   avatar-chat-server
 
@@ -263,18 +260,6 @@ curl http://localhost:8080/health
   - Hot reload enabled
   - Source code mounted as volume
   - Debug logging enabled
-
-### GPU Support
-
-The container requires NVIDIA Docker runtime for GPU acceleration:
-
-```bash
-# Install NVIDIA Container Toolkit
-# https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html
-
-# Verify GPU access
-docker run --rm --gpus all nvidia/cuda:12.1.1-runtime-ubuntu22.04 nvidia-smi
-```
 
 ## Authentication
 

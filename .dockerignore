@@ -11,6 +11,8 @@ __pycache__
 *.egg-info
 .eggs
 *.egg
+dist
+build
 
 # Virtual environments
 venv
@@ -23,28 +25,42 @@ ENV
 .idea
 *.swp
 *.swo
+*~
 
 # Test/Debug
 *.log
 .pytest_cache
 .coverage
+htmlcov
+transcript_log.json
 
-# Docker
+# Docker (don't copy Dockerfile into image)
 Dockerfile*
 docker-compose*.yml
 .docker
 
-# Documentation
+# Documentation (README.md needed for pyproject.toml)
 *.md
 !README.md
+docs/
 
-# Old code
-main_old.py
-
-# Environment files (keep .env.example)
+# Environment files (keep .env.example for reference)
 .env
 .env.local
+.env.*
+!.env.example
 
 # OS
 .DS_Store
 Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Tests (not needed in production)
+tests/
+test_*.py
+*_test.py

@@ -18,20 +18,21 @@ Or run directly:
 """
 
 import warnings
+
 warnings.filterwarnings("ignore", category=FutureWarning)
 
-import uvicorn
 import secrets
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from typing import Optional
 
-from core.config import get_settings, get_allowed_origins
-from core.logger import setup_logging, get_logger
-from routers import chat_router
-from services import get_wav2arkit_service, get_agent
+import uvicorn
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+
 from auth import AuthMiddleware
+from core.config import get_allowed_origins, get_settings
+from core.logger import get_logger, setup_logging
+from routers import chat_router
+from services import get_agent, get_wav2arkit_service
 
 logger = get_logger(__name__)
 
@@ -40,7 +41,7 @@ logger = get_logger(__name__)
 async def lifespan(app: FastAPI):
     """
     Application lifespan manager.
-    
+
     Handles startup and shutdown events for proper resource management.
     """
     settings = get_settings()
@@ -64,7 +65,7 @@ async def lifespan(app: FastAPI):
 
     # Initialize services (lazy loading - will connect on first request)
     get_wav2arkit_service()
-    
+
     yield
 
     # Shutdown
@@ -125,7 +126,7 @@ app.add_middleware(
 )
 
 # Initialize authentication middleware
-auth_middleware: Optional[AuthMiddleware] = None
+auth_middleware: AuthMiddleware | None = None
 if settings.auth_enabled:
     # Generate secret key if not provided
     auth_secret = settings.auth_secret_key or secrets.token_hex(32)
@@ -138,7 +139,7 @@ if settings.auth_enabled:
         allowed_origins=allowed_origins,
         secret_key=auth_secret,
         token_ttl=settings.auth_token_ttl,
-        enable_rate_limiting=settings.auth_enable_rate_limiting
+        enable_rate_limiting=settings.auth_enable_rate_limiting,
     )
 
 # Include routers
@@ -172,11 +173,7 @@ async def get_auth_token(request: Request):
     if not token:
         raise HTTPException(status_code=403, detail="Origin not allowed")
 
-    return {
-        "token": token,
-        "ttl": settings.auth_token_ttl,
-        "origin": origin
-    }
+    return {"token": token, "ttl": settings.auth_token_ttl, "origin": origin}
 
 
 @app.get("/")
@@ -197,7 +194,7 @@ async def health_check():
     """Health check endpoint for container orchestration."""
     wav2arkit_service = get_wav2arkit_service()
     agent = get_agent()
-    
+
     return {
         "status": "healthy",
         "services": {
@@ -209,7 +206,7 @@ async def health_check():
 
 if __name__ == "__main__":
     settings = get_settings()
-    
+
     uvicorn.run(
         "main:app",
         host=settings.server_host,

@@ -14,7 +14,7 @@ Features:
 
 import asyncio
 import json
-import logging
+import copy
 from typing import Optional, Dict, Any, List, Callable, Union
 import numpy as np
 
@@ -22,8 +22,6 @@ from .event_handler import RealtimeEventHandler
 from .api import RealtimeAPI
 from .conversation import RealtimeConversation
 from .utils import RealtimeUtils
-
-logger = logging.getLogger(__name__)
 
 
 # Type definitions
@@ -43,9 +41,6 @@ class RealtimeClient(RealtimeEventHandler):
     - Custom events: conversation.updated, conversation.item.appended,
       conversation.item.completed, conversation.interrupted
     """
-    
-    # Audio format constants (OpenAI Realtime API uses 24kHz)
-    SAMPLE_RATE = 24000
     
     def __init__(
         self,
@@ -67,12 +62,39 @@ class RealtimeClient(RealtimeEventHandler):
         
         self.model = model
         
+        # Default session configuration
+        self.default_session_config = {
+            'modalities': ['text', 'audio'],
+            'instructions': '',
+            'voice': 'verse',
+            'input_audio_format': 'pcm16',
+            'output_audio_format': 'pcm16',
+            'input_audio_transcription': None,
+            'turn_detection': None,
+            'tools': [],
+            'tool_choice': 'auto',
+            'temperature': 0.8,
+            'max_response_output_tokens': 4096,
+        }
+        
+        # Default VAD configuration
+        self.default_server_vad_config = {
+            'type': 'server_vad',
+            'threshold': 0.5,
+            'prefix_padding_ms': 300,
+            'silence_duration_ms': 200,
+        }
+        
+        # Transcription models
+        self.transcription_models = [{'model': 'whisper-1'}]
+        
         # Initialize state
         self.session_config: Dict[str, Any] = {}
         self.tools: Dict[str, Dict[str, Any]] = {}  # name -> {definition, handler}
         self.session_created = False
         self.input_audio_buffer = np.array([], dtype=np.int16)
         self._response_cancelled = False  # Flag to stop dispatching audio after interruption
+        self._is_responding = False  # Flag to track if there's an active response
         
         # Create underlying API and conversation handlers
         self.realtime = RealtimeAPI(url=url, api_key=api_key, debug=debug)
@@ -91,7 +113,7 @@ class RealtimeClient(RealtimeEventHandler):
         """
         self.session_created = False
         self.tools = {}
-        self.session_config = {}
+        self.session_config = copy.deepcopy(self.default_session_config)
         self.input_audio_buffer = np.array([], dtype=np.int16)
         return True
     
@@ -128,15 +150,6 @@ class RealtimeClient(RealtimeEventHandler):
         
         self.realtime.on('server.session.created', on_session_created)
         
-        # Handle session updated - log the config for debugging
-        def on_session_updated(event):
-            session = event.get('session', {})
-            turn_detection = session.get('turn_detection')
-            transcription = session.get('input_audio_transcription')
-            logger.debug(f"Session updated: turn_detection={turn_detection}, transcription={transcription}")
-        
-        self.realtime.on('server.session.updated', on_session_updated)
-        
         # Setup for application control flow
         def handler(event, *args):
             """Process event through conversation."""
@@ -144,7 +157,7 @@ class RealtimeClient(RealtimeEventHandler):
                 item, delta = self.conversation.process_event(event, *args)
                 return {'item': item, 'delta': delta}
             except Exception as e:
-                logger.error(f"Error processing event: {e}")
+                print(f"Error processing event: {e}")
                 return {'item': None, 'delta': None}
         
         def handler_with_dispatch(event, *args):
@@ -196,26 +209,36 @@ class RealtimeClient(RealtimeEventHandler):
         
         # Register handlers for conversation events
         def on_response_created(event):
-            # Reset cancelled flag when new response starts
+            # Reset cancelled flag and mark as responding when new response starts
             self._response_cancelled = False
+            self._is_responding = True
             handler(event)
 
         self.realtime.on('server.response.created', on_response_created)
+        
+        def on_response_done(event):
+            # Mark as no longer responding when response completes
+            self._is_responding = False
+            # Note: Don't call handler(event) - response.done doesn't need conversation processing
+
+        self.realtime.on('server.response.done', on_response_done)
         self.realtime.on('server.response.output_item.added', handler)
         self.realtime.on('server.response.content_part.added', handler)
         
         def on_speech_started(event):
-            # IMMEDIATELY set cancelled flag to stop dispatching audio deltas
-            self._response_cancelled = True
+            # Only interrupt if there's an active response to cancel
+            if self._is_responding:
+                # IMMEDIATELY set cancelled flag to stop dispatching audio deltas
+                self._response_cancelled = True
 
-            # Dispatch interrupt FIRST so widget stops playback immediately
-            # This must happen before processing the event to minimize latency
-            self.dispatch('conversation.interrupted')
+                # Dispatch interrupt FIRST so widget stops playback immediately
+                # This must happen before processing the event to minimize latency
+                self.dispatch('conversation.interrupted')
 
-            # Then cancel the response on OpenAI's side
-            self.realtime.send('response.cancel')
+                # Then cancel the response on OpenAI's side
+                self.realtime.send('response.cancel')
 
-            # Process the event last
+            # Process the event
             handler(event)
 
         self.realtime.on('server.input_audio_buffer.speech_started', on_speech_started)
@@ -393,14 +416,6 @@ class RealtimeClient(RealtimeEventHandler):
         self.realtime.send('conversation.item.delete', {'item_id': item_id})
         return True
     
-    # Default VAD configuration
-    DEFAULT_SERVER_VAD_CONFIG = {
-        'type': 'server_vad',
-        'threshold': 0.5,
-        'prefix_padding_ms': 300,
-        'silence_duration_ms': 200,
-    }
-
     def update_session(
         self,
         modalities: Optional[List[str]] = None,
@@ -409,6 +424,7 @@ class RealtimeClient(RealtimeEventHandler):
         input_audio_format: Optional[str] = None,
         output_audio_format: Optional[str] = None,
         input_audio_transcription: Optional[Dict] = None,
+        input_audio_noise_reduction: Optional[Dict] = None,
         turn_detection: Optional[Dict] = None,
         tools: Optional[List[ToolDefinition]] = None,
         tool_choice: Optional[str] = None,
@@ -417,23 +433,24 @@ class RealtimeClient(RealtimeEventHandler):
     ) -> bool:
         """
         Updates session configuration.
-
+        
         If the client is not yet connected, will save details and
         instantiate upon connection.
-
+        
         Args:
             modalities: List of modalities ('text', 'audio')
             instructions: System instructions
             voice: Voice for audio output
             input_audio_format: Format for input audio
             output_audio_format: Format for output audio
-            input_audio_transcription: Transcription config (e.g., {'model': 'whisper-1'})
+            input_audio_transcription: Transcription config
+            input_audio_noise_reduction: Noise reduction config (e.g., {"type": "near_field"})
             turn_detection: Turn detection config (or None to disable)
             tools: List of tool definitions
             tool_choice: Tool choice mode ('auto', 'none', etc.)
             temperature: Sampling temperature
             max_response_output_tokens: Max tokens for response
-
+            
         Returns:
             True on success
         """
@@ -450,6 +467,8 @@ class RealtimeClient(RealtimeEventHandler):
             self.session_config['output_audio_format'] = output_audio_format
         if input_audio_transcription is not None:
             self.session_config['input_audio_transcription'] = input_audio_transcription
+        if input_audio_noise_reduction is not None:
+            self.session_config['input_audio_noise_reduction'] = input_audio_noise_reduction
         if turn_detection is not None:
             self.session_config['turn_detection'] = turn_detection
         if tools is not None:
@@ -460,60 +479,38 @@ class RealtimeClient(RealtimeEventHandler):
             self.session_config['temperature'] = temperature
         if max_response_output_tokens is not None:
             self.session_config['max_response_output_tokens'] = max_response_output_tokens
-
+        
         # Handle turn_detection special case for VAD
         if turn_detection is not None:
             if turn_detection.get('type') == 'server_vad':
                 self.session_config['turn_detection'] = {
-                    **self.DEFAULT_SERVER_VAD_CONFIG,
+                    **self.default_server_vad_config,
                     **turn_detection,
                 }
-
+        
         # Build tools list from session config and registered tools
         use_tools = []
-
-        for tool_def in self.session_config.get('tools', []):
+        
+        for tool_def in (tools or []):
             definition = {'type': 'function', **tool_def}
             if definition.get('name') in self.tools:
                 raise ValueError(f'Tool "{definition["name"]}" has already been defined')
             use_tools.append(definition)
-
+        
         for name, tool_config in self.tools.items():
             use_tools.append({
                 'type': 'function',
                 **tool_config['definition'],
             })
-
-        # Build session object using flat format (original working format)
-        session: Dict[str, Any] = {}
         
-        if 'modalities' in self.session_config:
-            session['modalities'] = self.session_config['modalities']
-        if 'instructions' in self.session_config:
-            session['instructions'] = self.session_config['instructions']
-        if 'voice' in self.session_config:
-            session['voice'] = self.session_config['voice']
-        if 'input_audio_format' in self.session_config:
-            session['input_audio_format'] = self.session_config['input_audio_format']
-        if 'output_audio_format' in self.session_config:
-            session['output_audio_format'] = self.session_config['output_audio_format']
-        if 'input_audio_transcription' in self.session_config:
-            session['input_audio_transcription'] = self.session_config['input_audio_transcription']
-        if 'turn_detection' in self.session_config:
-            session['turn_detection'] = self.session_config['turn_detection']
-        if use_tools:
-            session['tools'] = use_tools
-        if 'tool_choice' in self.session_config:
-            session['tool_choice'] = self.session_config['tool_choice']
-        if 'temperature' in self.session_config:
-            session['temperature'] = self.session_config['temperature']
-        if 'max_response_output_tokens' in self.session_config:
-            session['max_response_output_tokens'] = self.session_config['max_response_output_tokens']
-
+        # Build session object
+        session = {**self.session_config}
+        session['tools'] = use_tools
+        
         # Send update if connected
         if self.realtime.is_connected():
             self.realtime.send('session.update', {'session': session})
-
+        
         return True
     
     def send_user_message_content(

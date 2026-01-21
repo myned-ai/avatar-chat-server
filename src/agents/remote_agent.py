@@ -7,12 +7,14 @@ Connects to an external agent service via WebSocket and proxies calls/events.
 
 import asyncio
 import json
-import websockets
-from typing import Callable, Optional, Any, Dict
+from collections.abc import Callable
 
-from .base_agent import BaseAgent, ConversationState
+import websockets
+
 from core.config import get_settings
 from core.logger import get_logger
+
+from .base_agent import BaseAgent, ConversationState
 
 logger = get_logger(__name__)
 
@@ -32,19 +34,19 @@ class RemoteAgent(BaseAgent):
         Loads settings from environment variables.
         """
         self._settings = get_settings()
-        self._ws: Optional[websockets.WebSocketServerProtocol] = None
+        self._ws: websockets.WebSocketServerProtocol | None = None
         self._connected = False
         self._state = ConversationState()
         self._event_loop = asyncio.get_event_loop()
 
         # Event callbacks
-        self._on_audio_delta: Optional[Callable] = None
-        self._on_transcript_delta: Optional[Callable] = None
-        self._on_response_start: Optional[Callable] = None
-        self._on_response_end: Optional[Callable] = None
-        self._on_user_transcript: Optional[Callable] = None
-        self._on_interrupted: Optional[Callable] = None
-        self._on_error: Optional[Callable] = None
+        self._on_audio_delta: Callable | None = None
+        self._on_transcript_delta: Callable | None = None
+        self._on_response_start: Callable | None = None
+        self._on_response_end: Callable | None = None
+        self._on_user_transcript: Callable | None = None
+        self._on_interrupted: Callable | None = None
+        self._on_error: Callable | None = None
 
     @property
     def is_connected(self) -> bool:
@@ -58,13 +60,13 @@ class RemoteAgent(BaseAgent):
 
     def set_event_handlers(
         self,
-        on_audio_delta: Optional[Callable] = None,
-        on_transcript_delta: Optional[Callable] = None,
-        on_response_start: Optional[Callable] = None,
-        on_response_end: Optional[Callable] = None,
-        on_user_transcript: Optional[Callable] = None,
-        on_interrupted: Optional[Callable] = None,
-        on_error: Optional[Callable] = None,
+        on_audio_delta: Callable | None = None,
+        on_transcript_delta: Callable | None = None,
+        on_response_start: Callable | None = None,
+        on_response_end: Callable | None = None,
+        on_user_transcript: Callable | None = None,
+        on_interrupted: Callable | None = None,
+        on_error: Callable | None = None,
     ) -> None:
         """
         Set event handler callbacks.
@@ -125,7 +127,7 @@ class RemoteAgent(BaseAgent):
             if self._on_error:
                 await self._on_error({"error": str(e)})
 
-    async def _handle_remote_event(self, event: Dict) -> None:
+    async def _handle_remote_event(self, event: dict) -> None:
         """Handle events received from remote agent."""
         event_type = event.get("type")
 
@@ -134,6 +136,7 @@ class RemoteAgent(BaseAgent):
             audio_data = event.get("data", "")
             if isinstance(audio_data, str):
                 import base64
+
                 audio_bytes = base64.b64decode(audio_data)
             else:
                 audio_bytes = audio_data
@@ -168,9 +171,7 @@ class RemoteAgent(BaseAgent):
             self._state.session_id = event.get("session_id")
             self._state.is_responding = True
             self._state.transcript_buffer = ""
-        elif event_type == "response_end":
-            self._state.is_responding = False
-        elif event_type == "interrupted":
+        elif event_type == "response_end" or event_type == "interrupted":
             self._state.is_responding = False
 
     def send_text_message(self, text: str) -> None:
@@ -197,11 +198,12 @@ class RemoteAgent(BaseAgent):
             return
 
         import base64
-        audio_b64 = base64.b64encode(audio_bytes).decode('utf-8')
+
+        audio_b64 = base64.b64encode(audio_bytes).decode("utf-8")
         message = {"type": "audio", "data": audio_b64}
         asyncio.create_task(self._send_message(message))
 
-    async def _send_message(self, message: Dict) -> None:
+    async def _send_message(self, message: dict) -> None:
         """Send a message to the remote agent."""
         try:
             await self._ws.send(json.dumps(message))

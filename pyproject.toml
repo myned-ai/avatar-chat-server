@@ -32,11 +32,13 @@ dependencies = [
     "google-genai>=1.0.0",  # Google GenAI SDK for Gemini Live API
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "pytest>=7.0.0",
     "pytest-asyncio>=0.21.0",
     "httpx>=0.25.0",
+    "ruff>=0.8.0",
+    "ty>=0.0.1a6",
 ]
 
 [build-system]
@@ -45,3 +47,71 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src"]
+
+# ==================== Ruff Configuration ====================
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+src = ["src"]
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # Pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "UP",     # pyupgrade
+    "ARG",    # flake8-unused-arguments
+    "SIM",    # flake8-simplify
+    "TCH",    # flake8-type-checking
+    "PTH",    # flake8-use-pathlib
+    "RUF",    # Ruff-specific rules
+]
+ignore = [
+    "E501",   # Line too long (handled by formatter)
+    "E402",   # Module level import not at top of file (needed for warnings filter)
+    "B008",   # Do not perform function calls in argument defaults (FastAPI Depends)
+    "B904",   # Within an except clause, raise exceptions with `raise ... from err`
+    "ARG001", # Unused function argument (common in event handlers)
+    "ARG002", # Unused method argument
+    "RUF006", # Store reference to asyncio.create_task (fire-and-forget is intentional)
+    "RUF012", # Mutable class attributes should use ClassVar (constants are fine)
+    "SIM105", # contextlib.suppress suggestion (explicit try/except is clearer)
+    "SIM108", # Ternary operator suggestion (multi-line if/else is clearer)
+    "SIM102", # Nested if statements (sometimes clearer for readability)
+    "W293",   # Blank line contains whitespace (in docstrings)
+    "RUF022", # __all__ not sorted (grouping by category is intentional)
+    "PTH123", # Path.open() suggestion (open() is fine)
+    "RUF013", # Implicit Optional type hint
+    "TC002",  # Move import into type-checking block
+    "B028",   # No stacklevel in warnings.warn
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]  # Allow unused imports in __init__.py
+
+[tool.ruff.lint.isort]
+known-first-party = ["core", "services", "agents", "routers", "auth", "wav2arkit"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+# ==================== Ty Configuration ====================
+[tool.ty.environment]
+python-version = "3.10"
+
+[tool.ty.rules]
+# Disable rules that produce false positives with pydantic-settings and third-party libs
+missing-argument = "ignore"            # pydantic-settings loads from env vars
+invalid-argument-type = "ignore"       # Third-party SDK type stub issues
+unresolved-import = "ignore"           # websockets type stub issues
+unresolved-attribute = "ignore"        # Third-party module attributes
+not-iterable = "ignore"                # websockets async iteration
+possibly-missing-attribute = "ignore"  # Optional types with None checks
+not-subscriptable = "ignore"           # ONNX tensor subscripting
+invalid-parameter-default = "ignore"   # Optional params with None defaults

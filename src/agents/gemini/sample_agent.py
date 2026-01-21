@@ -7,17 +7,20 @@ This is the sample agent that ships with the chat-server.
 
 import asyncio
 import time
-from typing import Callable, Optional, Any
-import numpy as np
+from collections.abc import Callable
+from typing import Any
 
-from ..base_agent import BaseAgent, ConversationState
-from .config import get_gemini_settings
-from core.config import get_settings
-from core.logger import get_logger
+import numpy as np
 
 # Import Gemini SDK
 from google import genai
 from google.genai import types
+
+from core.config import get_settings
+from core.logger import get_logger
+
+from ..base_agent import BaseAgent, ConversationState
+from .config import get_gemini_settings
 
 logger = get_logger(__name__)
 
@@ -38,26 +41,26 @@ class SampleGeminiAgent(BaseAgent):
         """
         self._settings = get_settings()  # Core settings (assistant_instructions, debug)
         self._gemini_settings = get_gemini_settings()  # Gemini-specific settings
-        self._client: Optional[genai.Client] = None
-        self._session: Optional[Any] = None
+        self._client: genai.Client | None = None
+        self._session: Any | None = None
         self._connected = False
         self._state = ConversationState()
 
         # Event callbacks
-        self._on_audio_delta: Optional[Callable] = None
-        self._on_transcript_delta: Optional[Callable] = None
-        self._on_response_start: Optional[Callable] = None
-        self._on_response_end: Optional[Callable] = None
-        self._on_user_transcript: Optional[Callable] = None
-        self._on_interrupted: Optional[Callable] = None
-        self._on_error: Optional[Callable] = None
+        self._on_audio_delta: Callable | None = None
+        self._on_transcript_delta: Callable | None = None
+        self._on_response_start: Callable | None = None
+        self._on_response_end: Callable | None = None
+        self._on_user_transcript: Callable | None = None
+        self._on_interrupted: Callable | None = None
+        self._on_error: Callable | None = None
 
         # Interruption handling
         self._response_cancelled = False
-        self._current_turn_id: Optional[str] = None
+        self._current_turn_id: str | None = None
 
         # Background tasks
-        self._receive_task: Optional[asyncio.Task] = None
+        self._receive_task: asyncio.Task | None = None
         self._session_lock = asyncio.Lock()
 
     @property
@@ -72,13 +75,13 @@ class SampleGeminiAgent(BaseAgent):
 
     def set_event_handlers(
         self,
-        on_audio_delta: Optional[Callable] = None,
-        on_transcript_delta: Optional[Callable] = None,
-        on_response_start: Optional[Callable] = None,
-        on_response_end: Optional[Callable] = None,
-        on_user_transcript: Optional[Callable] = None,
-        on_interrupted: Optional[Callable] = None,
-        on_error: Optional[Callable] = None,
+        on_audio_delta: Callable | None = None,
+        on_transcript_delta: Callable | None = None,
+        on_response_start: Callable | None = None,
+        on_response_end: Callable | None = None,
+        on_user_transcript: Callable | None = None,
+        on_interrupted: Callable | None = None,
+        on_error: Callable | None = None,
     ) -> None:
         """
         Set event handler callbacks.
@@ -120,17 +123,13 @@ class SampleGeminiAgent(BaseAgent):
             # Configure thinking mode (for models that support it)
             thinking_config = None
             if self._gemini_settings.gemini_thinking_budget != 0:
-                thinking_config = types.ThinkingConfig(
-                    thinking_budget=self._gemini_settings.gemini_thinking_budget
-                )
+                thinking_config = types.ThinkingConfig(thinking_budget=self._gemini_settings.gemini_thinking_budget)
                 logger.info(f"Thinking mode enabled (budget: {self._gemini_settings.gemini_thinking_budget})")
 
             # Configure context window compression for longer sessions
             context_window_compression = None
             if self._gemini_settings.gemini_context_window_compression:
-                context_window_compression = types.ContextWindowCompressionConfig(
-                    sliding_window=types.SlidingWindow()
-                )
+                context_window_compression = types.ContextWindowCompressionConfig(sliding_window=types.SlidingWindow())
                 logger.info("Context window compression enabled (longer sessions)")
 
             # Configure proactivity
@@ -144,14 +143,10 @@ class SampleGeminiAgent(BaseAgent):
                 response_modalities=["AUDIO"],
                 speech_config=types.SpeechConfig(
                     voice_config=types.VoiceConfig(
-                        prebuilt_voice_config=types.PrebuiltVoiceConfig(
-                            voice_name=self._gemini_settings.gemini_voice
-                        )
+                        prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name=self._gemini_settings.gemini_voice)
                     )
                 ),
-                system_instruction=types.Content(
-                    parts=[types.Part(text=self._settings.assistant_instructions)]
-                ),
+                system_instruction=types.Content(parts=[types.Part(text=self._settings.assistant_instructions)]),
                 realtime_input_config=types.RealtimeInputConfig(
                     automatic_activity_detection=types.AutomaticActivityDetection(
                         disabled=False,
@@ -164,9 +159,7 @@ class SampleGeminiAgent(BaseAgent):
                 input_audio_transcription=types.AudioTranscriptionConfig(),
                 output_audio_transcription=types.AudioTranscriptionConfig(),
                 tools=tools if tools else None,
-                generation_config=types.GenerationConfig(
-                    thinking_config=thinking_config
-                ) if thinking_config else None,
+                generation_config=types.GenerationConfig(thinking_config=thinking_config) if thinking_config else None,
                 context_window_compression=context_window_compression,
                 proactivity=proactivity,
             )
@@ -182,7 +175,9 @@ class SampleGeminiAgent(BaseAgent):
             # Start listening for responses in background
             self._receive_task = asyncio.create_task(self._receive_loop())
 
-            logger.info(f"Connected to Gemini Live API (model: {self._gemini_settings.gemini_model}, voice: {self._gemini_settings.gemini_voice})")
+            logger.info(
+                f"Connected to Gemini Live API (model: {self._gemini_settings.gemini_model}, voice: {self._gemini_settings.gemini_voice})"
+            )
 
         except Exception as e:
             logger.error(f"Failed to connect to Gemini Live API: {e}")
@@ -215,21 +210,21 @@ class SampleGeminiAgent(BaseAgent):
             # Skip processing if already cancelled (from previous interruption)
             if self._response_cancelled:
                 # But still check for new response start to reset the flag
-                server_content = getattr(response, 'server_content', None)
+                server_content = getattr(response, "server_content", None)
                 if server_content:
-                    model_turn = getattr(server_content, 'model_turn', None)
+                    model_turn = getattr(server_content, "model_turn", None)
                     if model_turn and not self._state.is_responding:
                         # New response starting, reset cancelled flag
                         self._response_cancelled = False
                     else:
                         return  # Skip processing cancelled response data
 
-            server_content = getattr(response, 'server_content', None)
+            server_content = getattr(response, "server_content", None)
             if not server_content:
                 return
 
             # Check for interruption FIRST - this must be handled immediately
-            if getattr(server_content, 'interrupted', False):
+            if getattr(server_content, "interrupted", False):
                 logger.info("Gemini detected interruption - stopping immediately")
                 # Set cancelled flag FIRST to stop any pending processing
                 self._response_cancelled = True
@@ -241,7 +236,7 @@ class SampleGeminiAgent(BaseAgent):
                 return
 
             # Handle model turn (audio/text response)
-            model_turn = getattr(server_content, 'model_turn', None)
+            model_turn = getattr(server_content, "model_turn", None)
             if model_turn:
                 # Signal response start if this is a new turn
                 if not self._state.is_responding:
@@ -254,21 +249,21 @@ class SampleGeminiAgent(BaseAgent):
                         await self._on_response_start(self._state.session_id)
 
                 # Process parts (audio and text)
-                parts = getattr(model_turn, 'parts', [])
+                parts = getattr(model_turn, "parts", [])
                 for part in parts:
                     if self._response_cancelled:
                         break
 
                     # Handle audio data
-                    inline_data = getattr(part, 'inline_data', None)
+                    inline_data = getattr(part, "inline_data", None)
                     if inline_data:
-                        audio_data = getattr(inline_data, 'data', None)
+                        audio_data = getattr(inline_data, "data", None)
                         if audio_data and isinstance(audio_data, bytes):
                             if self._on_audio_delta and not self._response_cancelled:
                                 await self._on_audio_delta(audio_data)
 
                     # Handle text data
-                    text = getattr(part, 'text', None)
+                    text = getattr(part, "text", None)
                     if text:
                         self._state.transcript_buffer += text
                         if self._on_transcript_delta and not self._response_cancelled:
@@ -276,24 +271,24 @@ class SampleGeminiAgent(BaseAgent):
                             await self._on_transcript_delta(text, "assistant", self._current_turn_id, None)
 
             # Handle output transcription (assistant's speech as text)
-            output_transcription = getattr(server_content, 'output_transcription', None)
+            output_transcription = getattr(server_content, "output_transcription", None)
             if output_transcription:
-                text = getattr(output_transcription, 'text', '')
+                text = getattr(output_transcription, "text", "")
                 if text:
                     self._state.transcript_buffer += text
                     if self._on_transcript_delta and not self._response_cancelled:
                         await self._on_transcript_delta(text, "assistant", self._current_turn_id, None)
 
             # Handle input transcription (user's speech as text)
-            input_transcription = getattr(server_content, 'input_transcription', None)
+            input_transcription = getattr(server_content, "input_transcription", None)
             if input_transcription:
-                text = getattr(input_transcription, 'text', '')
+                text = getattr(input_transcription, "text", "")
                 if text and self._on_user_transcript:
                     logger.debug(f"User: {text}")
                     await self._on_user_transcript(text)
 
             # Check for turn completion
-            turn_complete = getattr(server_content, 'turn_complete', False)
+            turn_complete = getattr(server_content, "turn_complete", False)
             if turn_complete and self._state.is_responding:
                 transcript = self._state.transcript_buffer
                 self._state.is_responding = False
@@ -332,10 +327,7 @@ class SampleGeminiAgent(BaseAgent):
         try:
             async with self._session_lock:
                 if self._session:
-                    await self._session.send(
-                        input=text,
-                        end_of_turn=True
-                    )
+                    await self._session.send(input=text, end_of_turn=True)
         except Exception as e:
             logger.error(f"Error sending text: {e}")
 
@@ -371,10 +363,7 @@ class SampleGeminiAgent(BaseAgent):
             async with self._session_lock:
                 if self._session:
                     await self._session.send_realtime_input(
-                        audio=types.Blob(
-                            data=audio_bytes,
-                            mime_type="audio/pcm;rate=16000"
-                        )
+                        audio=types.Blob(data=audio_bytes, mime_type="audio/pcm;rate=16000")
                     )
         except Exception as e:
             logger.error(f"Error sending audio: {e}")

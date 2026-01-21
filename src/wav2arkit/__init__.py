@@ -6,10 +6,10 @@ using ONNX runtime for CPU-optimized inference.
 """
 
 from .inference import Wav2ArkitInference
-from .utils import ARKitBlendShape, DEFAULT_CONTEXT
+from .utils import DEFAULT_CONTEXT, ARKitBlendShape
 
 __all__ = [
-    'Wav2ArkitInference',
-    'ARKitBlendShape',
-    'DEFAULT_CONTEXT',
+    "DEFAULT_CONTEXT",
+    "ARKitBlendShape",
+    "Wav2ArkitInference",
 ]

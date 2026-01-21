@@ -5,11 +5,11 @@ Provides Wav2ArkitInference class for CPU-optimized inference
 using the combined wav2arkit ONNX model.
 """
 
-import numpy as np
 import librosa
-from typing import Dict, Optional, Tuple
+import numpy as np
 
 from core.logger import get_logger
+
 from .utils import ARKitBlendShape
 
 logger = get_logger(__name__)
@@ -23,13 +23,7 @@ class Wav2ArkitInference:
     CPU inference from raw audio to ARKit blendshapes.
     """
 
-    def __init__(
-            self,
-            model_path: str,
-            audio_sr: int = 16000,
-            fps: float = 30.0,
-            debug: bool = False
-    ):
+    def __init__(self, model_path: str, audio_sr: int = 16000, fps: float = 30.0, debug: bool = False):
         """
         Initialize the Wav2Arkit inference engine.
 
@@ -49,10 +43,7 @@ class Wav2ArkitInference:
         logger.info(f"Loading Wav2Arkit model from {model_path}...")
 
         # Load ONNX model
-        self.session = ort.InferenceSession(
-            model_path,
-            providers=["CPUExecutionProvider"]
-        )
+        self.session = ort.InferenceSession(model_path, providers=["CPUExecutionProvider"])
 
         # Get input/output names
         self.input_name = self.session.get_inputs()[0].name
@@ -62,7 +53,7 @@ class Wav2ArkitInference:
             logger.debug(f"Model input: {self.input_name}, output: {self.output_name}")
 
         # Streaming context
-        self.context: Optional[Dict] = None
+        self.context: dict | None = None
 
         # Warmup: trigger ONNX inference and Numba JIT compilation
         self._warmup()
@@ -106,11 +97,7 @@ class Wav2ArkitInference:
         except Exception as e:
             logger.warning(f"Model warmup failed (non-critical): {e}")
 
-    def infer_streaming(
-            self,
-            audio: np.ndarray,
-            sample_rate: float
-    ) -> Tuple[Dict, Dict]:
+    def infer_streaming(self, audio: np.ndarray, sample_rate: float) -> tuple[dict, dict]:
         """
         Process a chunk of streaming audio and generate blendshapes.
 
@@ -136,10 +123,7 @@ class Wav2ArkitInference:
                 audio = audio[np.newaxis, :]  # Add batch dimension: (1, seq_len)
 
             # Run inference (audio -> blendshapes in one pass)
-            outputs = self.session.run(
-                [self.output_name],
-                {self.input_name: audio}
-            )
+            outputs = self.session.run([self.output_name], {self.input_name: audio})
             blendshapes = outputs[0]  # Shape: (1, seq_len, 52)
 
             # Remove batch dimension
@@ -153,26 +137,17 @@ class Wav2ArkitInference:
             if self.debug:
                 logger.debug(f"Inference: {len(audio[0])} samples -> {expression.shape[0]} frames")
 
-            return {
-                "code": 0,
-                "expression": expression,
-                "headpose": None
-            }, {}
+            return {"code": 0, "expression": expression, "headpose": None}, {}
 
         except Exception as e:
             logger.error(f"Inference error: {e}")
-            return {
-                "code": -1,
-                "error": str(e),
-                "expression": None,
-                "headpose": None
-            }, {}
+            return {"code": -1, "error": str(e), "expression": None, "headpose": None}, {}
 
     def get_blendshape_names(self) -> list:
         """Return the list of ARKit blendshape names."""
         return ARKitBlendShape.copy()
 
-    def weights_to_dict(self, weights: np.ndarray) -> Dict[str, float]:
+    def weights_to_dict(self, weights: np.ndarray) -> dict[str, float]:
         """
         Convert a single frame of weights to a dictionary.
 

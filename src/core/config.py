@@ -9,8 +9,8 @@ Vendor-specific settings (OpenAI, Gemini) are managed by their respective agents
 """
 
 from functools import lru_cache
-from typing import Optional
 from pathlib import Path
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Get the directory containing this file, then go up to avatar_chat_server/
@@ -20,11 +20,11 @@ _CONFIG_DIR = Path(__file__).parent.parent.parent
 class Settings(BaseSettings):
     """
     Application settings loaded from environment variables.
-    
+
     All settings can be overridden via environment variables or .env file.
     This class contains only VENDOR-AGNOSTIC settings.
     """
-    
+
     model_config = SettingsConfigDict(
         env_file=_CONFIG_DIR / ".env",
         env_file_encoding="utf-8",
@@ -33,13 +33,11 @@ class Settings(BaseSettings):
     )
 
     # Assistant Configuration (shared across all agents)
-    assistant_instructions: str = (
-        "You are a helpful and friendly AI assistant. Be concise in your responses."
-    )
-    
+    assistant_instructions: str = "You are a helpful and friendly AI assistant. Be concise in your responses."
+
     # Wav2Arkit Model Configuration (ONNX CPU-only)
     onnx_model_path: str = "./pretrained_models/wav2arkit_cpu.onnx"
-    
+
     # Server Configuration
     server_host: str = "0.0.0.0"
     server_port: int = 8080
@@ -51,17 +49,17 @@ class Settings(BaseSettings):
     auth_token_ttl: int = 3600
     auth_allowed_origins: str = "http://localhost:5173,http://localhost:5174,http://localhost:5175"
     auth_enable_rate_limiting: bool = True
-    
+
     # Agent Configuration
     agent_type: str = "sample_openai"  # "sample_openai", "sample_gemini", "remote"
-    agent_url: Optional[str] = None  # URL for remote agent (e.g., "ws://agent-service:8080/ws")
-    
+    agent_url: str | None = None  # URL for remote agent (e.g., "ws://agent-service:8080/ws")
+
     # Audio Configuration (vendor-agnostic)
     # Note: Widget sends 24kHz audio. This is used for Wav2Arkit processing.
-    input_sample_rate: int = 24000      # Input audio sample rate (widget format)
+    input_sample_rate: int = 24000  # Input audio sample rate (widget format)
     wav2arkit_sample_rate: int = 16000  # Wav2Arkit model expects 16kHz
-    blendshape_fps: int = 30            # Output blendshape frame rate
-    audio_chunk_duration: float = 0.5   # 0.5 second chunks for Wav2Arkit processing
+    blendshape_fps: int = 30  # Output blendshape frame rate
+    audio_chunk_duration: float = 0.5  # 0.5 second chunks for Wav2Arkit processing
 
 
 class AudioConstants:
@@ -83,7 +81,7 @@ class AudioConstants:
 def get_settings() -> Settings:
     """
     Get cached application settings.
-    
+
     Uses lru_cache to ensure settings are only loaded once
     and reused throughout the application lifecycle.
     """
@@ -101,4 +99,4 @@ def get_allowed_origins() -> list[str]:
     settings = get_settings()
     if not settings.auth_allowed_origins:
         return []
-    return [origin.strip() for origin in settings.auth_allowed_origins.split(',') if origin.strip()]
+    return [origin.strip() for origin in settings.auth_allowed_origins.split(",") if origin.strip()]

@@ -6,12 +6,13 @@ Handles audio-to-blendshape conversion for facial animation.
 Uses ONNX runtime for CPU-optimized inference.
 """
 
-from typing import Dict, List, Optional, Tuple, Any
-from pathlib import Path
 import base64
+from pathlib import Path
+from typing import Any
+
 import numpy as np
 
-from core.config import Settings, AudioConstants, get_settings, get_audio_constants
+from core.config import AudioConstants, Settings, get_audio_constants, get_settings
 from core.logger import get_logger
 
 logger = get_logger(__name__)
@@ -35,7 +36,7 @@ class Wav2ArkitService:
         """
         self.settings = settings
         self.audio_constants = audio_constants
-        self._inference: Optional[Any] = None
+        self._inference: Any | None = None
         self._available = False
 
         self._initialize_model()
@@ -112,7 +113,7 @@ class Wav2ArkitService:
         self,
         audio_data: np.ndarray,
         sample_rate: int,
-    ) -> Tuple[Dict, Optional[Any]]:
+    ) -> tuple[dict, Any | None]:
         """
         Run streaming inference on audio chunk.
 
@@ -129,7 +130,7 @@ class Wav2ArkitService:
 
         return self._inference.infer_streaming(audio_data, sample_rate=sample_rate)
 
-    def weights_to_dict(self, frame_weights: np.ndarray) -> Dict[str, float]:
+    def weights_to_dict(self, frame_weights: np.ndarray) -> dict[str, float]:
         """
         Convert frame weights array to named dictionary.
 
@@ -147,7 +148,7 @@ class Wav2ArkitService:
     def process_audio_chunk(
         self,
         audio_bytes: bytes,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Process audio chunk and return paired audio+blendshape frames.
 
@@ -199,21 +200,23 @@ class Wav2ArkitService:
                 frame_audio = frame_audio + bytes(bytes_per_frame - len(frame_audio))
 
             # Pre-encode base64 here to avoid encoding in broadcast loop (30 FPS)
-            frames.append({
-                "weights": weights_dict,
-                "audio": base64.b64encode(frame_audio).decode("utf-8"),
-            })
+            frames.append(
+                {
+                    "weights": weights_dict,
+                    "audio": base64.b64encode(frame_audio).decode("utf-8"),
+                }
+            )
 
         return frames
 
 
 # Singleton instance (created on first import if needed)
-_wav2arkit_service: Optional[Wav2ArkitService] = None
+_wav2arkit_service: Wav2ArkitService | None = None
 
 
 def get_wav2arkit_service(
-    settings: Optional[Settings] = None,
-    audio_constants: Optional[AudioConstants] = None,
+    settings: Settings | None = None,
+    audio_constants: AudioConstants | None = None,
 ) -> Wav2ArkitService:
     """
     Get or create the Wav2ArkitService singleton.

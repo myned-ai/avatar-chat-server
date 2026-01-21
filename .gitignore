@@ -101,6 +101,9 @@ site/
 .dmypy.json
 dmypy.json
 
+# ruff
+.ruff_cache/
+
 # Jupyter Notebook
 .ipynb_checkpoints
 

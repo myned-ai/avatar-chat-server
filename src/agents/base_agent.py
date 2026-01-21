@@ -5,16 +5,17 @@ Defines the interface for conversational AI agents.
 Supports both local (in-process) and remote (inter-container) implementations.
 """
 
-import asyncio
 from abc import ABC, abstractmethod
-from typing import Callable, Optional, Any
+from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
 class ConversationState:
     """State tracking for an active conversation."""
-    session_id: Optional[str] = None
+
+    session_id: str | None = None
     is_responding: bool = False
     transcript_buffer: str = ""
     audio_done: bool = False  # Track if response audio is complete
@@ -43,13 +44,13 @@ class BaseAgent(ABC):
     @abstractmethod
     def set_event_handlers(
         self,
-        on_audio_delta: Optional[Callable[[bytes], None]] = None,
-        on_transcript_delta: Optional[Callable[[str], None]] = None,
-        on_response_start: Optional[Callable[[str], None]] = None,
-        on_response_end: Optional[Callable[[str], None]] = None,
-        on_user_transcript: Optional[Callable[[str], None]] = None,
-        on_interrupted: Optional[Callable[[], None]] = None,
-        on_error: Optional[Callable[[Any], None]] = None,
+        on_audio_delta: Callable[[bytes], None] | None = None,
+        on_transcript_delta: Callable[[str], None] | None = None,
+        on_response_start: Callable[[str], None] | None = None,
+        on_response_end: Callable[[str], None] | None = None,
+        on_user_transcript: Callable[[str], None] | None = None,
+        on_interrupted: Callable[[], None] | None = None,
+        on_error: Callable[[Any], None] | None = None,
     ) -> None:
         """
         Set event handler callbacks.

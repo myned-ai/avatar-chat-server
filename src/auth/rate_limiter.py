@@ -10,13 +10,13 @@ Prevents abuse and ensures fair usage across all clients.
 
 import time
 from collections import defaultdict
-from typing import Dict, Tuple, Optional
 from dataclasses import dataclass, field
 
 
 @dataclass
 class TokenBucket:
     """Token bucket for rate limiting"""
+
     capacity: int
     refill_rate: float  # tokens per second
     tokens: float = field(init=False)
@@ -53,7 +53,7 @@ class RateLimiter:
         domain_capacity: int = 100,
         domain_refill_rate: float = 10.0,
         session_capacity: int = 30,
-        session_refill_rate: float = 5.0
+        session_refill_rate: float = 5.0,
     ):
         """
         Initialize Rate Limiter
@@ -70,16 +70,16 @@ class RateLimiter:
         self.session_refill_rate = session_refill_rate
 
         # Domain buckets: origin -> TokenBucket
-        self.domain_buckets: Dict[str, TokenBucket] = defaultdict(
+        self.domain_buckets: dict[str, TokenBucket] = defaultdict(
             lambda: TokenBucket(self.domain_capacity, self.domain_refill_rate)
         )
 
         # Session buckets: session_id -> TokenBucket
-        self.session_buckets: Dict[str, TokenBucket] = defaultdict(
+        self.session_buckets: dict[str, TokenBucket] = defaultdict(
             lambda: TokenBucket(self.session_capacity, self.session_refill_rate)
         )
 
-    def check_rate_limit(self, origin: str, session_id: str) -> Tuple[bool, Optional[str]]:
+    def check_rate_limit(self, origin: str, session_id: str) -> tuple[bool, str | None]:
         """
         Check if request should be rate limited
 
@@ -117,11 +117,11 @@ class RateLimiter:
         for session_id in sessions_to_remove:
             del self.session_buckets[session_id]
 
-    def get_stats(self) -> Dict:
+    def get_stats(self) -> dict:
         """Get rate limiter statistics"""
         return {
             "domain_buckets": len(self.domain_buckets),
             "session_buckets": len(self.session_buckets),
             "domain_capacity": self.domain_capacity,
-            "session_capacity": self.session_capacity
+            "session_capacity": self.session_capacity,
         }

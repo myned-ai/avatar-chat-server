@@ -7,10 +7,9 @@ optimized for realtime communication performance.
 
 import logging
 import sys
-from typing import Optional
 
 # Global log level - can be controlled via environment
-_log_level: Optional[int] = None
+_log_level: int | None = None
 
 
 def setup_logging(level: str = "INFO") -> None:

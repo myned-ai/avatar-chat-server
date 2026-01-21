@@ -9,25 +9,18 @@ Authentication Middleware
 """
 
 import logging
-from typing import List, Optional
-from fastapi import WebSocket, HTTPException, status
-from fastapi.responses import JSONResponse
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.requests import Request
 
-from .token_manager import TokenManager
+from fastapi import WebSocket
+
 from .rate_limiter import RateLimiter
+from .token_manager import TokenManager
 
 logger = logging.getLogger(__name__)
 
 
 class AuthMiddleware:
     def __init__(
-        self,
-        allowed_origins: List[str],
-        secret_key: str,
-        token_ttl: int = 3600,
-        enable_rate_limiting: bool = True
+        self, allowed_origins: list[str], secret_key: str, token_ttl: int = 3600, enable_rate_limiting: bool = True
     ):
         """
         Initialize Authentication Middleware
@@ -44,7 +37,7 @@ class AuthMiddleware:
 
         logger.info(f"AuthMiddleware initialized with {len(allowed_origins)} allowed origins")
 
-    def validate_origin(self, origin: Optional[str]) -> tuple[bool, Optional[str]]:
+    def validate_origin(self, origin: str | None) -> tuple[bool, str | None]:
         """
         Validate request origin against whitelist
 
@@ -68,11 +61,7 @@ class AuthMiddleware:
 
         return True, None
 
-    async def authenticate_websocket(
-        self,
-        websocket: WebSocket,
-        session_id: str
-    ) -> tuple[bool, Optional[str]]:
+    async def authenticate_websocket(self, websocket: WebSocket, session_id: str) -> tuple[bool, str | None]:
         """
         Authenticate WebSocket connection
 
@@ -120,7 +109,7 @@ class AuthMiddleware:
 
         return True, None
 
-    def generate_token_for_origin(self, origin: str) -> Optional[str]:
+    def generate_token_for_origin(self, origin: str) -> str | None:
         """
         Generate authentication token for a given origin
 
@@ -144,10 +133,7 @@ class AuthMiddleware:
 
     def get_stats(self) -> dict:
         """Get authentication statistics"""
-        stats = {
-            "allowed_origins": len(self.allowed_origins),
-            "rate_limiter_enabled": self.rate_limiter is not None
-        }
+        stats = {"allowed_origins": len(self.allowed_origins), "rate_limiter_enabled": self.rate_limiter is not None}
 
         if self.rate_limiter:
             stats["rate_limiter"] = self.rate_limiter.get_stats()

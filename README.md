@@ -28,6 +28,7 @@ Real-time voice-to-avatar interaction server combining AI agents (OpenAI Realtim
 - [Docker Usage](#docker-usage)
 - [Authentication](#authentication)
 - [Performance Best Practices](#performance-best-practices)
+- [Development](#development)
 - [License](#license)
 
 
@@ -390,6 +391,63 @@ Set `AGENT_TYPE=remote` and `AGENT_URL=ws://your-agent-service/ws` for remote ag
 3. Restart the server
 
 The core chat-server (WebSocket handling, blendshape generation) remains unchanged.
+
+## Development
+
+### Install Dev Dependencies
+
+```bash
+uv sync --group dev
+```
+
+### Code Quality Tools
+
+This project uses [Ruff](https://docs.astral.sh/ruff/) for linting and formatting, and [ty](https://github.com/astral-sh/ty) for static type checking.
+
+#### Linting
+
+```bash
+# Check for linting issues
+uv run ruff check src/
+
+# Auto-fix linting issues
+uv run ruff check src/ --fix
+
+# Fix with unsafe fixes (use with caution)
+uv run ruff check src/ --fix --unsafe-fixes
+```
+
+#### Formatting
+
+```bash
+# Check formatting
+uv run ruff format src/ --check
+
+# Format code
+uv run ruff format src/
+```
+
+#### Type Checking
+
+```bash
+# Run static type analysis
+uv run ty check src/
+```
+
+#### Run All Checks
+
+```bash
+# Lint, format, and type check
+uv run ruff check src/ --fix && uv run ruff format src/ && uv run ty check src/
+```
+
+### Running Tests
+
+```bash
+uv run pytest
+```
+
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 

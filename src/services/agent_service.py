@@ -5,13 +5,11 @@ Provides agent instances based on configuration.
 Supports local sample agents and remote agents.
 """
 
-from typing import Optional
-
-from agents import BaseAgent, SampleOpenAIAgent, SampleGeminiAgent, RemoteAgent
+from agents import BaseAgent, RemoteAgent, SampleGeminiAgent, SampleOpenAIAgent
 from core.config import get_settings
 
 # Global agent instance
-_agent: Optional[BaseAgent] = None
+_agent: BaseAgent | None = None
 
 
 def get_agent() -> BaseAgent:

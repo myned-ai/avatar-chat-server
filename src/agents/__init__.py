@@ -13,14 +13,14 @@ Remote Agent:
 """
 
 from .base_agent import BaseAgent, ConversationState
-from .openai import SampleOpenAIAgent
 from .gemini import SampleGeminiAgent
+from .openai import SampleOpenAIAgent
 from .remote_agent import RemoteAgent
 
 __all__ = [
     "BaseAgent",
     "ConversationState",
-    "SampleOpenAIAgent",
-    "SampleGeminiAgent",
     "RemoteAgent",
+    "SampleGeminiAgent",
+    "SampleOpenAIAgent",
 ]

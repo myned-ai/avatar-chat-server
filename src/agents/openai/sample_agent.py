@@ -7,12 +7,14 @@ This is the sample agent that ships with the chat-server.
 
 import asyncio
 import time
-from typing import Callable, Dict, Optional, Any
+from collections.abc import Callable
+from typing import Any
+
+from core.config import get_settings
+from core.logger import get_logger
 
 from ..base_agent import BaseAgent, ConversationState
 from .config import get_openai_settings
-from core.config import get_settings
-from core.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -33,21 +35,21 @@ class SampleOpenAIAgent(BaseAgent):
         """
         self._settings = get_settings()  # Core settings (assistant_instructions, debug)
         self._openai_settings = get_openai_settings()  # OpenAI-specific settings
-        self._client: Optional[Any] = None
+        self._client: Any | None = None
         self._connected = False
         self._state = ConversationState()
 
         # Event callbacks (set by the router)
-        self._on_audio_delta: Optional[Callable] = None
-        self._on_transcript_delta: Optional[Callable] = None
-        self._on_response_start: Optional[Callable] = None
-        self._on_response_end: Optional[Callable] = None
-        self._on_user_transcript: Optional[Callable] = None
-        self._on_interrupted: Optional[Callable] = None
-        self._on_error: Optional[Callable] = None
+        self._on_audio_delta: Callable | None = None
+        self._on_transcript_delta: Callable | None = None
+        self._on_response_start: Callable | None = None
+        self._on_response_end: Callable | None = None
+        self._on_user_transcript: Callable | None = None
+        self._on_interrupted: Callable | None = None
+        self._on_error: Callable | None = None
 
         # Current response item ID for cancellation
-        self._current_item_id: Optional[str] = None
+        self._current_item_id: str | None = None
         self._response_cancelled: bool = False
 
     @property
@@ -62,13 +64,13 @@ class SampleOpenAIAgent(BaseAgent):
 
     def set_event_handlers(
         self,
-        on_audio_delta: Optional[Callable] = None,
-        on_transcript_delta: Optional[Callable] = None,
-        on_response_start: Optional[Callable] = None,
-        on_response_end: Optional[Callable] = None,
-        on_user_transcript: Optional[Callable] = None,
-        on_interrupted: Optional[Callable] = None,
-        on_error: Optional[Callable] = None,
+        on_audio_delta: Callable | None = None,
+        on_transcript_delta: Callable | None = None,
+        on_response_start: Callable | None = None,
+        on_response_end: Callable | None = None,
+        on_user_transcript: Callable | None = None,
+        on_interrupted: Callable | None = None,
+        on_error: Callable | None = None,
     ) -> None:
         """
         Set event handler callbacks.
@@ -113,30 +115,47 @@ class SampleOpenAIAgent(BaseAgent):
         await self._client.wait_for_session_created()
 
         # Build VAD/turn detection config based on settings
+        # See: https://github.com/openai/openai-realtime-agents for reference values
         turn_detection = {
-            "type": "server_vad",
+            "type": self._openai_settings.openai_vad_type,
             "threshold": self._openai_settings.openai_vad_threshold,
-            "prefix_padding_ms": 300,
+            "prefix_padding_ms": self._openai_settings.openai_vad_prefix_padding_ms,
             "silence_duration_ms": self._openai_settings.openai_vad_silence_duration_ms,
+            "create_response": True,  # Auto-generate response when user stops speaking
         }
 
+        # Build transcription config
+        transcription_config = {
+            "model": self._openai_settings.openai_transcription_model,
+        }
+        # Add language if specified (helps reduce foreign language hallucinations)
+        if self._openai_settings.openai_transcription_language:
+            transcription_config["language"] = self._openai_settings.openai_transcription_language
+
         # Configure session using original flat format
-        self._client.update_session(
-            instructions=self._settings.assistant_instructions,
-            modalities=["text", "audio"],
-            voice=self._openai_settings.openai_voice,
-            input_audio_format="pcm16",
-            output_audio_format="pcm16",
-            input_audio_transcription={"model": "whisper-1"},
-            turn_detection=turn_detection,
-        )
+        session_config = {
+            "instructions": self._settings.assistant_instructions,
+            "modalities": ["text", "audio"],
+            "voice": self._openai_settings.openai_voice,
+            "input_audio_format": "pcm16",
+            "output_audio_format": "pcm16",
+            "input_audio_transcription": transcription_config,
+            "turn_detection": turn_detection,
+        }
+        # Add noise reduction if configured
+        if self._openai_settings.openai_noise_reduction:
+            session_config["input_audio_noise_reduction"] = {"type": self._openai_settings.openai_noise_reduction}
+
+        self._client.update_session(**session_config)
 
         self._connected = True
         logger.info(
             f"Connected to OpenAI Realtime API "
             f"(model: {self._openai_settings.openai_model}, "
             f"voice: {self._openai_settings.openai_voice}, "
-            f"vad: server_vad)"
+            f"transcription: {self._openai_settings.openai_transcription_model}, "
+            f"vad: {self._openai_settings.openai_vad_type}, "
+            f"threshold: {self._openai_settings.openai_vad_threshold})"
         )
 
     def _setup_events(self) -> None:
@@ -160,7 +179,7 @@ class SampleOpenAIAgent(BaseAgent):
         if self._settings.debug:
             client.on("realtime.event", self._handle_debug_event)
 
-    def _handle_debug_event(self, event: Dict) -> None:
+    def _handle_debug_event(self, event: dict) -> None:
         """Debug handler for all realtime events."""
         source = event.get("source", "unknown")
         evt = event.get("event", {})
@@ -177,7 +196,7 @@ class SampleOpenAIAgent(BaseAgent):
         if source == "server" and event_type not in skip_events:
             logger.debug(f"[{source}] {event_type}")
 
-    def _handle_conversation_updated(self, event: Dict) -> None:
+    def _handle_conversation_updated(self, event: dict) -> None:
         """Handle conversation updates (delta events)."""
         # Early exit if cancelled - check FIRST before any processing
         if self._response_cancelled:
@@ -215,16 +234,14 @@ class SampleOpenAIAgent(BaseAgent):
             self._state.transcript_buffer += transcript_delta
 
             if self._on_transcript_delta and not self._response_cancelled:
-                asyncio.create_task(
-                    self._on_transcript_delta(transcript_delta, role, item_id, previous_item_id)
-                )
+                asyncio.create_task(self._on_transcript_delta(transcript_delta, role, item_id, previous_item_id))
 
-    def _handle_audio_done(self, event: Dict) -> None:
+    def _handle_audio_done(self, event: dict) -> None:
         """Handle response.audio.done event - all audio has been sent."""
         logger.debug("Audio done received")
         self._state.audio_done = True
 
-    def _handle_item_appended(self, event: Dict) -> None:
+    def _handle_item_appended(self, event: dict) -> None:
         """Handle new conversation items."""
         item = event.get("item", {})
 
@@ -249,13 +266,12 @@ class SampleOpenAIAgent(BaseAgent):
             await asyncio.sleep(0.05)
         return True
 
-    def _handle_item_completed(self, event: Dict) -> None:
+    def _handle_item_completed(self, event: dict) -> None:
         """Handle completed conversation items."""
         item = event.get("item", {})
         role = item.get("role", "")
 
         if role == "assistant":
-
             # Wait for audio_done before triggering response_end
             async def wait_and_complete():
                 await self._wait_for_audio_done(timeout=3.0)
@@ -278,7 +294,7 @@ class SampleOpenAIAgent(BaseAgent):
 
             asyncio.create_task(wait_and_complete())
 
-    def _handle_user_transcript(self, event: Dict) -> None:
+    def _handle_user_transcript(self, event: dict) -> None:
         """Handle user's transcribed speech."""
         transcript = event.get("transcript", "")
 
@@ -293,9 +309,12 @@ class SampleOpenAIAgent(BaseAgent):
             if self._on_user_transcript:
                 asyncio.create_task(self._on_user_transcript(transcript, role))
 
-    def _handle_interrupted(self, event: Dict) -> None:
+    def _handle_interrupted(self, event: dict) -> None:
         """Handle conversation interruption."""
-        logger.info("Conversation interrupted - stopping audio processing immediately")
+        import time
+
+        handler_start = time.time()
+        logger.info(f"[INTERRUPT DEBUG] sample_agent._handle_interrupted called at {handler_start:.3f}")
 
         # Set cancelled flag IMMEDIATELY to stop processing any pending audio deltas
         # This MUST be set before anything else to ensure no more audio is processed
@@ -308,21 +327,23 @@ class SampleOpenAIAgent(BaseAgent):
         # This ensures the ChatConnectionManager receives the interrupt ASAP
         if self._on_interrupted:
             # Create task but also try to run it immediately
+            logger.info(
+                f"[INTERRUPT DEBUG] Creating async task for on_interrupted callback at {time.time():.3f} (+{(time.time() - handler_start) * 1000:.1f}ms)"
+            )
             task = asyncio.create_task(self._on_interrupted())
             # Log for debugging
             logger.debug(f"Interrupt handler task created: {task}")
 
-    def _handle_error(self, error: Dict) -> None:
+    def _handle_error(self, error: dict) -> None:
         """Handle errors from the Realtime API."""
         # Extract error details for better logging
         error_type = error.get("error", {}).get("type", "unknown")
         error_message = error.get("error", {}).get("message", str(error))
         error_code = error.get("error", {}).get("code", "")
         event_id = error.get("event_id", "")
-        
+
         logger.error(
-            f"Realtime API error: type={error_type}, code={error_code}, "
-            f"message={error_message}, event_id={event_id}"
+            f"Realtime API error: type={error_type}, code={error_code}, message={error_message}, event_id={event_id}"
         )
 
         if self._on_error:
@@ -349,9 +370,7 @@ class SampleOpenAIAgent(BaseAgent):
                 asyncio.create_task(self._on_interrupted())
 
         logger.debug(f"User text: {text}")
-        self._client.send_user_message_content([
-            {"type": "input_text", "text": text}
-        ])
+        self._client.send_user_message_content([{"type": "input_text", "text": text}])
 
     def append_audio(self, audio_bytes: bytes) -> None:
         """
@@ -366,8 +385,15 @@ class SampleOpenAIAgent(BaseAgent):
         self._client.append_input_audio(audio_bytes)
 
     async def disconnect(self) -> None:
-        """Disconnect from OpenAI Realtime API."""
+        """Disconnect from OpenAI Realtime API and clear all state."""
         if self._client and self._connected:
+            logger.info("Agent disconnect requested - closing OpenAI connection")
+
+            # Reset agent state first
+            self._response_cancelled = True
+            self._current_item_id = None
+            self._state = ConversationState()  # Reset conversation state
+
             try:
                 self._client.disconnect()
             except Exception as e:
@@ -378,14 +404,15 @@ class SampleOpenAIAgent(BaseAgent):
                 timeout = 3.0
                 poll_interval = 0.05
                 waited = 0.0
-                realtime_api = getattr(self._client, 'realtime', None)
-                while realtime_api and getattr(realtime_api, 'is_connected', lambda: False)() and waited < timeout:
+                realtime_api = getattr(self._client, "realtime", None)
+                while realtime_api and getattr(realtime_api, "is_connected", lambda: False)() and waited < timeout:
                     await asyncio.sleep(poll_interval)
                     waited += poll_interval
-                if realtime_api and getattr(realtime_api, 'is_connected', lambda: False)():
-                    logger.warning('Realtime API did not close within timeout')
+                if realtime_api and getattr(realtime_api, "is_connected", lambda: False)():
+                    logger.warning("Realtime API did not close within timeout")
             except Exception as e:
                 logger.warning(f"Error while waiting for realtime disconnect: {e}")
 
             self._connected = False
-            logger.info("Disconnected from OpenAI Realtime API")
+            self._client = None  # Clear client reference
+            logger.info("Disconnected from OpenAI Realtime API - all state cleared")

@@ -9,7 +9,7 @@ import numpy as np
 import librosa
 from typing import Dict, Optional, Tuple
 
-from logger import get_logger
+from core.logger import get_logger
 from .utils import ARKitBlendShape
 
 logger = get_logger(__name__)

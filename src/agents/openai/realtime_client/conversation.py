@@ -5,7 +5,6 @@ Holds conversation history and performs event validation.
 Tracks items, responses, and audio buffers.
 """
 
-import json
 import copy
 from typing import Dict, List, Any, Optional, Tuple
 import numpy as np

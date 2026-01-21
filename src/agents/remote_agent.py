@@ -11,8 +11,8 @@ import websockets
 from typing import Callable, Optional, Any, Dict
 
 from .base_agent import BaseAgent, ConversationState
-from config import Settings
-from logger import get_logger
+from core.config import get_settings
+from core.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -25,14 +25,13 @@ class RemoteAgent(BaseAgent):
     the chat router's expectations (e.g., same event messages).
     """
 
-    def __init__(self, settings: Settings):
+    def __init__(self):
         """
         Initialize the remote agent.
 
-        Args:
-            settings: Application settings containing agent URL
+        Loads settings from environment variables.
         """
-        self.settings = settings
+        self._settings = get_settings()
         self._ws: Optional[websockets.WebSocketServerProtocol] = None
         self._connected = False
         self._state = ConversationState()
@@ -92,7 +91,7 @@ class RemoteAgent(BaseAgent):
         if self._connected:
             return
 
-        agent_url = getattr(self.settings, 'agent_url', None)
+        agent_url = self._settings.agent_url
         if not agent_url:
             raise ValueError("AGENT_URL not configured for remote agent")
 

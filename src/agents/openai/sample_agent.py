@@ -7,12 +7,12 @@ This is the sample agent that ships with the chat-server.
 
 import asyncio
 import time
-from typing import Callable, Dict, List, Optional, Any
-from dataclasses import dataclass, field
+from typing import Callable, Dict, Optional, Any
 
-from .base_agent import BaseAgent, ConversationState
-from config import Settings
-from logger import get_logger
+from ..base_agent import BaseAgent, ConversationState
+from .config import get_openai_settings
+from core.config import get_settings
+from core.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -25,14 +25,14 @@ class SampleOpenAIAgent(BaseAgent):
     for voice-based conversation with the AI assistant.
     """
 
-    def __init__(self, settings: Settings):
+    def __init__(self):
         """
         Initialize the OpenAI agent.
 
-        Args:
-            settings: Application settings containing API key and configuration
+        Loads OpenAI-specific settings from environment variables.
         """
-        self.settings = settings
+        self._settings = get_settings()  # Core settings (assistant_instructions, debug)
+        self._openai_settings = get_openai_settings()  # OpenAI-specific settings
         self._client: Optional[Any] = None
         self._connected = False
         self._state = ConversationState()
@@ -100,8 +100,8 @@ class SampleOpenAIAgent(BaseAgent):
         from .realtime_client import RealtimeClient
 
         self._client = RealtimeClient(
-            api_key=self.settings.openai_api_key,
-            model=self.settings.openai_model,
+            api_key=self._openai_settings.openai_api_key,
+            model=self._openai_settings.openai_model,
             debug=False,  # Disable RealtimeClient debug logging to avoid spamming with base64 audio
         )
 
@@ -114,8 +114,8 @@ class SampleOpenAIAgent(BaseAgent):
 
         # Configure session
         self._client.update_session(
-            instructions=self.settings.assistant_instructions,
-            voice=self.settings.openai_voice,
+            instructions=self._settings.assistant_instructions,
+            voice=self._openai_settings.openai_voice,
             modalities=["text", "audio"],
             input_audio_format="pcm16",
             output_audio_format="pcm16",
@@ -129,7 +129,7 @@ class SampleOpenAIAgent(BaseAgent):
         )
 
         self._connected = True
-        logger.info(f"Connected to OpenAI Realtime API (voice: {self.settings.openai_voice})")
+        logger.info(f"Connected to OpenAI Realtime API (model: {self._openai_settings.openai_model}, voice: {self._openai_settings.openai_voice})")
 
     def _setup_events(self) -> None:
         """Setup event handlers for the Realtime client."""
@@ -149,7 +149,7 @@ class SampleOpenAIAgent(BaseAgent):
         client.on("error", self._handle_error)
 
         # Debug logging
-        if self.settings.debug:
+        if self._settings.debug:
             client.on("realtime.event", self._handle_debug_event)
 
     def _handle_debug_event(self, event: Dict) -> None:

@@ -17,9 +17,9 @@ from typing import Dict, List, Optional, Set
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
-from config import get_settings, get_audio_constants
+from core.config import get_settings, get_audio_constants
 from services import get_wav2arkit_service, get_agent
-from logger import get_logger
+from core.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -253,7 +253,7 @@ class ChatConnectionManager:
             "type": "audio_start",
             "sessionId": session_id,
             "turnId": self._current_turn_id,
-            "sampleRate": self._audio_constants.openai_sample_rate,
+            "sampleRate": self._audio_constants.input_sample_rate,
             "format": "audio/pcm16",
             "timestamp": int(time.time() * 1000),
         })
@@ -286,12 +286,12 @@ class ChatConnectionManager:
         self._audio_buffer.extend(audio_bytes)
 
         chunk_samples = len(audio_bytes) // 2
-        chunk_duration = chunk_samples / self._audio_constants.openai_sample_rate
+        chunk_duration = chunk_samples / self._audio_constants.input_sample_rate
         self._total_audio_received += chunk_duration
 
         # Calculate buffer duration
         buffer_samples = len(self._audio_buffer) // 2
-        buffer_duration = buffer_samples / self._audio_constants.openai_sample_rate
+        buffer_duration = buffer_samples / self._audio_constants.input_sample_rate
 
         # DEBUG: Log audio received (show total received so far)
         logger.debug(f"🎵 Audio: +{chunk_duration*1000:.0f}ms (total={self._total_audio_received:.2f}s, buffer={buffer_duration:.2f}s)")
@@ -301,7 +301,7 @@ class ChatConnectionManager:
         if buffer_duration >= self._audio_constants.audio_chunk_duration:
             chunk_bytes_size = int(
                 self._audio_constants.audio_chunk_duration
-                * self._audio_constants.openai_sample_rate
+                * self._audio_constants.input_sample_rate
                 * 2
             )
             chunk_bytes = bytes(self._audio_buffer[:chunk_bytes_size])
@@ -349,7 +349,7 @@ class ChatConnectionManager:
         buffer_samples = len(self._audio_buffer) // 2
         if buffer_samples > 0 and self._wav2arkit_service.is_available:
             # Use a longer minimum sample threshold to ensure we don't lose short final words
-            min_samples = int(0.3 * self._audio_constants.openai_sample_rate)  # 300ms minimum
+            min_samples = int(0.3 * self._audio_constants.input_sample_rate)  # 300ms minimum
             remaining_bytes = bytes(self._audio_buffer)
             if buffer_samples < min_samples:
                 # Pad with silence to ensure the model processes the full audio
@@ -359,7 +359,7 @@ class ChatConnectionManager:
 
             # Queue final audio - use blocking put to ensure it's processed
             await self._audio_chunk_queue.put(remaining_bytes)
-            logger.debug(f"Flushing final audio: {buffer_samples} samples ({buffer_samples / self._audio_constants.openai_sample_rate:.3f}s)")
+            logger.debug(f"Flushing final audio: {buffer_samples} samples ({buffer_samples / self._audio_constants.input_sample_rate:.3f}s)")
 
         # Signal that speech has ended - but wait for queues to drain first
         # Don't set _speech_ended until audio queue is empty to ensure all audio is processed
@@ -588,7 +588,7 @@ class ChatConnectionManager:
                     break
 
                 chunk_count += 1
-                chunk_duration = len(audio_bytes) // 2 / self._audio_constants.openai_sample_rate
+                chunk_duration = len(audio_bytes) // 2 / self._audio_constants.input_sample_rate
 
                 # DEBUG: Time the inference
                 inference_start = time.time()

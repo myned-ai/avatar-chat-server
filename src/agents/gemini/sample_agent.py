@@ -7,14 +7,17 @@ This is the sample agent that ships with the chat-server.
 
 import asyncio
 import time
-from typing import Callable, Dict, Optional, Any
+from typing import Callable, Optional, Any
 import numpy as np
 
-from .base_agent import BaseAgent, ConversationState
+from ..base_agent import BaseAgent, ConversationState
+from .config import get_gemini_settings
+from core.config import get_settings
+from core.logger import get_logger
+
+# Import Gemini SDK
 from google import genai
 from google.genai import types
-from config import Settings
-from logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -27,14 +30,14 @@ class SampleGeminiAgent(BaseAgent):
     for voice-based conversation with the AI assistant.
     """
 
-    def __init__(self, settings: Settings):
+    def __init__(self):
         """
         Initialize the Gemini agent.
 
-        Args:
-            settings: Application settings containing API key and configuration
+        Loads Gemini-specific settings from environment variables.
         """
-        self.settings = settings
+        self._settings = get_settings()  # Core settings (assistant_instructions, debug)
+        self._gemini_settings = get_gemini_settings()  # Gemini-specific settings
         self._client: Optional[genai.Client] = None
         self._session: Optional[Any] = None
         self._connected = False
@@ -106,25 +109,25 @@ class SampleGeminiAgent(BaseAgent):
 
         try:
             # Initialize client with API key
-            self._client = genai.Client(api_key=self.settings.gemini_api_key)
+            self._client = genai.Client(api_key=self._gemini_settings.gemini_api_key)
 
             # Build tools list
             tools = []
-            if self.settings.gemini_google_search_grounding:
+            if self._gemini_settings.gemini_google_search_grounding:
                 tools.append(types.Tool(google_search=types.GoogleSearch()))
                 logger.info("Google Search grounding enabled")
 
             # Configure thinking mode (for models that support it)
             thinking_config = None
-            if self.settings.gemini_thinking_budget != 0:
+            if self._gemini_settings.gemini_thinking_budget != 0:
                 thinking_config = types.ThinkingConfig(
-                    thinking_budget=self.settings.gemini_thinking_budget
+                    thinking_budget=self._gemini_settings.gemini_thinking_budget
                 )
-                logger.info(f"Thinking mode enabled (budget: {self.settings.gemini_thinking_budget})")
+                logger.info(f"Thinking mode enabled (budget: {self._gemini_settings.gemini_thinking_budget})")
 
             # Configure context window compression for longer sessions
             context_window_compression = None
-            if self.settings.gemini_context_window_compression:
+            if self._gemini_settings.gemini_context_window_compression:
                 context_window_compression = types.ContextWindowCompressionConfig(
                     sliding_window=types.SlidingWindow()
                 )
@@ -132,7 +135,7 @@ class SampleGeminiAgent(BaseAgent):
 
             # Configure proactivity
             proactivity = None
-            if self.settings.gemini_proactive_audio:
+            if self._gemini_settings.gemini_proactive_audio:
                 proactivity = types.ProactivityConfig(proactive_audio=True)
                 logger.info("Proactive audio enabled")
 
@@ -142,12 +145,12 @@ class SampleGeminiAgent(BaseAgent):
                 speech_config=types.SpeechConfig(
                     voice_config=types.VoiceConfig(
                         prebuilt_voice_config=types.PrebuiltVoiceConfig(
-                            voice_name=self.settings.gemini_voice
+                            voice_name=self._gemini_settings.gemini_voice
                         )
                     )
                 ),
                 system_instruction=types.Content(
-                    parts=[types.Part(text=self.settings.assistant_instructions)]
+                    parts=[types.Part(text=self._settings.assistant_instructions)]
                 ),
                 realtime_input_config=types.RealtimeInputConfig(
                     automatic_activity_detection=types.AutomaticActivityDetection(
@@ -170,7 +173,7 @@ class SampleGeminiAgent(BaseAgent):
 
             # Connect using async context - we manage the session manually
             self._session = await self._client.aio.live.connect(
-                model=self.settings.gemini_model,
+                model=self._gemini_settings.gemini_model,
                 config=config,
             ).__aenter__()
 
@@ -179,7 +182,7 @@ class SampleGeminiAgent(BaseAgent):
             # Start listening for responses in background
             self._receive_task = asyncio.create_task(self._receive_loop())
 
-            logger.info(f"Connected to Gemini Live API (voice: {self.settings.gemini_voice})")
+            logger.info(f"Connected to Gemini Live API (model: {self._gemini_settings.gemini_model}, voice: {self._gemini_settings.gemini_voice})")
 
         except Exception as e:
             logger.error(f"Failed to connect to Gemini Live API: {e}")

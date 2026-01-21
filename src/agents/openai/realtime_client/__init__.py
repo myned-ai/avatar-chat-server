@@ -5,7 +5,7 @@ A Python implementation of the OpenAI Realtime API client,
 adapted from the official JavaScript reference client.
 
 Usage:
-    from openai_realtime import RealtimeClient
+    from agents.openai.realtime_client import RealtimeClient
 
     client = RealtimeClient(api_key="your-api-key")
     await client.connect()

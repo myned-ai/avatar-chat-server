@@ -2,8 +2,13 @@
 Avatar Chat Server
 
 FastAPI application for real-time voice-to-avatar interaction.
-Combines OpenAI Realtime API for voice AI with Wav2Arkit
+Combines AI agents for voice conversation with Wav2Arkit
 model for synchronized facial animation.
+
+Supports multiple agent backends:
+- sample_openai: OpenAI Realtime API
+- sample_gemini: Google Gemini Live API
+- remote: External agent service
 
 Usage:
     uvicorn main:app --host 0.0.0.0 --port 8080 --reload
@@ -22,11 +27,11 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
 
-from config import get_settings, get_allowed_origins
+from core.config import get_settings, get_allowed_origins
+from core.logger import setup_logging, get_logger
 from routers import chat_router
-from services import get_wav2arkit_service, get_openai_service
+from services import get_wav2arkit_service, get_agent
 from auth import AuthMiddleware
-from logger import setup_logging, get_logger
 
 logger = get_logger(__name__)
 
@@ -48,8 +53,7 @@ async def lifespan(app: FastAPI):
     logger.info("Avatar Chat Server Starting")
     logger.info("=" * 60)
     logger.info(f"WebSocket endpoint: ws://{settings.server_host}:{settings.server_port}/ws")
-    logger.info(f"Voice: {settings.openai_voice}")
-    logger.info(f"Model: {settings.openai_model}")
+    logger.info(f"Agent type: {settings.agent_type}")
     logger.info(f"Wav2Arkit model: {settings.onnx_model_path}")
     logger.info(f"Debug: {settings.debug}")
     logger.info(f"Auth: {'Enabled' if settings.auth_enabled else 'Disabled'}")
@@ -65,8 +69,8 @@ async def lifespan(app: FastAPI):
 
     # Shutdown
     logger.info("Shutting down...")
-    openai_service = get_openai_service()
-    await openai_service.disconnect()
+    agent = get_agent()
+    await agent.disconnect()
 
 
 # Create FastAPI application
@@ -184,8 +188,7 @@ async def root():
         "version": "1.0.0",
         "status": "running",
         "websocket": f"ws://{settings.server_host}:{settings.server_port}/ws",
-        "voice": settings.openai_voice,
-        "model": settings.openai_model,
+        "agent_type": settings.agent_type,
     }
 
 
@@ -193,13 +196,13 @@ async def root():
 async def health_check():
     """Health check endpoint for container orchestration."""
     wav2arkit_service = get_wav2arkit_service()
-    openai_service = get_openai_service()
+    agent = get_agent()
     
     return {
         "status": "healthy",
         "services": {
             "wav2arkit": "available" if wav2arkit_service.is_available else "unavailable",
-            "openai": "connected" if openai_service.is_connected else "disconnected",
+            "agent": "connected" if agent.is_connected else "disconnected",
         },
     }
 

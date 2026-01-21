@@ -11,8 +11,8 @@ from pathlib import Path
 import base64
 import numpy as np
 
-from config import Settings, AudioConstants
-from logger import get_logger
+from core.config import Settings, AudioConstants, get_settings, get_audio_constants
+from core.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -172,7 +172,7 @@ class Wav2ArkitService:
         # Run inference
         result, _ = self.infer_streaming(
             audio_float,
-            sample_rate=self.audio_constants.openai_sample_rate,
+            sample_rate=self.audio_constants.input_sample_rate,
         )
 
         if result.get("code") != 0:
@@ -228,8 +228,6 @@ def get_wav2arkit_service(
     global _wav2arkit_service
 
     if _wav2arkit_service is None:
-        from config import get_settings, get_audio_constants
-
         settings = settings or get_settings()
         audio_constants = audio_constants or get_audio_constants()
         _wav2arkit_service = Wav2ArkitService(settings, audio_constants)

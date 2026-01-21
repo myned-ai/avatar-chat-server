@@ -7,7 +7,7 @@ Handles connection, authentication, and sending/receiving events.
 
 import json
 import asyncio
-from datetime import datetime
+import logging
 from typing import Optional, Dict, Any
 
 import websockets
@@ -15,6 +15,8 @@ from websockets.client import WebSocketClientProtocol
 
 from .event_handler import RealtimeEventHandler
 from .utils import RealtimeUtils
+
+logger = logging.getLogger(__name__)
 
 
 class RealtimeAPI(RealtimeEventHandler):
@@ -68,7 +70,7 @@ class RealtimeAPI(RealtimeEventHandler):
     
     def log(self, *args) -> bool:
         """
-        Writes WebSocket logs to console.
+        Writes WebSocket logs to logger.
         
         Args:
             *args: Arguments to log
@@ -77,14 +79,13 @@ class RealtimeAPI(RealtimeEventHandler):
             True on success
         """
         if self.debug:
-            date = datetime.now().isoformat()
             formatted_args = []
             for arg in args:
                 if isinstance(arg, dict):
                     formatted_args.append(json.dumps(arg, indent=2))
                 else:
                     formatted_args.append(str(arg))
-            print(f"[Websocket/{date}]", *formatted_args)
+            logger.debug(" ".join(formatted_args))
         return True
     
     async def connect(self, model: Optional[str] = None) -> bool:
@@ -104,7 +105,7 @@ class RealtimeAPI(RealtimeEventHandler):
         model = model or self.DEFAULT_MODEL
         
         if not self.api_key and self.url == self.DEFAULT_URL:
-            print(f'Warning: No apiKey provided for connection to "{self.url}"')
+            logger.warning(f'No apiKey provided for connection to "{self.url}"')
         
         if self.is_connected():
             raise ValueError("Already connected")

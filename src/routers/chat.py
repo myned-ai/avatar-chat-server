@@ -12,7 +12,6 @@ import orjson
 import time
 import uuid
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Dict, List, Optional, Set
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
@@ -22,36 +21,6 @@ from services import get_wav2arkit_service, get_agent
 from core.logger import get_logger
 
 logger = get_logger(__name__)
-
-# Transcript log file
-TRANSCRIPT_LOG_FILE = Path("transcript_log.json")
-
-
-def log_transcript(role: str, text: str, event_type: str, turn_id: Optional[str] = None) -> None:
-    """Log transcript to JSON file for debugging."""
-    entry = {
-        "timestamp": time.time(),
-        "datetime": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "role": role,
-        "text": text,
-        "event_type": event_type,
-        "turn_id": turn_id,
-    }
-
-    # Read existing log or create new
-    logs = []
-    if TRANSCRIPT_LOG_FILE.exists():
-        try:
-            with open(TRANSCRIPT_LOG_FILE, "r") as f:
-                logs = json.load(f)
-        except (json.JSONDecodeError, IOError):
-            logs = []
-
-    logs.append(entry)
-
-    # Write back
-    with open(TRANSCRIPT_LOG_FILE, "w") as f:
-        json.dump(logs, f, indent=2)
 
 
 router = APIRouter(tags=["chat"])
@@ -294,7 +263,7 @@ class ChatConnectionManager:
         buffer_duration = buffer_samples / self._audio_constants.input_sample_rate
 
         # DEBUG: Log audio received (show total received so far)
-        logger.debug(f"🎵 Audio: +{chunk_duration*1000:.0f}ms (total={self._total_audio_received:.2f}s, buffer={buffer_duration:.2f}s)")
+        logger.debug(f"Audio: +{chunk_duration*1000:.0f}ms (total={self._total_audio_received:.2f}s, buffer={buffer_duration:.2f}s)")
 
         # When we have enough audio, queue for processing
         # Use consistent chunk duration to maintain timing alignment
@@ -420,8 +389,6 @@ class ChatConnectionManager:
                 msg["itemId"] = item_id
 
             await self.broadcast(msg)
-            # Log AFTER broadcast to capture actual send time
-            log_transcript("assistant", transcript, "transcript_done", self._current_turn_id)
 
         await self.broadcast({"type": "avatar_state", "state": "Listening"})
 
@@ -463,8 +430,6 @@ class ChatConnectionManager:
             msg["previousItemId"] = previous_item_id
 
         await self.broadcast(msg)
-        # Log AFTER broadcast to capture actual send time
-        log_transcript(role, text, "transcript_delta", turn_id)
 
     async def _handle_user_transcript(self, transcript: str, role: str = "user") -> None:
         """Handle transcribed user speech."""
@@ -477,8 +442,6 @@ class ChatConnectionManager:
             "turnId": user_turn_id,
             "timestamp": int(time.time() * 1000),
         })
-        # Log AFTER broadcast to capture actual send time
-        log_transcript(role, transcript, "transcript_done", user_turn_id)
     
     async def _handle_interrupted(self) -> None:
         """Handle conversation interruption."""
@@ -541,8 +504,6 @@ class ChatConnectionManager:
                 "interrupted": True,
                 "timestamp": int(time.time() * 1000),
             })
-            # Log the interrupted finalization event
-            log_transcript("assistant", "", "transcript_interrupted", interrupted_turn_id)
 
         # Send interrupt signal to widget to stop playback immediately
         # This tells the client to clear its audio buffers and stop playback
@@ -625,7 +586,7 @@ class ChatConnectionManager:
                     # DEBUG: Warn if frame queue is getting full
                     queue_usage = self._frame_queue.qsize() / self._frame_queue.maxsize
                     if queue_usage > 0.8:
-                        logger.warning(f"⚠ Frame queue high: {self._frame_queue.qsize()}/{self._frame_queue.maxsize} "
+                        logger.warning(f"Frame queue high: {self._frame_queue.qsize()}/{self._frame_queue.maxsize} "
                                      f"({queue_usage*100:.0f}% full)")
 
                     logger.debug(f"Enqueued {len(frames)} frames in {enqueue_time:.1f}ms "
@@ -726,7 +687,7 @@ class ChatConnectionManager:
 
                 # DEBUG: Warn if emission is significantly slower than target
                 if frame_interval > target_frame_interval * 1.5:  # More than 50% slower than 33ms
-                    logger.warning(f"⚠ Slow frame emission: {frame_interval*1000:.1f}ms (expected {target_frame_interval*1000:.1f}ms), "
+                    logger.warning(f"Slow frame emission: {frame_interval*1000:.1f}ms (expected {target_frame_interval*1000:.1f}ms), "
                                  f"dequeue_wait={dequeue_wait:.1f}ms, broadcast={broadcast_time:.1f}ms")
 
         except asyncio.CancelledError:

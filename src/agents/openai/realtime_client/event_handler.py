@@ -6,9 +6,11 @@ inherited by RealtimeAPI and RealtimeClient.
 """
 
 import asyncio
+import logging
 from typing import Callable, Dict, List, Any, Optional
 from collections import defaultdict
 
+logger = logging.getLogger(__name__)
 
 # Type alias for event handler callbacks
 EventHandlerCallback = Callable[[Any], Any]
@@ -147,7 +149,7 @@ class RealtimeEventHandler:
                 if asyncio.iscoroutine(result):
                     asyncio.create_task(result)
             except Exception as e:
-                print(f"Error in event handler for '{event_name}': {e}")
+                logger.error(f"Error in event handler for '{event_name}': {e}")
         
         # Handle one-time next event handlers
         next_handlers = self._next_event_handlers.pop(event_name, [])
@@ -157,7 +159,7 @@ class RealtimeEventHandler:
                 if asyncio.iscoroutine(result):
                     asyncio.create_task(result)
             except Exception as e:
-                print(f"Error in next event handler for '{event_name}': {e}")
+                logger.error(f"Error in next event handler for '{event_name}': {e}")
         
         # Handle waiters
         waiters = self._event_waiters.pop(event_name, [])

@@ -112,24 +112,32 @@ class SampleOpenAIAgent(BaseAgent):
         await self._client.connect()
         await self._client.wait_for_session_created()
 
-        # Configure session
+        # Build VAD/turn detection config based on settings
+        turn_detection = {
+            "type": "server_vad",
+            "threshold": self._openai_settings.openai_vad_threshold,
+            "prefix_padding_ms": 300,
+            "silence_duration_ms": self._openai_settings.openai_vad_silence_duration_ms,
+        }
+
+        # Configure session using original flat format
         self._client.update_session(
             instructions=self._settings.assistant_instructions,
-            voice=self._openai_settings.openai_voice,
             modalities=["text", "audio"],
+            voice=self._openai_settings.openai_voice,
             input_audio_format="pcm16",
             output_audio_format="pcm16",
             input_audio_transcription={"model": "whisper-1"},
-            turn_detection={
-                "type": "server_vad",
-                "threshold": 0.2,
-                "prefix_padding_ms": 100,
-                "silence_duration_ms": 300,
-            },
+            turn_detection=turn_detection,
         )
 
         self._connected = True
-        logger.info(f"Connected to OpenAI Realtime API (model: {self._openai_settings.openai_model}, voice: {self._openai_settings.openai_voice})")
+        logger.info(
+            f"Connected to OpenAI Realtime API "
+            f"(model: {self._openai_settings.openai_model}, "
+            f"voice: {self._openai_settings.openai_voice}, "
+            f"vad: server_vad)"
+        )
 
     def _setup_events(self) -> None:
         """Setup event handlers for the Realtime client."""
@@ -306,7 +314,16 @@ class SampleOpenAIAgent(BaseAgent):
 
     def _handle_error(self, error: Dict) -> None:
         """Handle errors from the Realtime API."""
-        logger.error(f"Realtime API error: {error}")
+        # Extract error details for better logging
+        error_type = error.get("error", {}).get("type", "unknown")
+        error_message = error.get("error", {}).get("message", str(error))
+        error_code = error.get("error", {}).get("code", "")
+        event_id = error.get("event_id", "")
+        
+        logger.error(
+            f"Realtime API error: type={error_type}, code={error_code}, "
+            f"message={error_message}, event_id={event_id}"
+        )
 
         if self._on_error:
             asyncio.create_task(self._on_error(error))

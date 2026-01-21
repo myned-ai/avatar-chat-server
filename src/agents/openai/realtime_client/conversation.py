@@ -17,7 +17,8 @@ class RealtimeConversation:
     Holds conversation history and performs event validation for RealtimeAPI.
     """
     
-    DEFAULT_FREQUENCY = 24000  # 24,000 Hz
+    # OpenAI Realtime API uses 24kHz sample rate
+    DEFAULT_FREQUENCY = 24000
     
     def __init__(self):
         self.clear()

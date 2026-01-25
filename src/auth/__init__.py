@@ -11,5 +11,6 @@ Authentication Module
 from .middleware import AuthMiddleware
 from .rate_limiter import RateLimiter
 from .token_manager import TokenManager
+from .dependencies import get_auth_middleware
 
-__all__ = ["AuthMiddleware", "RateLimiter", "TokenManager"]
+__all__ = ["AuthMiddleware", "RateLimiter", "TokenManager", "get_auth_middleware"]

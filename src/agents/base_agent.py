@@ -6,7 +6,7 @@ Supports both local (in-process) and remote (inter-container) implementations.
 """
 
 from abc import ABC, abstractmethod
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any
 
@@ -44,13 +44,16 @@ class BaseAgent(ABC):
     @abstractmethod
     def set_event_handlers(
         self,
-        on_audio_delta: Callable[[bytes], None] | None = None,
-        on_transcript_delta: Callable[[str], None] | None = None,
-        on_response_start: Callable[[str], None] | None = None,
-        on_response_end: Callable[[str], None] | None = None,
-        on_user_transcript: Callable[[str], None] | None = None,
-        on_interrupted: Callable[[], None] | None = None,
-        on_error: Callable[[Any], None] | None = None,
+        on_audio_delta: Callable[[bytes], Awaitable[None]] | None = None,
+        on_transcript_delta: Callable[
+            [str, str, str | None, str | None], Awaitable[None]
+        ]
+        | None = None,
+        on_response_start: Callable[[str], Awaitable[None]] | None = None,
+        on_response_end: Callable[[str, str | None], Awaitable[None]] | None = None,
+        on_user_transcript: Callable[[str, str], Awaitable[None]] | None = None,
+        on_interrupted: Callable[[], Awaitable[None]] | None = None,
+        on_error: Callable[[Any], Awaitable[None]] | None = None,
     ) -> None:
         """
         Set event handler callbacks.

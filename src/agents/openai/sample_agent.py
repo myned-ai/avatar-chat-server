@@ -7,14 +7,14 @@ This is the sample agent that ships with the chat-server.
 
 import asyncio
 import time
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import Any
 
-from core.config import get_settings
 from core.logger import get_logger
+from core.settings import get_settings
 
 from ..base_agent import BaseAgent, ConversationState
-from .config import get_openai_settings
+from .openai_settings import get_openai_settings
 
 logger = get_logger(__name__)
 
@@ -64,13 +64,16 @@ class SampleOpenAIAgent(BaseAgent):
 
     def set_event_handlers(
         self,
-        on_audio_delta: Callable | None = None,
-        on_transcript_delta: Callable | None = None,
-        on_response_start: Callable | None = None,
-        on_response_end: Callable | None = None,
-        on_user_transcript: Callable | None = None,
-        on_interrupted: Callable | None = None,
-        on_error: Callable | None = None,
+        on_audio_delta: Callable[[bytes], Awaitable[None]] | None = None,
+        on_transcript_delta: Callable[
+            [str, str, str | None, str | None], Awaitable[None]
+        ]
+        | None = None,
+        on_response_start: Callable[[str], Awaitable[None]] | None = None,
+        on_response_end: Callable[[str, str | None], Awaitable[None]] | None = None,
+        on_user_transcript: Callable[[str, str], Awaitable[None]] | None = None,
+        on_interrupted: Callable[[], Awaitable[None]] | None = None,
+        on_error: Callable[[Any], Awaitable[None]] | None = None,
     ) -> None:
         """
         Set event handler callbacks.
@@ -108,6 +111,8 @@ class SampleOpenAIAgent(BaseAgent):
         )
 
         # Setup event handlers
+        if self._client is None:
+            raise RuntimeError("Client not initialized")
         self._setup_events()
 
         # Connect and wait for session
@@ -162,6 +167,9 @@ class SampleOpenAIAgent(BaseAgent):
         """Setup event handlers for the Realtime client."""
         client = self._client
 
+        if client is None:
+            raise RuntimeError("Client not initialized")
+        
         # Handle conversation updates
         client.on("conversation.updated", self._handle_conversation_updated)
         client.on("conversation.item.appended", self._handle_item_appended)

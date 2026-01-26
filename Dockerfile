@@ -18,7 +18,8 @@ FROM python:3.10-slim AS base
 # Prevent interactive prompts and set Python to not buffer output
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
+    PYTHONDONTWRITEBYTECODE=1 \
+    PATH="/root/.local/bin:$PATH"
 
 # Install system dependencies and clean up in same layer
 RUN apt-get update && apt-get install -y --no-install-recommends \

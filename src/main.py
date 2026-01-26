@@ -16,23 +16,21 @@ Usage:
 Or run directly:
     python main.py
 """
-
 import warnings
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
-import secrets
 from contextlib import asynccontextmanager
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 
-from auth import AuthMiddleware
-from core.config import get_allowed_origins, get_settings
+from auth import get_auth_middleware
 from core.logger import get_logger, setup_logging
+from core.settings import get_allowed_origins, get_settings
 from routers import chat_router
-from services import get_agent, get_wav2arkit_service
+from services import get_wav2arkit_service
 
 logger = get_logger(__name__)
 
@@ -53,7 +51,8 @@ async def lifespan(app: FastAPI):
     logger.info("=" * 60)
     logger.info("Avatar Chat Server Starting")
     logger.info("=" * 60)
-    logger.info(f"WebSocket endpoint: ws://{settings.server_host}:{settings.server_port}/ws")
+    protocol = "wss" if settings.use_ssl else "ws"
+    logger.info(f"WebSocket endpoint: {protocol}://{settings.server_host}:{settings.server_port}/ws")
     logger.info(f"Agent type: {settings.agent_type}")
     logger.info(f"Wav2Arkit model: {settings.onnx_model_path}")
     logger.info(f"Debug: {settings.debug}")
@@ -70,8 +69,6 @@ async def lifespan(app: FastAPI):
 
     # Shutdown
     logger.info("Shutting down...")
-    agent = get_agent()
-    await agent.disconnect()
 
 
 # Create FastAPI application
@@ -126,21 +123,7 @@ app.add_middleware(
 )
 
 # Initialize authentication middleware
-auth_middleware: AuthMiddleware | None = None
-if settings.auth_enabled:
-    # Generate secret key if not provided
-    auth_secret = settings.auth_secret_key or secrets.token_hex(32)
-    if not settings.auth_secret_key:
-        logger.warning("No AUTH_SECRET_KEY set. Using auto-generated key (not suitable for production)")
-        logger.warning(f"Generated key: {auth_secret}")
-        logger.warning(f"Add this to your .env file: AUTH_SECRET_KEY={auth_secret}")
-
-    auth_middleware = AuthMiddleware(
-        allowed_origins=allowed_origins,
-        secret_key=auth_secret,
-        token_ttl=settings.auth_token_ttl,
-        enable_rate_limiting=settings.auth_enable_rate_limiting,
-    )
+auth_middleware = get_auth_middleware()
 
 # Include routers
 app.include_router(chat_router)
@@ -176,41 +159,49 @@ async def get_auth_token(request: Request):
     return {"token": token, "ttl": settings.auth_token_ttl, "origin": origin}
 
 
-@app.get("/")
+@app.get("/inf")
 async def root():
     """Root endpoint with server information."""
     settings = get_settings()
-    return {
+    response = {
         "name": "Avatar Chat Server",
-        "version": "1.0.0",
+        "version": app.version,
         "status": "running",
-        "websocket": f"ws://{settings.server_host}:{settings.server_port}/ws",
-        "agent_type": settings.agent_type,
     }
+
+    if settings.debug:
+        protocol = "wss" if settings.use_ssl else "ws"
+        response["websocket"] = f"{protocol}://{settings.server_host}:{settings.server_port}/ws"
+        response["agent_type"] = settings.agent_type
+
+    return response
 
 
 @app.get("/health")
-async def health_check():
-    """Health check endpoint for container orchestration."""
-    wav2arkit_service = get_wav2arkit_service()
-    agent = get_agent()
+async def health_check(response: Response):
+    wav2arkit = get_wav2arkit_service()
 
-    return {
-        "status": "healthy",
-        "services": {
-            "wav2arkit": "available" if wav2arkit_service.is_available else "unavailable",
-            "agent": "connected" if agent.is_connected else "disconnected",
-        },
-    }
+    is_healthy = wav2arkit.is_available
+    
+    if not is_healthy:
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+        return {"status": "unhealthy", "details": "Critical service disconnected"}
+
+    return {"status": "healthy"}
 
 
 if __name__ == "__main__":
     settings = get_settings()
 
+    # Configure logging BEFORE uvicorn starts
+    # This ensures we control the handlers, not uvicorn
+    setup_logging("DEBUG" if settings.debug else "INFO")
+
     uvicorn.run(
-        "main:app",
+        app,
         host=settings.server_host,
         port=settings.server_port,
-        reload=settings.debug,
+        reload=False,  # Reload doesn't work with app object, use uvicorn CLI for dev
         log_level="debug" if settings.debug else "info",
+        log_config=None,  # Prevent uvicorn from overwriting our logging config
     )

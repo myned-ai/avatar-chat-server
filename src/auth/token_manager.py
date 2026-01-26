@@ -9,6 +9,7 @@ where signature = HMAC-SHA256(timestamp + origin, secret_key)
 """
 
 import base64
+import binascii
 import hashlib
 import hmac
 import time
@@ -75,5 +76,5 @@ class TokenManager:
 
             return True, None
 
-        except (ValueError, base64.binascii.Error) as e:
+        except (ValueError, binascii.Error) as e:
             return False, f"Invalid token format: {e!s}"

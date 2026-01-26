@@ -4,7 +4,7 @@ Gemini Agent Package
 Provides the sample Gemini agent implementation using Google Gemini Live API.
 """
 
-from .config import GeminiSettings, get_gemini_settings
+from .gemini_settings import GeminiSettings, get_gemini_settings
 from .sample_agent import SampleGeminiAgent
 
 __all__ = [

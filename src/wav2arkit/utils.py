@@ -151,7 +151,7 @@ BLINK_PATTERNS = [
 ]
 
 
-def symmetrize_blendshapes(bs_params: np.ndarray, mode: str = "average", symmetric_pairs: list = None) -> np.ndarray:
+def symmetrize_blendshapes(bs_params: np.ndarray, mode: str = "average", symmetric_pairs: list|None = None) -> np.ndarray:
     """
     Apply symmetrization to ARKit blendshape parameters.
 
@@ -302,7 +302,7 @@ def _blend_region_end(array: np.ndarray, region: np.ndarray, blend_frames: int) 
 def smooth_mouth_movements(
     blend_shapes: np.ndarray,
     processed_frames: int,
-    volume: np.ndarray = None,
+    volume: np.ndarray | None = None,
     silence_threshold: float = 0.001,
     min_silence_duration: int = 7,
     blend_window: int = 3,

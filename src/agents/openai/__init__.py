@@ -4,7 +4,7 @@ OpenAI Agent Package
 Provides the sample OpenAI agent implementation using OpenAI Realtime API.
 """
 
-from .config import OpenAISettings, get_openai_settings
+from .openai_settings import OpenAISettings, get_openai_settings
 from .sample_agent import SampleOpenAIAgent
 
 __all__ = [

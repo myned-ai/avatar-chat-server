@@ -16,11 +16,11 @@ import numpy as np
 from google import genai
 from google.genai import types
 
-from core.config import get_settings
 from core.logger import get_logger
+from core.settings import get_settings
 
 from ..base_agent import BaseAgent, ConversationState
-from .config import get_gemini_settings
+from .gemini_settings import get_gemini_settings
 
 logger = get_logger(__name__)
 
@@ -140,7 +140,7 @@ class SampleGeminiAgent(BaseAgent):
 
             # Configure Live API session
             config = types.LiveConnectConfig(
-                response_modalities=["AUDIO"],
+                response_modalities=[types.Modality.AUDIO],
                 speech_config=types.SpeechConfig(
                     voice_config=types.VoiceConfig(
                         prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name=self._gemini_settings.gemini_voice)

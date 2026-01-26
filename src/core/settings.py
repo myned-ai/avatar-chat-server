@@ -41,6 +41,7 @@ class Settings(BaseSettings):
     # Server Configuration
     server_host: str = "0.0.0.0"
     server_port: int = 8080
+    use_ssl: bool = False
     debug: bool = False
 
     # Authentication Configuration
@@ -61,20 +62,17 @@ class Settings(BaseSettings):
     blendshape_fps: int = 30  # Output blendshape frame rate
     audio_chunk_duration: float = 0.5  # 0.5 second chunks for Wav2Arkit processing
 
+    @property
+    def frame_interval_ms(self) -> float:
+        return 1000 / self.blendshape_fps
 
-class AudioConstants:
-    """Audio processing constants derived from settings."""
+    @property
+    def samples_per_frame(self) -> int:
+        return self.input_sample_rate // self.blendshape_fps
 
-    def __init__(self, settings: Settings):
-        self.input_sample_rate = settings.input_sample_rate
-        self.wav2arkit_sample_rate = settings.wav2arkit_sample_rate
-        self.blendshape_fps = settings.blendshape_fps
-        self.audio_chunk_duration = settings.audio_chunk_duration
-
-        # Derived values
-        self.frame_interval_ms = 1000 / self.blendshape_fps
-        self.samples_per_frame = self.input_sample_rate // self.blendshape_fps
-        self.bytes_per_frame = self.samples_per_frame * 2  # PCM16 = 2 bytes
+    @property
+    def bytes_per_frame(self) -> int:
+        return self.samples_per_frame * 2  # PCM16 = 2 bytes
 
 
 @lru_cache
@@ -86,12 +84,6 @@ def get_settings() -> Settings:
     and reused throughout the application lifecycle.
     """
     return Settings()
-
-
-@lru_cache
-def get_audio_constants() -> AudioConstants:
-    """Get cached audio constants derived from settings."""
-    return AudioConstants(get_settings())
 
 
 def get_allowed_origins() -> list[str]:

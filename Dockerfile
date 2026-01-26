@@ -18,8 +18,7 @@ FROM python:3.10-slim AS base
 # Prevent interactive prompts and set Python to not buffer output
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PATH="/root/.local/bin:$PATH"
+    PYTHONDONTWRITEBYTECODE=1
 
 # Install system dependencies and clean up in same layer
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -33,18 +32,21 @@ RUN useradd --create-home --shell /bin/bash appuser
 WORKDIR /app
 RUN chown appuser:appuser /app
 
-# Install huggingface_hub to download pretrained models
-RUN pip install -U "huggingface_hub[cli]"
-RUN mkdir -p pretrained_models \
-    && huggingface-cli download myned-ai/wav2arkit_cpu --local-dir pretrained_models
+# Install uv for fast package management (used throughout)
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+# Download pretrained models using huggingface_hub
+RUN uv pip install --system "huggingface_hub[cli]" \
+    && mkdir -p pretrained_models \
+    && huggingface-cli download myned-ai/wav2arkit_cpu --local-dir pretrained_models \
+    && uv pip uninstall --system huggingface_hub
 
 # ------------------------------------------------------------------------------
 # Stage 2: Dependencies installation with uv (as appuser)
 # ------------------------------------------------------------------------------
 FROM base AS dependencies
 
-# Install uv for fast package management
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+# uv already installed in base stage
 
 # Switch to non-root user BEFORE installing dependencies
 # This ensures .venv is owned by appuser from the start

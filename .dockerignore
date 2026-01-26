@@ -64,3 +64,6 @@ temp/
 tests/
 test_*.py
 *_test.py
+
+# Pretrained models (downloaded fresh in Dockerfile)
+**/pretrained_models/

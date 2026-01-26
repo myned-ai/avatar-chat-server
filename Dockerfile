@@ -32,6 +32,10 @@ RUN useradd --create-home --shell /bin/bash appuser
 WORKDIR /app
 RUN chown appuser:appuser /app
 
+RUN pip install -U "huggingface_hub[cli]" \
+    && mkdir -p pretrained_models \
+    && huggingface-cli download myned-ai/wav2arkit_cpu --local-dir pretrained_models
+
 # ------------------------------------------------------------------------------
 # Stage 2: Dependencies installation with uv (as appuser)
 # ------------------------------------------------------------------------------
@@ -58,6 +62,7 @@ FROM dependencies AS production
 
 # Copy application code (already running as appuser)
 COPY --chown=appuser:appuser ./src ./src
+RUN mv ./pretrained_models/ ./src/
 
 # Environment variables
 ENV SERVER_HOST=0.0.0.0 \
@@ -81,6 +86,7 @@ FROM dependencies AS development
 
 # Copy application code
 COPY --chown=appuser:appuser ./src ./src
+RUN mv ./pretrained_models/ ./src/
 
 # Mount point for source code (overrides the COPY above when mounted)
 VOLUME ["/app"]

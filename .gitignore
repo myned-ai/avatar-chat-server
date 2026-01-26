@@ -8,6 +8,9 @@
 .env.production
 *.eval
 
+# Scripts
+*.ps1
+
 # Python
 __pycache__/
 *.py[cod]

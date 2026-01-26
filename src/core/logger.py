@@ -56,7 +56,7 @@ def setup_logging(level: str = "INFO") -> None:
 
     noisy_loggers = [
         "numba",
-        "numba.core", 
+        "numba.core",
         "numba.core.byteflow",
         "numba.core.ssa",
         "numba.core.interpreter",

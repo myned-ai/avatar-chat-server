@@ -84,6 +84,14 @@ class BaseAgent(ABC):
         """
         pass
 
+    def cancel_response(self) -> None:
+        """
+        Cancel the current response generation.
+        Optional implementation - base does nothing.
+        """
+        # Default implementation does nothing - subclasses may override
+        return
+
     @abstractmethod
     def append_audio(self, audio_bytes: bytes) -> None:
         """

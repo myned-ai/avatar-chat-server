@@ -147,12 +147,7 @@ class ChatSession:
         if self.wav2arkit_service.is_available:
              self.wav2arkit_service.reset_context()
 
-        # Start background tasks
-        if self.frame_emit_task is None or self.frame_emit_task.done():
-            self.frame_emit_task = asyncio.create_task(self._emit_frames())
-        if self.inference_task is None or self.inference_task.done():
-            self.inference_task = asyncio.create_task(self._inference_worker())
-
+        # Send start event BEFORE starting tasks to ensure client is ready to receive frames
         await self.send_json({"type": "avatar_state", "state": "Responding"})
         await self.send_json(
             {
@@ -164,6 +159,12 @@ class ChatSession:
                 "timestamp": int(time.time() * 1000),
             }
         )
+
+        # Start background tasks
+        if self.frame_emit_task is None or self.frame_emit_task.done():
+            self.frame_emit_task = asyncio.create_task(self._emit_frames())
+        if self.inference_task is None or self.inference_task.done():
+            self.inference_task = asyncio.create_task(self._inference_worker())
 
     async def _handle_audio_delta(self, audio_bytes: bytes) -> None:
         """Handle audio chunk from agent."""
@@ -326,10 +327,19 @@ class ChatSession:
         interrupted_turn_id = self.current_turn_id
 
         await self.send_json({"type": "interrupt", "timestamp": int(time.time() * 1000)})
+        logger.debug(f"Session {self.session_id}: Interruption signal sent to client")
         await self.send_json({"type": "avatar_state", "state": "Listening"})
+
+        # Halt Upstream Agent synchronously
+        try:
+            # Direct call, not create_task, because it is synchronous
+            self.agent.cancel_response()
+        except Exception as e:
+            logger.warning(f"Failed to cancel agent response: {e}")
 
         self.audio_buffer.clear()
         
+        # Flush synchronous queues
         while not self.audio_chunk_queue.empty():
             try:
                 self.audio_chunk_queue.get_nowait()
@@ -342,12 +352,22 @@ class ChatSession:
             except asyncio.QueueEmpty:
                 break
 
+        # Proper Task Cancellation
+        tasks_to_cancel = []
         if self.inference_task and not self.inference_task.done():
             self.inference_task.cancel()
+            tasks_to_cancel.append(self.inference_task)
         
         if self.frame_emit_task and not self.frame_emit_task.done():
             self.frame_emit_task.cancel()
+            tasks_to_cancel.append(self.frame_emit_task)
+            
+        if tasks_to_cancel:
+            # Wait for tasks to clean up (swallow CancelledError)
+            await asyncio.gather(*tasks_to_cancel, return_exceptions=True)
 
+        self.inference_task = None
+        self.frame_emit_task = None
         self.speech_ended = True
         self.current_turn_id = None
 
@@ -394,6 +414,8 @@ class ChatSession:
                     )
                 except Exception as e:
                     logger.error(f"Inference processing failed: {e}", exc_info=True)
+                    # Prevent CPU spin loop on persistent error
+                    await asyncio.sleep(0.1)
                     continue
 
                 if self.is_interrupted:

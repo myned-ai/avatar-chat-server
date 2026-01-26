@@ -369,16 +369,30 @@ class SampleOpenAIAgent(BaseAgent):
 
         # Cancel any ongoing response before sending new message (text-based interruption)
         if self._state.is_responding:
-            logger.debug("Cancelling ongoing response due to text message")
-            self._client.cancel_response()
-            self._response_cancelled = True
-            self._state.is_responding = False
-            self._current_item_id = None
-            if self._on_interrupted:
-                asyncio.create_task(self._on_interrupted())
+            self.cancel_response()
 
         logger.debug(f"User text: {text}")
         self._client.send_user_message_content([{"type": "input_text", "text": text}])
+
+    def cancel_response(self) -> None:
+        """
+        Explicitly cancel the current response.
+        Used by the server when the user interrupts via UI command.
+        """
+        if not self._connected or not self._client:
+            return
+            
+        logger.debug("Cancelling ongoing response (upstream)")
+        self._client.cancel_response()
+        
+        # Manually trigger strict state reset
+        self._response_cancelled = True
+        self._state.is_responding = False
+        self._state.audio_done = True
+        self._current_item_id = None
+        
+        # Note: We do NOT trigger _on_interrupted here recursively
+        # because this method is called BY the handler that handles interruption
 
     def append_audio(self, audio_bytes: bytes) -> None:
         """

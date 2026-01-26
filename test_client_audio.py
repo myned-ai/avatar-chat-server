@@ -1,9 +1,9 @@
 import asyncio
-import websockets
-import json
 import base64
+import json
 import sys
-import queue
+
+import websockets
 
 # Try to import pyaudio
 try:
@@ -19,30 +19,67 @@ SAMPLE_RATE = 24000
 CHANNELS = 1
 FORMAT = pyaudio.paInt16
 CHUNK_SIZE = 2400  # 100ms at 24kHz
+# [NEW] Audio Gate Threshold (Adjust based on mic sensitivity)
+SILENCE_THRESHOLD = 200
 
 # Global flag to stop threads
 is_running = True
 
+def is_silent(data_chunk):
+    """Simple RMS amplitude check for 16-bit PCM."""
+    # Convert bytes to integers (signed 16-bit little endian)
+    count = len(data_chunk) // 2
+    sum_squares = 0.0
+    for i in range(0, len(data_chunk), 2):
+        # Little-endian 16-bit signed integer
+        sample = int.from_bytes(data_chunk[i:i+2], byteorder='little', signed=True)
+        sum_squares += sample * sample
+    
+    rms = (sum_squares / count) ** 0.5
+    return rms, rms < SILENCE_THRESHOLD
+
 async def send_audio(websocket, input_stream, loop):
     """
     Reads audio from microphone and sends it to the server.
+    Applies a simple Noise Gate to prevent accidental VAD interrupts.
     """
     print("[Mic] Started recording...")
+    print(f"[Mic] Noise Gate Enabled (Threshold: {SILENCE_THRESHOLD})")
+    print("[Mic] If you see 'Gated', speak louder.")
     
     # Notify server we are starting audio stream
     await websocket.send(json.dumps({
-        "type": "audio_stream_start", 
+        "type": "audio_stream_start",
         "userId": "test_client"
     }))
 
+    last_was_silent = True
+
     try:
         while is_running:
-            # Read audio chunk in a separate thread to avoid blocking the event loop
-            # exception_on_overflow=False prevents crashes if the computer is slow
+            # Read audio chunk in a separate thread
             audio_data = await loop.run_in_executor(
-                None, 
+                None,
                 lambda: input_stream.read(CHUNK_SIZE, exception_on_overflow=False)
             )
+            
+            # Check for silence
+            rms, silent = await loop.run_in_executor(None, is_silent, audio_data)
+
+            if silent:
+                if not last_was_silent:
+                    print(f"\n[Mic] Gated (RMS: {int(rms)}) ", end="", flush=True)
+                else:
+                    print(".", end="", flush=True)
+
+                last_was_silent = True
+                await asyncio.sleep(0.01)
+                continue
+            
+            if last_was_silent:
+                print(f"\n[Mic] Sending (RMS: {int(rms)}) > ", end="", flush=True)
+            
+            last_was_silent = False
             
             # Encode and send
             b64_data = base64.b64encode(audio_data).decode("utf-8")
@@ -51,7 +88,7 @@ async def send_audio(websocket, input_stream, loop):
                 "data": b64_data
             }
             await websocket.send(json.dumps(msg))
-            await asyncio.sleep(0.001) # Yield slightly
+            await asyncio.sleep(0.001)
             
     except websockets.exceptions.ConnectionClosed:
         print("[Mic] Connection closed")
@@ -82,6 +119,9 @@ async def receive_audio(websocket, output_stream):
             
             elif msg_type == "transcript_done":
                 print(f"\n[Transcript: {data.get('text')}]")
+
+            elif msg_type == "audio_start":
+                 print(f"\n[Audio Start] Turn ID: {data.get('turnId')}")
                 
             elif msg_type == "interrupt":
                 print("\n[Interrupted]")
@@ -138,8 +178,8 @@ async def run_client():
             receiver_task = asyncio.create_task(receive_audio(websocket, output_stream))
             
             # Wait for either to finish (or error)
-            done, pending = await asyncio.wait(
-                [sender_task, receiver_task], 
+            _done, pending = await asyncio.wait(
+                [sender_task, receiver_task],
                 return_when=asyncio.FIRST_COMPLETED
             )
             

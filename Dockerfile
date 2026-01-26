@@ -33,8 +33,9 @@ RUN useradd --create-home --shell /bin/bash appuser
 WORKDIR /app
 RUN chown appuser:appuser /app
 
-RUN pip install -U "huggingface_hub[cli]" \
-    && mkdir -p pretrained_models \
+# Install huggingface_hub to download pretrained models
+RUN pip install -U "huggingface_hub[cli]"
+RUN mkdir -p pretrained_models \
     && huggingface-cli download myned-ai/wav2arkit_cpu --local-dir pretrained_models
 
 # ------------------------------------------------------------------------------

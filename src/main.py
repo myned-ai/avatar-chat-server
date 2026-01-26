@@ -198,10 +198,10 @@ if __name__ == "__main__":
     setup_logging("DEBUG" if settings.debug else "INFO")
 
     uvicorn.run(
-        "main:app",
+        app,
         host=settings.server_host,
         port=settings.server_port,
-        reload=settings.debug,
+        reload=False,  # Reload doesn't work with app object, use uvicorn CLI for dev
         log_level="debug" if settings.debug else "info",
         log_config=None,  # Prevent uvicorn from overwriting our logging config
     )

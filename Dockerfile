@@ -61,7 +61,8 @@ COPY --chown=appuser:appuser ./src ./src
 
 # Environment variables
 ENV SERVER_HOST=0.0.0.0 \
-    SERVER_PORT=8080
+    SERVER_PORT=8080 \
+    PYTHONPATH=/app/src
 
 # Expose port
 EXPOSE 8080
@@ -71,7 +72,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')" || exit 1
 
 # Start the server
-CMD ["uv", "run", "python", "src/main.py"]
+CMD ["uv", "run", "--no-dev", "python", "src/main.py"]
 
 # ------------------------------------------------------------------------------
 # Stage 4: Development image (with hot reload)
@@ -87,7 +88,8 @@ VOLUME ["/app"]
 # Environment variables for development
 ENV DEBUG=true \
     SERVER_HOST=0.0.0.0 \
-    SERVER_PORT=8080
+    SERVER_PORT=8080 \
+    PYTHONPATH=/app/src
 
 # Expose port
 EXPOSE 8080

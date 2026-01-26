@@ -7,7 +7,7 @@
 </head>
 <body>
     <h1>Avatar Chat Widget Test</h1>
-    <p>Server: <code>ws://localhost:8080</code></p>
+    <p>Server: <code>ws://avatar-chat-server-624148005029.europe-west2.run.app/ws</code></p>
     <p>Make sure AUTH_ENABLED=false in your .env file</p>
 
     <!-- Container for the widget -->
@@ -20,7 +20,7 @@
         // Initialize the widget
         AvatarChat.init({
             container: '#avatar-chat',
-            serverUrl: 'ws://localhost:8080/ws',
+            serverUrl: 'ws://avatar-chat-server-624148005029.europe-west2.run.app/ws',
             authEnabled: false
         });
     </script>

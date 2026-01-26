@@ -85,6 +85,10 @@ class AuthMiddleware:
             logger.warning(f"Origin validation failed for {origin}: {error}")
             return False, error
 
+        if origin is None:
+            logger.warning("Origin header is missing")
+            return False, "Missing Origin header"
+        
         # Get token from query parameters
         token = websocket.query_params.get("token")
         if not token:

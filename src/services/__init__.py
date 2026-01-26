@@ -6,11 +6,11 @@ Contains service layer classes for:
 - Agent management (factory pattern)
 """
 
-from services.agent_service import get_agent
+from services.agent_service import create_agent_instance
 from services.wav2arkit_service import Wav2ArkitService, get_wav2arkit_service
 
 __all__ = [
     "Wav2ArkitService",
-    "get_agent",
+    "create_agent_instance",
     "get_wav2arkit_service",
 ]

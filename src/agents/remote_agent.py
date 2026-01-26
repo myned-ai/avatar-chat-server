@@ -11,8 +11,8 @@ from collections.abc import Callable
 
 import websockets
 
-from core.config import get_settings
 from core.logger import get_logger
+from core.settings import get_settings
 
 from .base_agent import BaseAgent, ConversationState
 

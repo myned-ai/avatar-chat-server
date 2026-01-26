@@ -6,32 +6,25 @@ Supports local sample agents and remote agents.
 """
 
 from agents import BaseAgent, RemoteAgent, SampleGeminiAgent, SampleOpenAIAgent
-from core.config import get_settings
-
-# Global agent instance
-_agent: BaseAgent | None = None
+from core.settings import get_settings
 
 
-def get_agent() -> BaseAgent:
+def create_agent_instance() -> BaseAgent:
     """
-    Get or create the agent instance based on configuration.
+    Create a new agent instance based on configuration.
+    Used for creating a fresh agent for each session.
 
     Returns:
-        Agent instance
+        New Agent instance
     """
-    global _agent
+    settings = get_settings()
+    agent_type = settings.agent_type
 
-    if _agent is None:
-        settings = get_settings()
-        agent_type = settings.agent_type
-
-        if agent_type == "sample_openai":
-            _agent = SampleOpenAIAgent()
-        elif agent_type == "sample_gemini":
-            _agent = SampleGeminiAgent()
-        elif agent_type == "remote":
-            _agent = RemoteAgent()
-        else:
-            raise ValueError(f"Unknown agent_type: {agent_type}. Supported: sample_openai, sample_gemini, remote")
-
-    return _agent
+    if agent_type == "sample_openai":
+        return SampleOpenAIAgent()
+    elif agent_type == "sample_gemini":
+        return SampleGeminiAgent()
+    elif agent_type == "remote":
+        return RemoteAgent()
+    else:
+        raise ValueError(f"Unknown agent_type: {agent_type}. Supported: sample_openai, sample_gemini, remote")

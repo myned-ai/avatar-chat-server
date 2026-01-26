@@ -12,8 +12,8 @@ from typing import Any
 
 import numpy as np
 
-from core.config import AudioConstants, Settings, get_audio_constants, get_settings
 from core.logger import get_logger
+from core.settings import Settings, get_settings
 
 logger = get_logger(__name__)
 
@@ -26,16 +26,14 @@ class Wav2ArkitService:
     audio to ARKit-compatible facial blendshapes.
     """
 
-    def __init__(self, settings: Settings, audio_constants: AudioConstants):
+    def __init__(self, settings: Settings):
         """
         Initialize the Wav2Arkit service.
 
         Args:
             settings: Application settings
-            audio_constants: Audio processing constants
         """
         self.settings = settings
-        self.audio_constants = audio_constants
         self._inference: Any | None = None
         self._available = False
 
@@ -54,8 +52,8 @@ class Wav2ArkitService:
 
             self._inference = Wav2ArkitInference(
                 model_path=str(model_path),
-                audio_sr=self.audio_constants.wav2arkit_sample_rate,
-                fps=self.audio_constants.blendshape_fps,
+                audio_sr=self.settings.wav2arkit_sample_rate,
+                fps=self.settings.blendshape_fps,
                 debug=self.settings.debug,
             )
 
@@ -83,12 +81,12 @@ class Wav2ArkitService:
         try:
             logger.info("Running model warmup pass...")
             # Create dummy audio: 1 second of silence at model sample rate
-            dummy_audio = np.zeros(self.audio_constants.wav2arkit_sample_rate, dtype=np.float32)
+            dummy_audio = np.zeros(self.settings.wav2arkit_sample_rate, dtype=np.float32)
 
             # Run inference (will trigger ONNX runtime initialization)
             result, _ = self.infer_streaming(
                 dummy_audio,
-                sample_rate=self.audio_constants.wav2arkit_sample_rate,
+                sample_rate=self.settings.wav2arkit_sample_rate,
             )
 
             if result.get("code") == 0:
@@ -128,6 +126,9 @@ class Wav2ArkitService:
         if not self.is_available:
             return {"code": -1, "error": "Wav2Arkit model not available"}, None
 
+        if self._inference is None:
+            return {"code": -1, "error": "Wav2Arkit inference not initialized"}, None
+        
         return self._inference.infer_streaming(audio_data, sample_rate=sample_rate)
 
     def weights_to_dict(self, frame_weights: np.ndarray) -> dict[str, float]:
@@ -143,6 +144,9 @@ class Wav2ArkitService:
         if not self.is_available:
             return {}
 
+        if self._inference is None:
+            return {}
+        
         return self._inference.weights_to_dict(frame_weights)
 
     def process_audio_chunk(
@@ -173,19 +177,23 @@ class Wav2ArkitService:
         # Run inference
         result, _ = self.infer_streaming(
             audio_float,
-            sample_rate=self.audio_constants.input_sample_rate,
+            sample_rate=self.settings.input_sample_rate,
         )
 
-        if result.get("code") != 0:
-            return []
-
         expression = result.get("expression")
-        if expression is None or len(expression) == 0:
-            return []
+        
+        # Handle inference failure or empty result by returning audio with neutral face
+        # This ensures audio is never dropped even if model fails
+        if result.get("code") != 0 or expression is None or len(expression) == 0:
+            if result.get("code") != 0:
+                logger.warning(f"Inference failed (code {result.get('code')}). Using fallback frames.")
+            else:
+                logger.warning("Inference returned no frames. Using fallback frames.")
+            return self._create_fallback_frames(audio_bytes)
 
         # Pair each blendshape frame with its corresponding audio
         frames = []
-        bytes_per_frame = self.audio_constants.bytes_per_frame
+        bytes_per_frame = self.settings.bytes_per_frame
 
         for i, frame_weights in enumerate(expression):
             weights_dict = self.weights_to_dict(frame_weights)
@@ -209,6 +217,49 @@ class Wav2ArkitService:
 
         return frames
 
+    def _create_fallback_frames(self, audio_bytes: bytes) -> list[dict[str, Any]]:
+        """Create frames with audio but zero/neutral weights."""
+        if not self._inference:
+            return []
+            
+        frames = []
+        bytes_per_frame = self.settings.bytes_per_frame
+        
+        # Calculate how many frames fit in this audio chunk
+        # Use simple ceiling division logic or just process ensuring all audio is sent
+        total_len = len(audio_bytes)
+        num_frames = (total_len + bytes_per_frame - 1) // bytes_per_frame
+        
+        # Get neutral (zero) weights
+        # We can cache this or invoke get_blendshape_names
+        try:
+            names = self._inference.get_blendshape_names()
+            zero_weights = dict.fromkeys(names, 0.0)
+        except Exception:
+            zero_weights = {}
+
+        for i in range(num_frames):
+            audio_start = i * bytes_per_frame
+            # Ensure we don't go past end
+            audio_end = min(audio_start + bytes_per_frame, total_len)
+            
+            frame_audio = audio_bytes[audio_start:audio_end]
+            
+            if len(frame_audio) == 0:
+                break
+                
+            # Pad final frame if needed to match protocol expectations
+            if len(frame_audio) < bytes_per_frame:
+                padding = bytes(bytes_per_frame - len(frame_audio))
+                frame_audio = frame_audio + padding
+            
+            frames.append({
+                "weights": zero_weights,
+                "audio": base64.b64encode(frame_audio).decode("utf-8")
+            })
+            
+        return frames
+
 
 # Singleton instance (created on first import if needed)
 _wav2arkit_service: Wav2ArkitService | None = None
@@ -216,14 +267,12 @@ _wav2arkit_service: Wav2ArkitService | None = None
 
 def get_wav2arkit_service(
     settings: Settings | None = None,
-    audio_constants: AudioConstants | None = None,
 ) -> Wav2ArkitService:
     """
     Get or create the Wav2ArkitService singleton.
 
     Args:
         settings: Application settings (uses defaults if not provided)
-        audio_constants: Audio constants (uses defaults if not provided)
 
     Returns:
         Wav2ArkitService instance
@@ -232,7 +281,6 @@ def get_wav2arkit_service(
 
     if _wav2arkit_service is None:
         settings = settings or get_settings()
-        audio_constants = audio_constants or get_audio_constants()
-        _wav2arkit_service = Wav2ArkitService(settings, audio_constants)
+        _wav2arkit_service = Wav2ArkitService(settings)
 
     return _wav2arkit_service

@@ -30,7 +30,7 @@ class OpenAISettings(BaseSettings):
     )
 
     # OpenAI Configuration
-    openai_api_key: str
+    openai_api_key: str = ""
     openai_model: str = "gpt-4o-realtime-preview"
     openai_voice: Literal["alloy", "ash", "ballad", "coral", "echo", "sage", "shimmer", "verse", "marin", "cedar"] = (
         "alloy"

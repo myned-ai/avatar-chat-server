@@ -36,9 +36,10 @@ RUN chown appuser:appuser /app
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 # Download pretrained models using huggingface_hub
-RUN uv pip install --system "huggingface_hub[cli]" \
-    && mkdir -p pretrained_models \
-    && huggingface-cli download myned-ai/wav2arkit_cpu --local-dir pretrained_models \
+RUN uv pip install --system huggingface_hub
+RUN mkdir -p pretrained_models \
+    && python -c "from huggingface_hub import snapshot_download; snapshot_download('myned-ai/wav2arkit_cpu', local_dir='pretrained_models')" \
+    && chown -R appuser:appuser pretrained_models \
     && uv pip uninstall --system huggingface_hub
 
 # ------------------------------------------------------------------------------

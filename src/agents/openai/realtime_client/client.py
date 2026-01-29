@@ -13,20 +13,21 @@ Features:
 """
 
 import asyncio
-import json
 import copy
-from typing import Optional, Dict, Any, List, Callable, Union
+import json
+from collections.abc import Callable
+from typing import Any
+
 import numpy as np
 
-from .event_handler import RealtimeEventHandler
 from .api import RealtimeAPI
 from .conversation import RealtimeConversation
+from .event_handler import RealtimeEventHandler
 from .utils import RealtimeUtils
 
-
 # Type definitions
-ToolDefinition = Dict[str, Any]
-ToolHandler = Callable[[Dict[str, Any]], Any]
+ToolDefinition = dict[str, Any]
+ToolHandler = Callable[[dict[str, Any]], Any]
 
 
 class RealtimeClient(RealtimeEventHandler):
@@ -44,9 +45,9 @@ class RealtimeClient(RealtimeEventHandler):
     
     def __init__(
         self,
-        url: Optional[str] = None,
-        api_key: Optional[str] = None,
-        model: str = "gpt-4o-realtime-preview",
+        model: str,
+        url: str | None = None,
+        api_key: str | None = None,
         debug: bool = False
     ):
         """
@@ -89,8 +90,8 @@ class RealtimeClient(RealtimeEventHandler):
         self.transcription_models = [{'model': 'whisper-1'}]
         
         # Initialize state
-        self.session_config: Dict[str, Any] = {}
-        self.tools: Dict[str, Dict[str, Any]] = {}  # name -> {definition, handler}
+        self.session_config: dict[str, Any] = {}
+        self.tools: dict[str, dict[str, Any]] = {}  # name -> {definition, handler}
         self.session_created = False
         self.input_audio_buffer = np.array([], dtype=np.int16)
         self._response_cancelled = False  # Flag to stop dispatching audio after interruption
@@ -174,7 +175,7 @@ class RealtimeClient(RealtimeEventHandler):
                 self.dispatch('conversation.updated', {'item': item, 'delta': delta})
             return result
         
-        async def call_tool(tool: Dict[str, Any]):
+        async def call_tool(tool: dict[str, Any]):
             """Call a registered tool and send the result."""
             try:
                 arguments = json.loads(tool.get('arguments', '{}'))
@@ -226,16 +227,16 @@ class RealtimeClient(RealtimeEventHandler):
         self.realtime.on('server.response.content_part.added', handler)
         
         def on_speech_started(event):
-            # Only interrupt if there's an active response to cancel
+            # ALWAYS dispatch the interrupt event.
+            # Even if the server is "done" generating, the client might still be playing
+            # buffered audio. The application layer needs this signal to clear that buffer.
+            self.dispatch('conversation.interrupted')
+
+            # Set the cancelled flag to stop processing any lingering network packets
+            self._response_cancelled = True
+
+            # Only send the cancel command upstream if OpenAi is actually generating
             if self._is_responding:
-                # IMMEDIATELY set cancelled flag to stop dispatching audio deltas
-                self._response_cancelled = True
-
-                # Dispatch interrupt FIRST so widget stops playback immediately
-                # This must happen before processing the event to minimize latency
-                self.dispatch('conversation.interrupted')
-
-                # Then cancel the response on OpenAI's side
                 self.realtime.send('response.cancel')
 
             # Process the event
@@ -348,7 +349,7 @@ class RealtimeClient(RealtimeEventHandler):
             self.realtime.disconnect()
         self.conversation.clear()
     
-    def get_turn_detection_type(self) -> Optional[str]:
+    def get_turn_detection_type(self) -> str | None:
         """
         Gets the active turn detection mode.
         
@@ -360,7 +361,7 @@ class RealtimeClient(RealtimeEventHandler):
             return turn_detection.get('type')
         return None
     
-    def add_tool(self, definition: ToolDefinition, handler: ToolHandler) -> Dict[str, Any]:
+    def add_tool(self, definition: ToolDefinition, handler: ToolHandler) -> dict[str, Any]:
         """
         Add a tool and handler.
         
@@ -369,7 +370,7 @@ class RealtimeClient(RealtimeEventHandler):
             handler: Function to call when tool is invoked
             
         Returns:
-            Dict with definition and handler
+            dict with definition and handler
         """
         if 'name' not in definition:
             raise ValueError("Tool definition must have a 'name'")
@@ -418,18 +419,18 @@ class RealtimeClient(RealtimeEventHandler):
     
     def update_session(
         self,
-        modalities: Optional[List[str]] = None,
-        instructions: Optional[str] = None,
-        voice: Optional[str] = None,
-        input_audio_format: Optional[str] = None,
-        output_audio_format: Optional[str] = None,
-        input_audio_transcription: Optional[Dict] = None,
-        input_audio_noise_reduction: Optional[Dict] = None,
-        turn_detection: Optional[Dict] = None,
-        tools: Optional[List[ToolDefinition]] = None,
-        tool_choice: Optional[str] = None,
-        temperature: Optional[float] = None,
-        max_response_output_tokens: Optional[int] = None,
+        modalities: list[str]| None = None,
+        instructions: str|None = None,
+        voice: str|None = None,
+        input_audio_format: str|None = None,
+        output_audio_format: str|None = None,
+        input_audio_transcription: dict|None = None,
+        input_audio_noise_reduction: dict|None = None,
+        turn_detection: dict|None = None,
+        tools: list[ToolDefinition]| None = None,
+        tool_choice: str|None = None,
+        temperature: float|None = None,
+        max_response_output_tokens: int|None = None,
     ) -> bool:
         """
         Updates session configuration.
@@ -497,7 +498,7 @@ class RealtimeClient(RealtimeEventHandler):
                 raise ValueError(f'Tool "{definition["name"]}" has already been defined')
             use_tools.append(definition)
         
-        for name, tool_config in self.tools.items():
+        for _, tool_config in self.tools.items():
             use_tools.append({
                 'type': 'function',
                 **tool_config['definition'],
@@ -515,7 +516,7 @@ class RealtimeClient(RealtimeEventHandler):
     
     def send_user_message_content(
         self,
-        content: List[Dict[str, Any]]
+        content: list[dict[str, Any]]
     ) -> bool:
         """
         Sends user message content and generates a response.
@@ -547,7 +548,7 @@ class RealtimeClient(RealtimeEventHandler):
         self.create_response()
         return True
     
-    def append_input_audio(self, audio_data: Union[bytes, np.ndarray]) -> bool:
+    def append_input_audio(self, audio_data: bytes | np.ndarray) -> bool:
         """
         Appends user audio to the existing audio buffer.
         
@@ -590,7 +591,7 @@ class RealtimeClient(RealtimeEventHandler):
         self.realtime.send('response.create')
         return True
     
-    def cancel_response(self, item_id: Optional[str] = None, sample_count: int = 0) -> Dict[str, Any]:
+    def cancel_response(self, item_id: str|None = None, sample_count: int = 0) -> dict[str, Any]:
         """
         Cancels the ongoing server generation and truncates ongoing generation.
         
@@ -618,7 +619,7 @@ class RealtimeClient(RealtimeEventHandler):
         
         self.realtime.send('response.cancel')
         
-        audio = item.get('formatted', {}).get('audio', np.array([], dtype=np.int16))
+        item.get('formatted', {}).get('audio', np.array([], dtype=np.int16))
         audio_end_ms = int((sample_count / self.conversation.DEFAULT_FREQUENCY) * 1000)
         
         self.realtime.send('conversation.item.truncate', {
@@ -629,7 +630,7 @@ class RealtimeClient(RealtimeEventHandler):
         
         return {'item': item}
     
-    async def wait_for_next_item(self) -> Dict[str, Any]:
+    async def wait_for_next_item(self) -> dict[str, Any]:
         """
         Utility for waiting for the next conversation.item.appended event.
         
@@ -639,7 +640,7 @@ class RealtimeClient(RealtimeEventHandler):
         event = await self.wait_for_next('conversation.item.appended')
         return {'item': event.get('item')}
     
-    async def wait_for_next_completed_item(self) -> Dict[str, Any]:
+    async def wait_for_next_completed_item(self) -> dict[str, Any]:
         """
         Utility for waiting for the next conversation.item.completed event.
         

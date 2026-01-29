@@ -31,14 +31,14 @@ class OpenAISettings(BaseSettings):
 
     # OpenAI Configuration
     openai_api_key: str = ""
-    openai_model: str = "gpt-4o-realtime-preview"
+    openai_model: str = "gpt-realtime"
     openai_voice: Literal["alloy", "ash", "ballad", "coral", "echo", "sage", "shimmer", "verse", "marin", "cedar"] = (
         "alloy"
     )
 
     # Transcription model for user speech
     # Options: whisper-1, gpt-4o-transcribe, gpt-4o-mini-transcribe, gpt-4o-transcribe-latest
-    openai_transcription_model: str = "gpt-4o-mini-transcribe"
+    openai_transcription_model: str = "gpt-4o-transcribe"
 
     # Language for transcription (ISO-639-1 code, e.g., 'en', 'es', 'fr')
     # Set to help the model focus on expected language and reduce foreign language hallucinations
@@ -46,7 +46,7 @@ class OpenAISettings(BaseSettings):
 
     # Voice Activity Detection (VAD) type
     # Options: server_vad, semantic_vad
-    openai_vad_type: Literal["server_vad", "semantic_vad"] = "server_vad"
+    openai_vad_type: Literal["server_vad", "semantic_vad"] = "semantic_vad"
 
     # VAD threshold (0.0 to 1.0) - higher = less sensitive to speech (default 0.9 per OpenAI ref)
     openai_vad_threshold: float = 0.9

@@ -3,7 +3,6 @@ import uuid
 
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 
-from auth import get_auth_middleware
 from chat import ConnectionManager, get_connection_manager
 from core.logger import get_logger
 from core.settings import Settings, get_settings
@@ -22,12 +21,10 @@ async def websocket_endpoint(
     chat_connection_manager: ConnectionManager = Depends(get_connection_manager),
 ) -> None:
 
-    # If using reverse proxy (NGINX/Cloudflare), headers might be filtered
-    # For now, we trust the standard UUID generation
     session_id = str(uuid.uuid4())
 
     # Auth check...
-    auth_middleware = get_auth_middleware()
+    from main import auth_middleware
 
     if settings.auth_enabled and auth_middleware:
         is_authenticated, error = await auth_middleware.authenticate_websocket(
@@ -48,5 +45,5 @@ async def websocket_endpoint(
     except WebSocketDisconnect:
         await chat_connection_manager.disconnect(websocket)
     except Exception as e:
-        logger.warning(f"WebSocket error: {e}")
+        logger.error(f"WebSocket error in chat handler: {type(e).__name__}: {e}", exc_info=True)
         await chat_connection_manager.disconnect(websocket)

@@ -15,6 +15,7 @@ from core.settings import get_settings
 
 from ..base_agent import BaseAgent, ConversationState
 from .openai_settings import get_openai_settings
+from .realtime_client import RealtimeClient
 
 logger = get_logger(__name__)
 
@@ -35,7 +36,7 @@ class SampleOpenAIAgent(BaseAgent):
         """
         self._settings = get_settings()  # Core settings (assistant_instructions, debug)
         self._openai_settings = get_openai_settings()  # OpenAI-specific settings
-        self._client: Any | None = None
+        self._client: RealtimeClient | None = None
         self._connected = False
         self._state = ConversationState()
 
@@ -51,6 +52,12 @@ class SampleOpenAIAgent(BaseAgent):
         # Current response item ID for cancellation
         self._current_item_id: str | None = None
         self._response_cancelled: bool = False
+        
+        #  Thread safety and re-entry prevention
+        self._response_processing_lock = asyncio.Lock()
+        self._is_processing_response: bool = False
+        self._interruption_lock = asyncio.Lock()
+        self._interruption_in_progress: bool = False
 
     @property
     def is_connected(self) -> bool:
@@ -102,8 +109,6 @@ class SampleOpenAIAgent(BaseAgent):
 
         logger.info("Connecting to OpenAI Realtime API")
 
-        from .realtime_client import RealtimeClient
-
         self._client = RealtimeClient(
             api_key=self._openai_settings.openai_api_key,
             model=self._openai_settings.openai_model,
@@ -127,6 +132,7 @@ class SampleOpenAIAgent(BaseAgent):
             "prefix_padding_ms": self._openai_settings.openai_vad_prefix_padding_ms,
             "silence_duration_ms": self._openai_settings.openai_vad_silence_duration_ms,
             "create_response": True,  # Auto-generate response when user stops speaking
+            "interrupt_response": True
         }
 
         # Build transcription config
@@ -204,6 +210,15 @@ class SampleOpenAIAgent(BaseAgent):
         if source == "server" and event_type not in skip_events:
             logger.debug(f"[{source}] {event_type}")
 
+    def _handle_error(self, event: Any) -> None:
+        """Handle error events from the client."""
+        error = event.get("error", event)
+        logger.error(f"OpenAI Realtime API Error: {error}")
+        
+        if self._on_error:
+            # Create task for async callback
+            asyncio.create_task(self._on_error(error))
+
     def _handle_conversation_updated(self, event: dict) -> None:
         """Handle conversation updates (delta events)."""
         # Early exit if cancelled - check FIRST before any processing
@@ -257,6 +272,7 @@ class SampleOpenAIAgent(BaseAgent):
             self._current_item_id = item.get("id")
             self._response_cancelled = False  # Reset cancel flag for new response
             self._state.session_id = f"session_{int(time.time() * 1000)}"
+            logger.info(f"New Session ID generated: {self._state.session_id}") # Debug Log
             self._state.is_responding = True
             self._state.transcript_buffer = ""
             self._state.audio_done = False  # Reset audio done flag
@@ -317,45 +333,71 @@ class SampleOpenAIAgent(BaseAgent):
             if self._on_user_transcript:
                 asyncio.create_task(self._on_user_transcript(transcript, role))
 
-    def _handle_interrupted(self, event: dict) -> None:
-        """Handle conversation interruption."""
-        import time
+    async def _handle_interrupted(self, event: dict) -> None:
+        """
+        Handle conversation interruption with production-grade locking and error handling.
+        
+        Implements:
+        - Fast-path check before lock acquisition
+        - Async lock with timeout to prevent deadlocks
+        - Double-check pattern to prevent race conditions
+        - Proper error handling and logging
+        - State cleanup and reset for next response
+        """
+        # [FAST PATH] Check if already in progress without acquiring lock first
+        if self._interruption_in_progress:
+            logger.debug(f"Session {self._state.session_id}: Interruption already in progress, ignoring duplicate")
+            return
 
-        handler_start = time.time()
-        logger.info(f"[INTERRUPT DEBUG] sample_agent._handle_interrupted called at {handler_start:.3f}")
+        # [ACQUIRE LOCK] With timeout to prevent deadlocks (C# pattern: WaitAsync with timeout)
+        try:
+            async def acquire_lock_with_timeout():
+                async with self._interruption_lock:
+                    return True
+            
+            await asyncio.wait_for(acquire_lock_with_timeout(), timeout=1.0)
+            
+            async with self._interruption_lock:
+                    # [DOUBLE-CHECK] Inside the lock, verify again
+                    if self._interruption_in_progress:
+                        logger.debug(f"Session {self._state.session_id}: Interruption already in progress (after lock)")
+                        return
 
-        # Set cancelled flag IMMEDIATELY to stop processing any pending audio deltas
-        # This MUST be set before anything else to ensure no more audio is processed
-        self._response_cancelled = True
-        self._state.is_responding = False
-        self._state.audio_done = True  # Mark audio as done to prevent waiting
-        self._current_item_id = None
+                    self._interruption_in_progress = True
+                    logger.info(f"Session {self._state.session_id}: Starting interruption handling")
 
-        # Call interrupt handler synchronously-ish (as a high-priority task)
-        # This ensures the ChatConnectionManager receives the interrupt ASAP
-        if self._on_interrupted:
-            # Create task but also try to run it immediately
-            logger.info(
-                f"[INTERRUPT DEBUG] Creating async task for on_interrupted callback at {time.time():.3f} (+{(time.time() - handler_start) * 1000:.1f}ms)"
-            )
-            task = asyncio.create_task(self._on_interrupted())
-            # Log for debugging
-            logger.debug(f"Interrupt handler task created: {task}")
+                    try:
+                        # Send interrupt message to client IMMEDIATELY
+                        # This ensures client stops playback instantly
+                        try:
+                            if self._on_interrupted:
+                                await self._on_interrupted()
+                            logger.info(f"Session {self._state.session_id}: Interruption signal sent to client")
+                        except Exception as e:
+                            logger.error(f"Session {self._state.session_id}: Failed to send interrupt message: {e}")
+                            return  # Don't proceed if we can't notify client
 
-    def _handle_error(self, error: dict) -> None:
-        """Handle errors from the Realtime API."""
-        # Extract error details for better logging
-        error_type = error.get("error", {}).get("type", "unknown")
-        error_message = error.get("error", {}).get("message", str(error))
-        error_code = error.get("error", {}).get("code", "")
-        event_id = error.get("event_id", "")
+                        # Guard against duplicate cancellation
+                        if self._response_cancelled:
+                            logger.debug(f"Session {self._state.session_id}: Already interrupted flag set, skipping upstream cancellation")
+                            return
 
-        logger.error(
-            f"Realtime API error: type={error_type}, code={error_code}, message={error_message}, event_id={event_id}"
-        )
+                        # Cancel current response
+                        self.cancel_response()
+                            # Don't fail the whole interruption if agent cancel fails
 
-        if self._on_error:
-            asyncio.create_task(self._on_error(error))
+                        logger.info(f"Session {self._state.session_id}: Interruption handling completed successfully")
+
+                    finally:
+                        # Always reset the flag, even if errors occur
+                        self._interruption_in_progress = False
+
+        except asyncio.TimeoutError:
+            logger.error(f"Session {self._state.session_id}: Interruption handling lock timeout (1.0s exceeded)")
+            self._interruption_in_progress = False
+        except Exception as e:
+            logger.error(f"Session {self._state.session_id}: Unexpected error during interruption handling: {e}", exc_info=True)
+            self._interruption_in_progress = False
 
     def send_text_message(self, text: str) -> None:
         """

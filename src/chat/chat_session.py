@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import concurrent.futures
 import time
 from typing import Any
 
@@ -56,9 +57,24 @@ class ChatSession:
         self.is_interrupted: bool = False
         self.first_audio_received: bool = False
 
+        # Track accumulated text for accurate interruption cutting
+        self.current_turn_text: str = ""
+        
+        # Where we are in the text stream (time-wise)
+        self.virtual_cursor_text_ms = 0.0
+        
+        # Calibration constant
+        self.chars_per_second = 16.0
+        
         # Background tasks
         self.frame_emit_task: asyncio.Task | None = None
         self.inference_task: asyncio.Task | None = None
+        
+        # Thread safety and re-entry prevention during interruptions
+        self._interruption_lock = asyncio.Lock()
+  
+        # Dedicated thread pool for heavier inference tasks
+        self._inference_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
         self._setup_agent_handlers()
 
@@ -83,24 +99,33 @@ class ChatSession:
         self.is_active = False
         self.is_interrupted = True
         
-        # Cancel tasks
-        if self.inference_task and not self.inference_task.done():
-            self.inference_task.cancel()
-            try:
-                await self.inference_task
-            except asyncio.CancelledError:
-                pass
+        await self._cancel_and_wait_task(self.inference_task)
+        await self._cancel_and_wait_task(self.frame_emit_task)
         
-        if self.frame_emit_task and not self.frame_emit_task.done():
-            self.frame_emit_task.cancel()
-            try:
-                await self.frame_emit_task
-            except asyncio.CancelledError:
-                pass
-        
+        # Shutdown executor
+        self._inference_executor.shutdown(wait=False)
+
         # Disconnect Agent
         await self.agent.disconnect()
         logger.info(f"Session {self.session_id} stopped.")
+        
+        # Shutdown executor
+        self._inference_executor.shutdown(wait=False)
+
+        # Disconnect Agent
+        await self.agent.disconnect()
+        logger.info(f"Session {self.session_id} stopped.")
+
+    async def _cancel_and_wait_task(self, task: asyncio.Task | None) -> None:
+        """Helper to safely cancel and await a task."""
+        if task and not task.done():
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+            except Exception as e:
+                logger.warning(f"Error during task cancellation: {e}")
 
     async def send_json(self, message: dict[str, Any]) -> None:
         """Send JSON to this specific client."""
@@ -117,6 +142,14 @@ class ChatSession:
             else:
                 logger.error(f"Error sending to client {self.session_id}: {e}")
 
+    async def _drain_queue(self, queue: asyncio.Queue) -> None:
+        """Helper to flush an asyncio queue."""
+        while not queue.empty():
+            try:
+                queue.get_nowait()
+            except asyncio.QueueEmpty:
+                break
+
     async def _handle_response_start(self, session_id: str) -> None:
         """Handle AI response start."""
         self.current_turn_id = f"turn_{int(time.time() * 1000)}_{session_id[:8]}"
@@ -128,21 +161,12 @@ class ChatSession:
         self.speech_ended = False
         self.is_interrupted = False
         self.first_audio_received = False
+        self.current_turn_text = ""
 
         # Clear queues
         self.audio_buffer.clear()
-        
-        while not self.frame_queue.empty():
-            try:
-                self.frame_queue.get_nowait()
-            except asyncio.QueueEmpty:
-                break
-        
-        while not self.audio_chunk_queue.empty():
-            try:
-                self.audio_chunk_queue.get_nowait()
-            except asyncio.QueueEmpty:
-                break
+        await self._drain_queue(self.frame_queue)
+        await self._drain_queue(self.audio_chunk_queue)
 
         if self.wav2arkit_service.is_available:
              self.wav2arkit_service.reset_context()
@@ -169,6 +193,10 @@ class ChatSession:
     async def _handle_audio_delta(self, audio_bytes: bytes) -> None:
         """Handle audio chunk from agent."""
         if self.is_interrupted:
+            return
+
+        # Drop packets if worker tasks are dead (prevents queue blocking/freezing)
+        if self.inference_task is None or self.inference_task.done():
             return
 
         if not self.first_audio_received:
@@ -251,6 +279,10 @@ class ChatSession:
                 await asyncio.wait_for(self.inference_task, timeout=8.0)
             except (asyncio.TimeoutError, asyncio.CancelledError):
                 pass
+        
+        # Check interruption before final waits/sends
+        if self.is_interrupted:
+            return
 
         if self.frame_emit_task and not self.frame_emit_task.done():
             try:
@@ -260,6 +292,9 @@ class ChatSession:
             except (asyncio.TimeoutError, asyncio.CancelledError):
                 pass
         
+        if self.is_interrupted:
+            return
+
         await self.send_json(
             {
                 "type": "audio_end",
@@ -295,6 +330,22 @@ class ChatSession:
         item_id: str | None = None,
         previous_item_id: str | None = None,
     ) -> None:
+        
+        if role == "assistant":
+            self.current_turn_text += text
+            
+            # Calculate heuristic timestamp
+            # We assume the text starts "now" at the end of the previous text
+            char_duration_ms = (len(text) / self.chars_per_second) * 1000
+            
+            start_offset = self.virtual_cursor_text_ms
+            end_offset = start_offset + char_duration_ms
+            
+            self.virtual_cursor_text_ms += char_duration_ms
+        else:
+            start_offset = 0
+            end_offset = 0
+
         turn_id = self.current_turn_id if role == "assistant" else f"user_{int(time.time() * 1000)}"
         msg = {
             "type": "transcript_delta",
@@ -303,6 +354,8 @@ class ChatSession:
             "turnId": turn_id,
             "sessionId": self.session_id,
             "timestamp": int(time.time() * 1000),
+            "startOffset": int(start_offset),
+            "endOffset": int(end_offset)
         }
         if item_id:
             msg["itemId"] = item_id
@@ -322,66 +375,126 @@ class ChatSession:
             }
         )
 
-    async def _handle_interrupted(self) -> None:
+    async def _calculate_truncated_text(self) -> str:
+        """Helper to calculate truncated text based on audio duration."""
+        try:
+            seconds_spoken = self.total_frames_emitted / self.settings.blendshape_fps
+            estimated_chars = int(seconds_spoken * 16)  # English avg: ~16 chars/sec
+            
+            final_text = self.current_turn_text
+            if len(final_text) > estimated_chars:
+                # Try to cut at word boundary
+                search_buffer = 10
+                cut_index = final_text.find(" ", estimated_chars)
+                
+                if cut_index != -1 and cut_index - estimated_chars < search_buffer:
+                    final_text = final_text[:cut_index] + "..."
+                else:
+                    final_text = final_text[:estimated_chars] + "..."
+            
+            logger.debug(f"Session {self.session_id}: Text truncated to {len(final_text)} chars ({seconds_spoken:.2f}s spoken)")
+            return final_text
+        except Exception as e:
+            logger.warning(f"Session {self.session_id}: Error computing text truncation: {e}")
+            return self.current_turn_text
+
+    async def _execute_interruption_sequence(self) -> None:
+        """
+        Executes the core cleanup logic inside the interruption lock.
+        Separated for clarity and maintenance.
+        """
+        # Double-check inside lock
+        if self.is_interrupted:
+            return
+
         self.is_interrupted = True
         interrupted_turn_id = self.current_turn_id
+        logger.debug(f"Session {self.session_id}: Cancellation sequence (turn_id: {interrupted_turn_id})")
 
-        await self.send_json({"type": "interrupt", "timestamp": int(time.time() * 1000)})
-        logger.debug(f"Session {self.session_id}: Interruption signal sent to client")
-        await self.send_json({"type": "avatar_state", "state": "Listening"})
-
-        # Halt Upstream Agent synchronously
+        # 1. Cancel Agent Response
         try:
-            # Direct call, not create_task, because it is synchronous
             self.agent.cancel_response()
         except Exception as e:
-            logger.warning(f"Failed to cancel agent response: {e}")
+            logger.debug(f"Session {self.session_id}: Agent cancel: {e}")
 
+        # 2. Clear Local Buffers
         self.audio_buffer.clear()
         
-        # Flush synchronous queues
-        while not self.audio_chunk_queue.empty():
-            try:
-                self.audio_chunk_queue.get_nowait()
-            except asyncio.QueueEmpty:
-                break
-                
-        while not self.frame_queue.empty():
-            try:
-                self.frame_queue.get_nowait()
-            except asyncio.QueueEmpty:
-                break
+        # 3. Drain Queues
+        await self._drain_queue(self.audio_chunk_queue)
+        await self._drain_queue(self.frame_queue)
 
-        # Proper Task Cancellation
-        tasks_to_cancel = []
-        if self.inference_task and not self.inference_task.done():
-            self.inference_task.cancel()
-            tasks_to_cancel.append(self.inference_task)
+        # 4. Cancel Tasks
+        await self._cancel_and_wait_task(self.inference_task)
+        await self._cancel_and_wait_task(self.frame_emit_task)
         
-        if self.frame_emit_task and not self.frame_emit_task.done():
-            self.frame_emit_task.cancel()
-            tasks_to_cancel.append(self.frame_emit_task)
-            
-        if tasks_to_cancel:
-            # Wait for tasks to clean up (swallow CancelledError)
-            await asyncio.gather(*tasks_to_cancel, return_exceptions=True)
-
         self.inference_task = None
         self.frame_emit_task = None
+
+        # 5. Reset State
         self.speech_ended = True
         self.current_turn_id = None
+        
+        # 6. Calc Truncation & Send
+        final_text = await self._calculate_truncated_text()
+        
+        try:
+            await self.send_json({
+                "type": "transcript_done",
+                "text": final_text,
+                "role": "assistant",
+                "turnId": interrupted_turn_id,
+                "interrupted": True,
+                "timestamp": int(time.time() * 1000)
+            })
+            logger.info(f"Session {self.session_id}: Interruption complete")
 
-        if interrupted_turn_id:
-            await self.send_json(
-                {
-                    "type": "transcript_done",
-                    "text": "",
-                    "role": "assistant",
-                    "turnId": interrupted_turn_id,
-                    "interrupted": True,
-                    "timestamp": int(time.time() * 1000),
-                }
-            )
+        except Exception as e:
+            logger.error(f"Session {self.session_id}: Failed to send transcript_done: {e}")
+
+        # Critical: Re-enable processing
+        self.is_interrupted = False
+
+    async def _handle_interrupted(self) -> None:
+        """
+        Production-grade interruption handler.
+        """
+        # Fast-path check
+        if self.is_interrupted:
+            return
+
+        # [MODIFIED] Calculate offset immediately for the instant message
+        current_offset_ms = 0
+        if self.settings.blendshape_fps > 0:
+             current_offset_ms = int((self.total_frames_emitted / self.settings.blendshape_fps) * 1000)
+
+        # Immediate client notification
+        try:
+            await self.send_json({
+                "type": "interrupt", 
+                "timestamp": int(time.time() * 1000),
+                "turnId": self.current_turn_id,   # Add context
+                "offsetMs": current_offset_ms     # Add exact cut point
+            })
+            await self.send_json({"type": "avatar_state", "state": "Listening"})
+        except Exception as e:
+            logger.error(f"Session {self.session_id}: Failed to send interrupt: {e}")
+            return
+
+        # Lock acquisition with timeout
+        try:
+            async def _locked_execution():
+                async with self._interruption_lock:
+                    await self._execute_interruption_sequence()
+
+            await asyncio.wait_for(_locked_execution(), timeout=1.0)
+
+        except asyncio.TimeoutError:
+            logger.error(f"Session {self.session_id}: TIMEOUT unlocking interrupted state")
+            self.is_interrupted = False
+        except Exception as e:
+            logger.error(f"Session {self.session_id}: EXCEPTION in interruption: {e}", exc_info=True)
+            self.is_interrupted = False
 
     async def _inference_worker(self) -> None:
         """Process audio chunks through Wav2Arkit model."""
@@ -408,9 +521,9 @@ class ChatSession:
 
                 # Run inference in default executor
                 try:
-                    # Use None executor to use the default loop executor (ThreadPool)
+                    # Use dedicated executor to prevent blocking
                     frames = await loop.run_in_executor(
-                        None, self.wav2arkit_service.process_audio_chunk, audio_bytes
+                        self._inference_executor, self.wav2arkit_service.process_audio_chunk, audio_bytes
                     )
                 except Exception as e:
                     logger.error(f"Inference processing failed: {e}", exc_info=True)
@@ -514,6 +627,9 @@ class ChatSession:
         elif msg_type == "audio_stream_start":
             self.is_streaming_audio = True
             self.user_id = data.get("userId", "unknown")
+            # Unstick session: If user starts speaking, previous interruption is over.
+            # This ensures we recover even if OpenAI errored out in the previous turn.
+            self.is_interrupted = False
 
         elif msg_type == "audio":
             if self.is_streaming_audio:
@@ -523,6 +639,7 @@ class ChatSession:
                     self.agent.append_audio(audio_bytes)
 
         elif msg_type == "interrupt":
+            logger.info(f"Session {self.session_id}: Received explicit interrupt command from client")
             await self._handle_interrupted()
 
         elif msg_type == "ping":

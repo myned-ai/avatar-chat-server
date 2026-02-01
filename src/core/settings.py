@@ -45,7 +45,7 @@ class Settings(BaseSettings):
     debug: bool = False
 
     # Authentication Configuration
-    auth_enabled: bool = True
+    auth_enabled: bool = False
     auth_secret_key: str = ""
     auth_token_ttl: int = 3600
     auth_allowed_origins: str = "http://localhost:5173,http://localhost:5174,http://localhost:5175"

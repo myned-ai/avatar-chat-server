@@ -272,6 +272,7 @@ class SampleOpenAIAgent(BaseAgent):
             self._current_item_id = item.get("id")
             self._response_cancelled = False  # Reset cancel flag for new response
             self._state.session_id = f"session_{int(time.time() * 1000)}"
+            logger.info(f"New Session ID generated: {self._state.session_id}") # Debug Log
             self._state.is_responding = True
             self._state.transcript_buffer = ""
             self._state.audio_done = False  # Reset audio done flag

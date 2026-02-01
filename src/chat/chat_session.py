@@ -448,6 +448,7 @@ class ChatSession:
                 "timestamp": int(time.time() * 1000)
             })
             logger.info(f"Session {self.session_id}: Interruption complete")
+
         except Exception as e:
             logger.error(f"Session {self.session_id}: Failed to send transcript_done: {e}")
 
@@ -462,9 +463,19 @@ class ChatSession:
         if self.is_interrupted:
             return
 
+        # [MODIFIED] Calculate offset immediately for the instant message
+        current_offset_ms = 0
+        if self.settings.blendshape_fps > 0:
+             current_offset_ms = int((self.total_frames_emitted / self.settings.blendshape_fps) * 1000)
+
         # Immediate client notification
         try:
-            await self.send_json({"type": "interrupt", "timestamp": int(time.time() * 1000)})
+            await self.send_json({
+                "type": "interrupt", 
+                "timestamp": int(time.time() * 1000),
+                "turnId": self.current_turn_id,   # Add context
+                "offsetMs": current_offset_ms     # Add exact cut point
+            })
             await self.send_json({"type": "avatar_state", "state": "Listening"})
         except Exception as e:
             logger.error(f"Session {self.session_id}: Failed to send interrupt: {e}")

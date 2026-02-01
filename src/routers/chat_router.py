@@ -22,6 +22,8 @@ async def websocket_endpoint(
     chat_connection_manager: ConnectionManager = Depends(get_connection_manager),
 ) -> None:
 
+    # If using reverse proxy (NGINX/Cloudflare), headers might be filtered
+    # For now, we trust the standard UUID generation
     session_id = str(uuid.uuid4())
 
     # Auth check...

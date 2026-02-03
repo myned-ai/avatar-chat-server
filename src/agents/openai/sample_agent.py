@@ -148,6 +148,7 @@ class SampleOpenAIAgent(BaseAgent):
             "instructions": self._settings.assistant_instructions,
             "modalities": ["text", "audio"],
             "voice": self._openai_settings.openai_voice,
+            "speed": self._openai_settings.openai_voice_speed,
             "input_audio_format": "pcm16",
             "output_audio_format": "pcm16",
             "input_audio_transcription": transcription_config,

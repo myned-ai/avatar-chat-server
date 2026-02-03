@@ -67,7 +67,8 @@ class RealtimeClient(RealtimeEventHandler):
         self.default_session_config = {
             'modalities': ['text', 'audio'],
             'instructions': '',
-            'voice': 'verse',
+            'voice': 'alloy',
+            'speed': 1.0,
             'input_audio_format': 'pcm16',
             'output_audio_format': 'pcm16',
             'input_audio_transcription': None,
@@ -344,7 +345,7 @@ class RealtimeClient(RealtimeEventHandler):
             raise ValueError("Already connected, use .disconnect() first")
         
         await self.realtime.connect(model=self.model)
-        self.update_session()
+        #self.update_session() <-- Avoid sending default values unnecessarily
         return True
     
     async def wait_for_session_created(self) -> bool:
@@ -442,6 +443,7 @@ class RealtimeClient(RealtimeEventHandler):
         modalities: list[str]| None = None,
         instructions: str|None = None,
         voice: str|None = None,
+        speed: float|None = None,
         input_audio_format: str|None = None,
         output_audio_format: str|None = None,
         input_audio_transcription: dict|None = None,
@@ -462,6 +464,7 @@ class RealtimeClient(RealtimeEventHandler):
             modalities: List of modalities ('text', 'audio')
             instructions: System instructions
             voice: Voice for audio output
+            speed: Voice speed (0.25 to 1.5, where 1.0 is normal)
             input_audio_format: Format for input audio
             output_audio_format: Format for output audio
             input_audio_transcription: Transcription config
@@ -482,6 +485,8 @@ class RealtimeClient(RealtimeEventHandler):
             self.session_config['instructions'] = instructions
         if voice is not None:
             self.session_config['voice'] = voice
+        if speed is not None:
+            self.session_config['speed'] = speed
         if input_audio_format is not None:
             self.session_config['input_audio_format'] = input_audio_format
         if output_audio_format is not None:

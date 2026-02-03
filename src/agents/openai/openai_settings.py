@@ -36,9 +36,12 @@ class OpenAISettings(BaseSettings):
         "alloy"
     )
 
+    # Voice speed (0.25 to 1.5, where 1.0 is normal speed)
+    openai_voice_speed: float = 1.2
+
     # Transcription model for user speech
     # Options: whisper-1, gpt-4o-transcribe, gpt-4o-mini-transcribe, gpt-4o-transcribe-latest
-    openai_transcription_model: str = "gpt-4o-transcribe"
+    openai_transcription_model: str = "whisper-1"
 
     # Language for transcription (ISO-639-1 code, e.g., 'en', 'es', 'fr')
     # Set to help the model focus on expected language and reduce foreign language hallucinations

@@ -267,10 +267,26 @@ class RealtimeConversation:
             self.responses.append(response)
         return (None, None)
 
-    def _process_response_output_item_added(self, event: dict, *args) -> tuple[None, None]:
+    def _process_response_output_item_added(self, event: dict, *args) -> tuple[dict, None]:
         """Process response.output_item.added event."""
         response_id = event["response_id"]
         item = event["item"]
+
+        # Register item in item_lookup so subsequent deltas can find it
+        new_item = copy.deepcopy(item)
+        if "formatted" not in new_item:
+            new_item["formatted"] = {
+                "audio": np.array([], dtype=np.int16),
+                "text": "",
+                "transcript": "",
+            }
+
+        if new_item["id"] not in self.item_lookup:
+            self.item_lookup[new_item["id"]] = new_item
+            self.items.append(new_item)
+        
+        # Use the stored item reference
+        stored_item = self.item_lookup[new_item["id"]]
 
         response = self.response_lookup.get(response_id)
         if not response:
@@ -278,9 +294,9 @@ class RealtimeConversation:
 
         if "output" not in response:
             response["output"] = []
-        response["output"].append(item)
+        response["output"].append(stored_item)
 
-        return (None, None)
+        return (stored_item, None)
 
     def _process_response_output_item_done(self, event: dict, *args) -> tuple[dict | None, None]:
         """Process response.output_item.done event."""

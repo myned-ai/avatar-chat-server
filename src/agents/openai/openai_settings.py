@@ -41,7 +41,7 @@ class OpenAISettings(BaseSettings):
 
     # Transcription model for user speech
     # Options: whisper-1, gpt-4o-transcribe, gpt-4o-mini-transcribe, gpt-4o-transcribe-latest
-    openai_transcription_model: str = "whisper-1"
+    openai_transcription_model: str = "gpt-4o-transcribe"
 
     # Language for transcription (ISO-639-1 code, e.g., 'en', 'es', 'fr')
     # Set to help the model focus on expected language and reduce foreign language hallucinations

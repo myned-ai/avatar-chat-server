@@ -47,7 +47,7 @@ class SampleOpenAIAgent(BaseAgent):
         self._on_response_end: Callable | None = None
         self._on_user_transcript: Callable | None = None
         self._on_interrupted: Callable | None = None
-        self._on_error: Callable | None = None
+        self._on_error: Callable[[Any], Awaitable[None]] | None = None
 
         # Current response item ID for cancellation
         self._current_item_id: str | None = None
@@ -181,6 +181,7 @@ class SampleOpenAIAgent(BaseAgent):
         client.on("conversation.item.appended", self._handle_item_appended)
         client.on("conversation.item.completed", self._handle_item_completed)
         client.on("conversation.item.input_transcription.completed", self._handle_user_transcript)
+        client.on("conversation.item.input_transcription.failed", self._handle_transcription_failed)
         client.on("conversation.interrupted", self._handle_interrupted)
 
         # Handle response.audio.done event (signals all audio has been sent)
@@ -205,18 +206,50 @@ class SampleOpenAIAgent(BaseAgent):
             "input_audio_buffer.speech_stopped",
             "response.audio.delta",
             "response.audio_transcript.delta",
+            "error",  # Handled separately by _handle_error
         ]
 
         if source == "server" and event_type not in skip_events:
-            logger.debug(f"[{source}] {event_type}")
+            # Enrich conversation item events
+            if event_type == "conversation.item.created":
+                item = evt.get("item", {})
+                item_type = item.get("type", "unknown")
+                role = item.get("role", "")
+                item_id = item.get("id", "")[:12] if item.get("id") else ""
+                logger.debug(f"[{source}] {event_type}: type={item_type}, role={role}, id={item_id}...")
+            # Enrich response events
+            elif event_type == "response.created":
+                response = evt.get("response", {})
+                response_id = response.get("id", "")[:12] if response.get("id") else ""
+                status = response.get("status", "")
+                logger.debug(f"[{source}] {event_type}: id={response_id}..., status={status}")
+            elif event_type == "response.done":
+                response = evt.get("response", {})
+                response_id = response.get("id", "")[:12] if response.get("id") else ""
+                status = response.get("status", "")
+                logger.debug(f"[{source}] {event_type}: id={response_id}..., status={status}")
+            # Enrich input buffer events
+            elif event_type == "input_audio_buffer.committed":
+                item_id = evt.get("item_id", "")[:12] if evt.get("item_id") else ""
+                logger.debug(f"[{source}] {event_type}: item_id={item_id}...")
+            else:
+                logger.debug(f"[{source}] {event_type}")
 
     def _handle_error(self, event: Any) -> None:
         """Handle error events from the client."""
         error = event.get("error", event)
-        logger.error(f"OpenAI Realtime API Error: {error}")
+        error_code = error.get("code") if isinstance(error, dict) else None
         
+        # Suppress expected errors during interruptions
+        if error_code == "response_cancel_not_active":
+            # This happens when we try to cancel a response that already finished
+            # It's expected during interruptions and can be safely ignored
+            logger.debug(f"Ignoring expected cancellation error: {error_code}")
+            return
+        
+        logger.error(f"OpenAI Realtime API Error: {error}")
+        logger.info(f"Full error event: {event}")
         if self._on_error:
-            # Create task for async callback
             asyncio.create_task(self._on_error(error))
 
     def _handle_conversation_updated(self, event: dict) -> None:
@@ -332,6 +365,23 @@ class SampleOpenAIAgent(BaseAgent):
             # which fires on speech_started (before transcript is available)
             if self._on_user_transcript:
                 asyncio.create_task(self._on_user_transcript(transcript, role))
+
+    def _handle_transcription_failed(self, event: dict) -> None:
+        """Handle input audio transcription failure."""
+        item_id = event.get("item_id")
+        content_index = event.get("content_index")
+        error = event.get("error", {})
+        
+        error_type = error.get("type", "unknown")
+        error_code = error.get("code", "unknown")
+        error_message = error.get("message", "No message provided")
+        
+        logger.warning(
+            f"Session {self._state.session_id}: Input audio transcription failed - "
+            f"item_id={item_id}, content_index={content_index}, "
+            f"type={error_type}, code={error_code}, message={error_message}"
+        )
+        logger.debug(f"Full transcription error event: {event}")
 
     async def _handle_interrupted(self, event: dict) -> None:
         """

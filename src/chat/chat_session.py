@@ -86,7 +86,7 @@ class ChatSession:
             on_response_end=self._handle_response_end,
             on_user_transcript=self._handle_user_transcript,
             on_transcript_delta=self._handle_transcript_delta,
-            on_interrupted=self._handle_interrupted,
+            on_interrupted=self._handle_interrupted
         )
 
     async def start(self) -> None:
@@ -495,6 +495,10 @@ class ChatSession:
         except Exception as e:
             logger.error(f"Session {self.session_id}: EXCEPTION in interruption: {e}", exc_info=True)
             self.is_interrupted = False
+
+    async def on_error(self, error: Any) -> None:
+        """Handle error events from the agent."""
+        logger.error(f"Session {self.session_id}: Agent error: {error}")
 
     async def _inference_worker(self) -> None:
         """Process audio chunks through Wav2Arkit model."""

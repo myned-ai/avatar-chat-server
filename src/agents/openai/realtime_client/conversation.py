@@ -41,6 +41,7 @@ class RealtimeConversation:
             "response.audio.delta": self._process_response_audio_delta,
             "response.text.delta": self._process_response_text_delta,
             "response.function_call_arguments.delta": self._process_response_function_call_arguments_delta,
+            "error": self._process_error,
         }
 
     def clear(self) -> bool:
@@ -369,3 +370,44 @@ class RealtimeConversation:
         item["formatted"]["tool"]["arguments"] += delta
 
         return (item, {"arguments": delta})
+
+    def _process_error(self, event: dict, *args) -> tuple[dict, None]:
+        """
+        Process error event from the Realtime API.
+
+        Error events have the structure:
+        {
+            "event_id": "...",
+            "type": "error",
+            "error": {
+                "type": "invalid_request_error" | "server_error" | ...,
+                "code": "...",
+                "message": "...",
+                "param": "..." | null,
+                "event_id": "..." | null  # The event_id that caused the error
+            }
+        }
+
+        Returns:
+            Tuple of (error_item, None) where error_item contains formatted error info
+        """
+        error_data = event.get("error", {})
+
+        error_item = {
+            "id": event.get("event_id", ""),
+            "type": "error",
+            "error": {
+                "type": error_data.get("type", "unknown_error"),
+                "code": error_data.get("code"),
+                "message": error_data.get("message", "Unknown error occurred"),
+                "param": error_data.get("param"),
+                "event_id": error_data.get("event_id"),
+            },
+            "formatted": {
+                "text": error_data.get("message", "Unknown error occurred"),
+                "error_type": error_data.get("type", "unknown_error"),
+                "error_code": error_data.get("code"),
+            },
+        }
+
+        return (error_item, None)

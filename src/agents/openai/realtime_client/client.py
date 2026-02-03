@@ -271,6 +271,18 @@ class RealtimeClient(RealtimeEventHandler):
                 })
         
         self.realtime.on('server.conversation.item.input_audio_transcription.completed', on_input_transcription_completed)
+        
+        def on_input_transcription_failed(event):
+            """Handle input audio transcription failure."""
+            # Dispatch the failure event so applications can handle it
+            self.dispatch('conversation.item.input_transcription.failed', {
+                'item_id': event.get('item_id'),
+                'content_index': event.get('content_index'),
+                'error': event.get('error', {}),
+            })
+        
+        self.realtime.on('server.conversation.item.input_audio_transcription.failed', on_input_transcription_failed)
+        
         self.realtime.on('server.response.audio_transcript.delta', handler_with_dispatch)
         self.realtime.on('server.response.audio.delta', handler_with_dispatch)
         self.realtime.on('server.response.text.delta', handler_with_dispatch)
@@ -286,6 +298,14 @@ class RealtimeClient(RealtimeEventHandler):
                 asyncio.create_task(call_tool(item['formatted']['tool']))
         
         self.realtime.on('server.response.output_item.done', on_output_item_done)
+        
+        # Handle error events from OpenAI
+        def on_error(event):
+            """Handle error events from the Realtime API."""
+            # Dispatch the error event to the application layer
+            self.dispatch('error', event)
+        
+        self.realtime.on('server.error', on_error)
         
         return True
     

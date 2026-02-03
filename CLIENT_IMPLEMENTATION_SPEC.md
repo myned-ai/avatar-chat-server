@@ -9,7 +9,7 @@ This document specifies the communication protocol and implementation requiremen
 
 ### 1.1 Transport
 - **Protocol:** WebSocket (WS/WSS)
-- **Endpoint:** `/chat/ws`
+- **Endpoint:** `/ws`
 - **Audio Format:** PCM 16-bit, 24kHz, Mono, Raw (Little Endian).
 
 ---

@@ -4,7 +4,7 @@ import time
 
 import websockets
 
-WS_URL = "ws://localhost:8080/chat/ws"
+WS_URL = "ws://localhost:8080/ws"
 
 class ChatClientSimulator:
     def __init__(self):

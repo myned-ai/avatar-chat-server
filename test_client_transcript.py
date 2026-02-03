@@ -16,7 +16,7 @@ except ImportError:
     sys.exit(1)
 
 # Configuration
-SERVER_URL = "ws://localhost:8080/chat/ws"
+SERVER_URL = "ws://localhost:8080/ws"
 SAMPLE_RATE = 24000
 CHANNELS = 1
 FORMAT = pyaudio.paInt16

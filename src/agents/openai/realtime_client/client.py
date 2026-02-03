@@ -67,7 +67,7 @@ class RealtimeClient(RealtimeEventHandler):
         self.default_session_config = {
             'modalities': ['text', 'audio'],
             'instructions': '',
-            'voice': 'verse',
+            'voice': 'alloy',
             'input_audio_format': 'pcm16',
             'output_audio_format': 'pcm16',
             'input_audio_transcription': None,
@@ -324,7 +324,7 @@ class RealtimeClient(RealtimeEventHandler):
             raise ValueError("Already connected, use .disconnect() first")
         
         await self.realtime.connect(model=self.model)
-        self.update_session()
+        #self.update_session() <-- Avoid sending default values unnecessarily
         return True
     
     async def wait_for_session_created(self) -> bool:

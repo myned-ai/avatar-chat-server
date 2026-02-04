@@ -177,6 +177,9 @@ class SampleOpenAIAgent(BaseAgent):
         if client is None:
             raise RuntimeError("Client not initialized")
         
+        # Handle response lifecycle
+        client.on("response.started", self._handle_response_started)
+        
         # Handle conversation updates
         client.on("conversation.updated", self._handle_conversation_updated)
         client.on("conversation.item.appended", self._handle_item_appended)
@@ -298,21 +301,37 @@ class SampleOpenAIAgent(BaseAgent):
         logger.debug("Audio done received")
         self._state.audio_done = True
 
+    def _handle_response_started(self, event: dict) -> None:
+        """Handle response.started event - OpenAI started generating a response."""
+        response_id = event.get("response_id", "")[:12] if event.get("response_id") else ""
+        logger.debug(f"Response started: id={response_id}...")
+        
+        # Initialize state for new response
+        self._response_cancelled = False
+        self._state.session_id = f"session_{int(time.time() * 1000)}"
+        self._state.is_responding = True
+        self._state.transcript_buffer = ""
+        self._state.audio_done = False
+        
+        logger.info(f"Assistant response starting - Session ID: {self._state.session_id}")
+        
+        if self._on_response_start:
+            logger.debug(f"Calling on_response_start callback with session: {self._state.session_id}")
+            asyncio.create_task(self._on_response_start(self._state.session_id))
+
     def _handle_item_appended(self, event: dict) -> None:
-        """Handle new conversation items."""
+        """Handle new conversation items (for tracking item IDs)."""
         item = event.get("item", {})
+        role = item.get("role", "")
+        item_type = item.get("type", "")
+        item_id = item.get("id", "")[:12] if item.get("id") else ""
+        
+        logger.debug(f"Item appended: role={role}, type={item_type}, id={item_id}...")
 
-        if item.get("role") == "assistant":
+        # Track the current item ID for assistant responses
+        if role == "assistant":
             self._current_item_id = item.get("id")
-            self._response_cancelled = False  # Reset cancel flag for new response
-            self._state.session_id = f"session_{int(time.time() * 1000)}"
-            logger.info(f"New Session ID generated: {self._state.session_id}") # Debug Log
-            self._state.is_responding = True
-            self._state.transcript_buffer = ""
-            self._state.audio_done = False  # Reset audio done flag
-
-            if self._on_response_start:
-                asyncio.create_task(self._on_response_start(self._state.session_id))
+            # Note: Response start is now handled in _handle_response_started
 
     async def _wait_for_audio_done(self, timeout: float = 3.0) -> bool:
         """Wait for audio_done flag to be set, with timeout."""

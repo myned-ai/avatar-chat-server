@@ -48,6 +48,7 @@ class ChatSession:
 
         # Tracking state
         self.current_turn_id: str | None = None
+        self.current_turn_session_id: str | None = None  # Turn-level session ID from agent
         self.speech_start_time: float = 0
         self.actual_audio_start_time: float = 0
         self.total_frames_emitted: int = 0
@@ -63,8 +64,8 @@ class ChatSession:
         # Where we are in the text stream (time-wise)
         self.virtual_cursor_text_ms = 0.0
         
-        # Calibration constant
-        self.chars_per_second = 16.0
+        # Calibration constant for transcript timing (configurable via settings)
+        self.chars_per_second = settings.transcript_chars_per_second
         
         # Background tasks
         self.frame_emit_task: asyncio.Task | None = None
@@ -152,6 +153,8 @@ class ChatSession:
 
     async def _handle_response_start(self, session_id: str) -> None:
         """Handle AI response start."""
+        logger.info(f"Session {self.session_id}: Response start received, creating turn for session {session_id}")
+        self.current_turn_session_id = session_id  # Store turn-level session ID
         self.current_turn_id = f"turn_{int(time.time() * 1000)}_{session_id[:8]}"
         self.speech_start_time = time.time()
         self.actual_audio_start_time = 0
@@ -172,11 +175,12 @@ class ChatSession:
              self.wav2arkit_service.reset_context()
 
         # Send start event BEFORE starting tasks to ensure client is ready to receive frames
+        logger.debug(f"Session {self.session_id}: Sending audio_start with turnId={self.current_turn_id}, sessionId={self.current_turn_session_id}")
         await self.send_json({"type": "avatar_state", "state": "Responding"})
         await self.send_json(
             {
                 "type": "audio_start",
-                "sessionId": session_id,
+                "sessionId": self.current_turn_session_id,
                 "turnId": self.current_turn_id,
                 "sampleRate": self.settings.input_sample_rate,
                 "format": "audio/pcm16",
@@ -589,7 +593,7 @@ class ChatSession:
                         "type": "sync_frame",
                         "weights": frame_data["weights"],
                         "audio": frame_data["audio"],
-                        "sessionId": self.session_id,
+                        "sessionId": self.current_turn_session_id,
                         "turnId": self.current_turn_id,
                         "timestamp": int(time.time() * 1000),
                         "frameIndex": self.blendshape_frame_idx,
@@ -610,7 +614,7 @@ class ChatSession:
                                 "type": "sync_frame",
                                 "weights": frame_data["weights"],
                                 "audio": frame_data["audio"],
-                                "sessionId": self.session_id,
+                                "sessionId": self.current_turn_session_id,
                                 "turnId": self.current_turn_id,
                                 "timestamp": int(time.time() * 1000),
                                 "frameIndex": self.blendshape_frame_idx,

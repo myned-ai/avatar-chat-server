@@ -62,6 +62,11 @@ class Settings(BaseSettings):
     blendshape_fps: int = 30  # Output blendshape frame rate
     audio_chunk_duration: float = 0.5  # 0.5 second chunks for Wav2Arkit processing
 
+    # Transcript timing estimation
+    # Used to calculate text offsets for transcript deltas
+    # Typical values: slow=12, normal=16, fast=20 chars/sec
+    transcript_chars_per_second: float = 16.0
+
     @property
     def frame_interval_ms(self) -> float:
         return 1000 / self.blendshape_fps

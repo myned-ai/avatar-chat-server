@@ -215,6 +215,12 @@ class RealtimeClient(RealtimeEventHandler):
             self._response_cancelled = False
             self._is_responding = True
             handler(event)
+            # Dispatch response.started event for application layer
+            response = event.get('response', {})
+            self.dispatch('response.started', {
+                'response_id': response.get('id'),
+                'status': response.get('status'),
+            })
 
         self.realtime.on('server.response.created', on_response_created)
         

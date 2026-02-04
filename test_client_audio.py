@@ -185,6 +185,11 @@ async def receive_audio(websocket):
     """
     global is_ai_speaking
     print("[Speaker] Ready for audio...")
+    
+    # Track if we received audio_start for current turn
+    audio_start_received = False
+    sync_frames_before_start = 0
+    
     try:
         while is_running:
             message = await websocket.recv()
@@ -192,6 +197,11 @@ async def receive_audio(websocket):
             msg_type = data.get("type")
             
             if msg_type == "sync_frame":
+                # Check if sync_frame arrived before audio_start
+                if not audio_start_received:
+                    sync_frames_before_start += 1
+                    print(f"\n[WARNING] sync_frame received BEFORE audio_start! (count: {sync_frames_before_start})")
+                
                 if not is_ai_speaking:
                     continue  # Ignore audio frame if we are interrupted/not speaking
 
@@ -210,12 +220,17 @@ async def receive_audio(websocket):
                 print(f"\n[AI COMPLETE] {text}")
 
             elif msg_type == "audio_start":
+                 if sync_frames_before_start > 0:
+                     print(f"\n[ERROR] Received {sync_frames_before_start} sync_frames BEFORE audio_start!")
                  print(f"\n[SERVER] Audio Start - Turn ID: {data.get('turnId')}")
                  is_ai_speaking = True
+                 audio_start_received = True
+                 sync_frames_before_start = 0  # Reset counter for next turn
 
             elif msg_type == "interrupt":
                 print("\n[!!!] INTERRUPT RECEIVED - Clearing playback queue...")
                 is_ai_speaking = False
+                audio_start_received = False  # Reset for next turn
                 # CLEAR the queue immediately (thread-safe way)
                 with playback_queue.mutex:
                     playback_queue.queue.clear()
@@ -223,6 +238,7 @@ async def receive_audio(websocket):
             elif msg_type == "audio_end":
                  print("\n[SERVER] Audio Finished")
                  is_ai_speaking = False
+                 audio_start_received = False  # Reset for next turn
 
     except websockets.exceptions.ConnectionClosed:
         print("\n[Speaker] Connection closed")

@@ -128,7 +128,7 @@ class SampleOpenAIAgent(BaseAgent):
         # See: https://github.com/openai/openai-realtime-agents for reference values
         turn_detection = {
             "type": self._openai_settings.openai_vad_type,
-            "threshold": self._openai_settings.openai_vad_threshold,
+          #  "threshold": self._openai_settings.openai_vad_threshold,
             "prefix_padding_ms": self._openai_settings.openai_vad_prefix_padding_ms,
             "silence_duration_ms": self._openai_settings.openai_vad_silence_duration_ms,
             "create_response": True,  # Auto-generate response when user stops speaking

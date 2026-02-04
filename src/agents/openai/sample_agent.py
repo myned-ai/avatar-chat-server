@@ -158,6 +158,9 @@ class SampleOpenAIAgent(BaseAgent):
         if self._openai_settings.openai_noise_reduction:
             session_config["input_audio_noise_reduction"] = {"type": self._openai_settings.openai_noise_reduction}
 
+        # log info from session_config
+        logger.info(f"Session configuration: {session_config}")
+
         self._client.update_session(**session_config)
 
         self._connected = True

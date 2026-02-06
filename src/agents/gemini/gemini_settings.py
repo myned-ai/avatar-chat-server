@@ -31,8 +31,8 @@ class GeminiSettings(BaseSettings):
 
     # Gemini Configuration
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-2.0-flash-exp"
-    gemini_voice: Literal["Puck", "Charon", "Kore", "Fenrir", "Aoede", "Leda", "Orus", "Zephyr"] = "Puck"
+    gemini_model: str = "gemini-2.5-flash-native-audio-preview-12-2025"
+    gemini_voice: Literal["Puck", "Charon", "Kore", "Fenrir", "Aoede", "Leda", "Orus", "Zephyr"] = "Orus"
     # Thinking budget: 0=disabled, -1=dynamic, 1-32768=fixed token budget
     gemini_thinking_budget: int = -1
     # Enable Google Search grounding for real-time information

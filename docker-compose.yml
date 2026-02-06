@@ -38,6 +38,16 @@ services:
       - SERVER_PORT=8080
       - AUTH_ENABLED=false
       - DEBUG=${DEBUG:-false}
+      # Agent Configuration
+      - AGENT_TYPE=${AGENT_TYPE:-sample_gemini}
+      # Gemini Configuration
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_MODEL=${GEMINI_MODEL}
+      - GEMINI_VOICE=${GEMINI_VOICE}
+      - GEMINI_THINKING_BUDGET=${GEMINI_THINKING_BUDGET}
+      - GEMINI_GOOGLE_SEARCH_GROUNDING=${GEMINI_GOOGLE_SEARCH_GROUNDING}
+      - GEMINI_PROACTIVE_AUDIO=${GEMINI_PROACTIVE_AUDIO}
+      - GEMINI_CONTEXT_WINDOW_COMPRESSION=${GEMINI_CONTEXT_WINDOW_COMPRESSION}
     volumes:
       # Mount ONNX model (CPU-only)
       - ./src/pretrained_models/wav2arkit_cpu.onnx:/app/pretrained_models/wav2arkit_cpu.onnx:ro
@@ -72,6 +82,16 @@ services:
       - SERVER_PORT=8080
       - AUTH_ENABLED=false
       - DEBUG=true
+      # Agent Configuration
+      - AGENT_TYPE=${AGENT_TYPE:-sample_gemini}
+      # Gemini Configuration
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_MODEL=${GEMINI_MODEL}
+      - GEMINI_VOICE=${GEMINI_VOICE}
+      - GEMINI_THINKING_BUDGET=${GEMINI_THINKING_BUDGET}
+      - GEMINI_GOOGLE_SEARCH_GROUNDING=${GEMINI_GOOGLE_SEARCH_GROUNDING}
+      - GEMINI_PROACTIVE_AUDIO=${GEMINI_PROACTIVE_AUDIO}
+      - GEMINI_CONTEXT_WINDOW_COMPRESSION=${GEMINI_CONTEXT_WINDOW_COMPRESSION}
     volumes:
       # Mount source code for hot reload
       - .:/app

@@ -512,7 +512,8 @@ class ChatSession:
             
             while True:
                 if self.is_interrupted:
-                    break
+                    await asyncio.sleep(0.01)
+                    continue
                 
                 try:
                     audio_bytes = await asyncio.wait_for(
@@ -525,7 +526,8 @@ class ChatSession:
                     continue
                 
                 if self.is_interrupted:
-                    break
+                    await asyncio.sleep(0.01)
+                    continue
 
                 # Run inference in default executor
                 try:
@@ -540,11 +542,13 @@ class ChatSession:
                     continue
 
                 if self.is_interrupted:
-                    break
+                    await asyncio.sleep(0.01)
+                    continue
 
                 if frames:
                     for frame in frames:
                         if self.is_interrupted:
+                            # Break inner loop but continue outer loop
                             break
                         await self.frame_queue.put(frame)
                 else:
@@ -560,7 +564,8 @@ class ChatSession:
         try:
             while True:
                 if self.is_interrupted:
-                    break
+                    await asyncio.sleep(0.01)
+                    continue
 
                 # Pacing logic
                 elapsed_time = time.time() - self.speech_start_time
@@ -581,7 +586,8 @@ class ChatSession:
                     continue
                 
                 if self.is_interrupted:
-                    break
+                    await asyncio.sleep(0.01)
+                    continue
 
                 if self.blendshape_frame_idx % 30 == 0:
                     audio_b64 = frame_data.get("audio", "")

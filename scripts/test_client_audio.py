@@ -87,7 +87,6 @@ async def capture_mic_input(p, device_index):
     This matches simple_gemini_test.py pattern.
     """
     print(f"[Mic] Opening stream on device {device_index} at {INPUT_SAMPLE_RATE}Hz...")
-    stream = None
     try:
         stream = await asyncio.to_thread(
             p.open,
@@ -113,7 +112,7 @@ async def capture_mic_input(p, device_index):
     except Exception as e:
         print(f"[Mic] Fatal stream error: {e}")
     finally:
-        if stream is not None:
+        if 'stream' in locals():
             stream.stop_stream()
             stream.close()
 
@@ -140,8 +139,7 @@ async def send_audio(websocket):
         rms = get_rms(data)
         status = "Listening" if is_ai_speaking else "Talking"
         bars = "|" * int(rms / 100)
-        if len(bars) > 20:
-            bars = bars[:20] + "+"
+        if len(bars) > 20: bars = bars[:20] + "+"
         print(f"\r[MIC] {status} RMS:{int(rms):<5} {bars:<22}         ", end="", flush=True)
 
         b64_data = base64.b64encode(data).decode("utf-8")
@@ -184,8 +182,7 @@ async def receive_audio(websocket):
             msg_type = data.get("type")
             
             if msg_type == "sync_frame":
-                if not is_ai_speaking:
-                    continue
+                if not is_ai_speaking: continue
 
                 audio_b64 = data.get("audio")
                 if audio_b64:
@@ -227,14 +224,13 @@ async def user_interrupt_monitor(websocket):
     while is_running:
         try:
             await loop.run_in_executor(None, sys.stdin.readline)
-            if not is_running:
-                break
+            if not is_running: break
             print(" [User] Interrupt!", flush=True)
             await websocket.send(json.dumps({"type": "interrupt"}))
             # Clear local
             while not playback_queue.empty():
                 playback_queue.get_nowait()
-        except:  # noqa: E722
+        except:
             break
 
 
@@ -260,8 +256,7 @@ async def run_client():
             
             await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
             
-            for t in tasks:
-                t.cancel()
+            for t in tasks: t.cancel()
             
     except Exception as e:
         print(f"Connection Error: {e}")

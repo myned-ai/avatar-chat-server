@@ -53,6 +53,10 @@ class GeminiSettings(BaseSettings):
     # Sample rate to send to Gemini (default 16000 for best recognition)
     # Reverting to 16000 to match working simple_gemini_test.py
     gemini_input_sample_rate: int = 16000
+    
+    # Audio Output Configuration
+    # Sample rate received from Gemini (default 24000 to match native output)
+    gemini_output_sample_rate: int = 24000
 
     # VAD Configuration
     # Sensitivity: "sensitivity_unspecified", "start_sensitivity_low", "start_sensitivity_medium", "start_sensitivity_high"
@@ -63,6 +67,9 @@ class GeminiSettings(BaseSettings):
     # Turn Coverage: "TURN_COVERAGE_UNSPECIFIED", "TURN_INCLUDES_ONLY_ACTIVITY", "TURN_INCLUDES_ALL_INPUT"
     # Default: UNSPECIFIED (Only Activity)
     gemini_turn_coverage: str = "TURN_INCLUDES_ALL_INPUT"
+
+    # --- Client Sync ---
+    gemini_transcript_speed: float = 15.0
 
 
 @lru_cache

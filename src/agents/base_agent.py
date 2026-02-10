@@ -53,6 +53,15 @@ class BaseAgent(ABC):
 
     @property
     @abstractmethod
+    def transcript_speed(self) -> float:
+        """
+        Transcript character emission speed (chars/sec).
+        Used by the client to smooth out text rendering.
+        """
+        pass
+
+    @property
+    @abstractmethod
     def state(self) -> ConversationState:
         """Get current conversation state."""
         pass

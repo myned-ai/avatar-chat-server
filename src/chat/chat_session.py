@@ -38,18 +38,12 @@ class ChatSession:
         self.agent = create_agent_instance()
         
         # Determine negotiated input sample rate
-        self.input_sample_rate = self.settings.input_sample_rate
-        # Check if agent has a preference (BaseAgent property)
-        if hasattr(self.agent, "input_sample_rate"):
-             self.input_sample_rate = self.agent.input_sample_rate
-             logger.info(f"Session {self.session_id}: Negotiated input sample rate: {self.input_sample_rate}")
+        self.input_sample_rate = self.agent.input_sample_rate
+        logger.info(f"Session {self.session_id}: Negotiated input sample rate: {self.input_sample_rate}")
 
         # Determine negotiated output sample rate
-        self.output_sample_rate = self.settings.output_sample_rate
-        # Check if agent has a preference
-        if hasattr(self.agent, "output_sample_rate"):
-             self.output_sample_rate = self.agent.output_sample_rate
-             logger.info(f"Session {self.session_id}: Negotiated output sample rate: {self.output_sample_rate}")
+        self.output_sample_rate = self.agent.output_sample_rate
+        logger.info(f"Session {self.session_id}: Negotiated output sample rate: {self.output_sample_rate}")
 
         # Client State
         self.is_streaming_audio = False
@@ -80,11 +74,8 @@ class ChatSession:
         self.virtual_cursor_text_ms = 0.0
         
         # Calibration constant for transcript timing (configurable via settings)
-        self.chars_per_second = settings.transcript_chars_per_second
-        # Check if agent has a preference
-        if hasattr(self.agent, "transcript_speed"):
-             self.chars_per_second = self.agent.transcript_speed
-             logger.info(f"Session {self.session_id}: Using agent-specific transcript speed: {self.chars_per_second} chars/sec")
+        self.chars_per_second = self.agent.transcript_speed
+        logger.info(f"Session {self.session_id}: Using agent-specific transcript speed: {self.chars_per_second} chars/sec")
         
         # Background tasks
         self.frame_emit_task: asyncio.Task | None = None
@@ -504,7 +495,7 @@ class ChatSession:
         # Immediate client notification
         try:
             await self.send_json({
-                "type": "interrupt", 
+                "type": "interrupt",
                 "timestamp": int(time.time() * 1000),
                 "turnId": self.current_turn_id,   # Add context
                 "offsetMs": current_offset_ms     # Add exact cut point
@@ -562,8 +553,8 @@ class ChatSession:
                 try:
                     # Use dedicated executor to prevent blocking
                     frames = await loop.run_in_executor(
-                        self._inference_executor, 
-                        self.wav2arkit_service.process_audio_chunk, 
+                        self._inference_executor,
+                        self.wav2arkit_service.process_audio_chunk,
                         audio_bytes,
                         self.output_sample_rate
                     )

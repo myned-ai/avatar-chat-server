@@ -10,15 +10,16 @@ This document specifies the communication protocol and implementation requiremen
 ### 1.1 Transport
 - **Protocol:** WebSocket (WS/WSS)
 - **Endpoint:** `/ws`
-- **Audio Format:** PCM 16-bit, 24kHz, Mono, Raw (Little Endian).
+- **Audio Format:** JSON (Base64 Encoded PCM16). Sample Rate is dictated by the server via `config` event.
 
 ---
 
 ## 2. Connection Lifecycle
 
 1.  **Connect**: Client establishes WebSocket connection.
-2.  **Session Loop**:
-    -   Client streams raw audio bytes (binary).
+2.  **Config**: Server sends `config` event with expected sample rate.
+3.  **Session Loop**:
+    -   Client streams Base64 audio chunks (JSON).
     -   Server streams JSON events (text).
 3.  **Interruption**: If user speaks while avatar is talking, Server sends `interrupt` control event. Client must prune audio buffer.
 
@@ -28,7 +29,16 @@ This document specifies the communication protocol and implementation requiremen
 
 All server messages are JSON objects. The `type` field is discriminative.
 
-### 3.1 `audio_start`
+### 3.1 `config` (NEW)
+Sent immediately after connection to inform client of required audio settings.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `type` | string | Yes | Value: `"config"` |
+| `audio` | object | Yes | Audio settings |
+| `audio.inputSampleRate` | number | Yes | Required sample rate for client mic (e.g. 16000 or 24000) |
+
+### 3.2 `audio_start`
 Signals the beginning of a new audio response turn from the Avatar.
 *Trigger:* Analysis start or VAD silence detected on user end.
 
@@ -78,6 +88,8 @@ Streaming text updates for UI display (User or Assistant).
 | `turnId` | string | Yes | Correlates to audio turn |
 | `startOffset` | number | No | Estimated start time in ms relative to turn (assistant only) |
 | `endOffset` | number | No | Estimated end time in ms relative to turn (assistant only) |
+| `itemId` | string | No | Source Item ID (if available) |
+| `previousItemId` | string | No | Previous Item ID (if available) |
 
 ### 3.5 `transcript_done`
 Final confirmed text for a turn. Sent when silence is detected (user) or generation finishes (assistant).
@@ -91,6 +103,7 @@ Final confirmed text for a turn. Sent when silence is detected (user) or generat
 | `text` | string | Yes | Full text of the turn |
 | `turnId` | string | Yes | Turn ID |
 | `interrupted`| boolean| No | `true` if this transcript was cut short by interruption |
+| `itemId` | string | No | Item ID (if available) |
 
 ### 3.6 `interrupt` (CRITICAL)
 Sent when Server VAD detects user speech while Avatar is outputting audio.
@@ -135,8 +148,8 @@ Sent before sending initial raw audio bytes.
 | `type` | string | Yes | Value: `"audio_stream_start"` |
 | `userId` | string | No | Client user identifier |
 
-### 4.2 `audio` (JSON Wrapper)
-*Note:* Preferred method is **Binary Message** (raw bytes). If using JSON:
+### 4.2 `audio`
+**IMPORTANT:** The server currently ONLY supports JSON audio. Binary messages are not supported.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|

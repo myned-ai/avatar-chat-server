@@ -50,11 +50,11 @@ class ChatClientSimulator:
         print("\n\n>>> [ACTION] TRIGGERING INTERRUPTION NOW <<<")
         print(">>> [ACTION] Sending 'interrupt' event")
         # Send explicit interrupt (simulating VAD trigger or Stop button)
-        await self.ws.send(json.dumps({"type": "interrupt"})) # type: ignore
+        await self.ws.send(json.dumps({"type": "interrupt"}))
         
         await asyncio.sleep(0.5)
         print(">>> [ACTION] Sending new user test: 'Stop, that is enough.'")
-        await self.ws.send(json.dumps({"type": "text", "data": "Stop, that is enough."})) # type: ignore
+        await self.ws.send(json.dumps({"type": "text", "data": "Stop, that is enough."}))
         
         # Let the new response play out briefly then exit
         await asyncio.sleep(5.0)

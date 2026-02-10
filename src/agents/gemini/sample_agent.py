@@ -10,8 +10,6 @@ import time
 from collections.abc import Callable
 from typing import Any
 
-import numpy as np
-
 # Import Gemini SDK
 from google.genai import Client, types
 
@@ -221,7 +219,7 @@ class SampleGeminiAgent(BaseAgent):
                 
                 # Connect using async context manager - keeping it alive for the duration of the session
                 logger.info("Initiating connection to Gemini Live API...")
-                async with self._client.aio.live.connect(model=model_id, config=config) as session:
+                async with self._client.aio.live.connect(model=model_id, config=config) as session: # type: ignore
                     self._session = session
                     self._connected = True
                     self._connection_ready.set()
@@ -248,7 +246,7 @@ class SampleGeminiAgent(BaseAgent):
 
                             logger.info("Gemini receive iterator finished. Re-entering receive loop (Session Active).")
                             # Do NOT break. Loop back to call session.receive() again.
-                            await asyncio.sleep(0.01) 
+                            await asyncio.sleep(0.01)
                         
                         if self._reconnect_requested:
                            logger.info("Closing session for reconnect...")
@@ -267,6 +265,14 @@ class SampleGeminiAgent(BaseAgent):
                 logger.info("Gemini connection task cancelled. Stopping reconnect loop.")
                 break
             except Exception as e:
+                # [CRITICAL] Check for Auth errors (401) to prevent infinite loops
+                error_str = str(e)
+                if "401" in error_str or "Unauthorized" in error_str or "Unauthenticated" in error_str:
+                    logger.critical(f"Authentication failed: {e}. Stopping connection loop to prevent infinite retries.")
+                    if self._on_error:
+                        await self._on_error({"error": f"Authentication failed: {e}. Please check your API key."})
+                    break
+
                 logger.error(f"Connection failed: {e}. Retrying in 2s...", exc_info=True)
                 if self._on_error:
                     await self._on_error({"error": f"Connection failed: {e}"})
@@ -274,9 +280,7 @@ class SampleGeminiAgent(BaseAgent):
                 # Reset connection state before retrying
                 self._connected = False
                 self._session = None
-                self._connection_ready.clear() # Reset event for next attempt? 
-                # Actually, connect() waits for this. If it's already set, connect() returns.
-                # If we are reconnecting, connect() is already returned. This is fine.
+                self._connection_ready.clear()
                 
                 await asyncio.sleep(2) # Backoff before reconnect
             finally:
@@ -300,8 +304,6 @@ class SampleGeminiAgent(BaseAgent):
         Builds the LiveConnectConfig dictionary for the session.
         Simplified to match the working pattern in simple_gemini_test.py.
         """
-        # Determine voice settings
-        voice_name = self._gemini_settings.gemini_voice
         
         # Determine audio format
         # Gemini usually expects 16kHz or 24kHz.
@@ -537,7 +539,7 @@ class SampleGeminiAgent(BaseAgent):
             start_sensitivity: New start sensitivity
             end_sensitivity: New end sensitivity
         """
-        if (self._vad_start_sensitivity == start_sensitivity and 
+        if (self._vad_start_sensitivity == start_sensitivity and
             self._vad_end_sensitivity == end_sensitivity):
             # No change, avoid disruptive reconnect
             logger.debug("VAD Settings unchanged, skipping reconnect.")

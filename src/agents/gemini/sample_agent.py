@@ -112,8 +112,7 @@ class SampleGeminiAgent(BaseAgent):
             print(f"[Agent] Not connected, dropping {len(audio_bytes)} bytes")
             return
 
-        # print(f"[Agent] Appending {len(audio_bytes)} bytes")
-        
+       
         # Check if resampling is needed
         # We assume input is matching configured input_sample_rate (negotiated by ChatSession)
         # Gemini expects 16kHz usually.

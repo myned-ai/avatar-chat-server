@@ -38,6 +38,7 @@ services:
       - SERVER_PORT=8080
       - AUTH_ENABLED=false
       - DEBUG=${DEBUG:-false}
+      - DEBUG_AUDIO_CAPTURE=${DEBUG_AUDIO_CAPTURE:-false}
       # Agent Configuration
       - AGENT_TYPE=${AGENT_TYPE:-sample_gemini}
       # Gemini Configuration

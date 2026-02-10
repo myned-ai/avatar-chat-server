@@ -36,6 +36,22 @@ class BaseAgent(ABC):
         pass
 
     @property
+    def input_sample_rate(self) -> int:
+        """
+        Preferred input sample rate for this agent.
+        Defaults to 24000 (OpenAI standard).
+        """
+        return 24000
+
+    @property
+    def output_sample_rate(self) -> int:
+        """
+        Preferred output sample rate for this agent.
+        Defaults to 24000 (OpenAI standard).
+        """
+        return 24000
+
+    @property
     @abstractmethod
     def state(self) -> ConversationState:
         """Get current conversation state."""

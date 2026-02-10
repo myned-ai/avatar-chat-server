@@ -48,6 +48,9 @@ CONFIG = {
     }
 }
 
+
+
+
 class GeminiVoiceLoop:
     def __init__(self):
         self.pya = pyaudio.PyAudio()
@@ -73,7 +76,7 @@ class GeminiVoiceLoop:
         print("[System] Listening... (You can speak now)")
         while True:
             data = await asyncio.to_thread(audio_stream.read, CHUNK_SIZE, exception_on_overflow=False)
-            await self.out_queue.put({"data": data, "mime_type": "audio/pcm"})
+            await self.out_queue.put({"data": data, "mime_type": "audio/pcm;rate=16000"})
 
     async def send_realtime(self):
         """Sends audio from out_queue to Gemini session."""
@@ -112,8 +115,11 @@ class GeminiVoiceLoop:
                         
                         # Print User Transcript
                         in_trans = getattr(server_content, "input_transcription", None)
-                        if in_trans and in_trans.text:
-                             print(f"\n[User]: {in_trans.text}")
+                        if in_trans: # and in_trans.text:
+                             # Print raw object to see if there are flags like is_final
+                             # print(f"[DEBUG] InputTranscription: {in_trans}")
+                             if in_trans.text:
+                                 print(f"\n[User Raw]: {in_trans.text}")
 
                         # Print Thoughts (if any)
                         model_turn = getattr(server_content, "model_turn", None)

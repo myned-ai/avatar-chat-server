@@ -43,6 +43,7 @@ class Settings(BaseSettings):
     server_port: int = 8080
     use_ssl: bool = False
     debug: bool = False
+    debug_audio_capture: bool = False  # Save incoming audio to files for debugging
 
     # Authentication Configuration
     auth_enabled: bool = False
@@ -58,6 +59,7 @@ class Settings(BaseSettings):
     # Audio Configuration (vendor-agnostic)
     # Note: Widget sends 24kHz audio. This is used for Wav2Arkit processing.
     input_sample_rate: int = 24000  # Input audio sample rate (widget format)
+    output_sample_rate: int = 24000  # Output audio sample rate (for playback and lip-sync)
     wav2arkit_sample_rate: int = 16000  # Wav2Arkit model expects 16kHz
     blendshape_fps: int = 30  # Output blendshape frame rate
     audio_chunk_duration: float = 0.5  # 0.5 second chunks for Wav2Arkit processing

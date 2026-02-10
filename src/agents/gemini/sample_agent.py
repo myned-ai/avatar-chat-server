@@ -13,8 +13,7 @@ from typing import Any
 import numpy as np
 
 # Import Gemini SDK
-from google import genai
-from google.genai import types
+from google.genai import Client, types
 
 from core.logger import get_logger
 from core.settings import get_settings
@@ -41,7 +40,7 @@ class SampleGeminiAgent(BaseAgent):
         """
         self._settings = get_settings()  # Core settings (assistant_instructions, debug)
         self._gemini_settings = get_gemini_settings()  # Gemini-specific settings
-        self._client: genai.Client | None = None
+        self._client: Client | None = None
         self._session: Any | None = None
         self._connected = False
         self._state = ConversationState()
@@ -58,6 +57,16 @@ class SampleGeminiAgent(BaseAgent):
         # Interruption handling
         self._response_cancelled = False
         self._current_turn_id: str | None = None
+        
+        # Interruption synchronization
+        self._interruption_lock = asyncio.Lock()
+        self._interruption_in_progress = False
+        self._current_user_transcript: str = "" # Buffer for fragmented user input
+        
+        # Dynamic VAD Settings (Initialized from config, can be updated)
+        self._vad_start_sensitivity = self._gemini_settings.gemini_vad_start_sensitivity
+        self._vad_end_sensitivity = self._gemini_settings.gemini_vad_end_sensitivity
+        self._reconnect_requested = False
 
         # Background tasks
         self._receive_task: asyncio.Task | None = None
@@ -78,6 +87,50 @@ class SampleGeminiAgent(BaseAgent):
     def state(self) -> ConversationState:
         """Get current conversation state."""
         return self._state
+
+    @property
+    def input_sample_rate(self) -> int:
+        # Use configured input rate (now 16000 to match working simple test)
+        return self._gemini_settings.gemini_input_sample_rate
+
+    @property
+    def output_sample_rate(self) -> int:
+        """Get negotiated output sample rate."""
+        return self._gemini_settings.gemini_output_sample_rate
+
+    @property
+    def transcript_speed(self) -> float:
+        """Get transcript speed (chars/sec) for this agent."""
+        return self._gemini_settings.gemini_transcript_speed
+
+    def append_audio(self, audio_bytes: bytes) -> None:
+        """
+        Append audio to the input buffer.
+        
+        Args:
+            audio_bytes: PCM16 audio bytes
+        """
+        if not self._connected or not self._session:
+            print(f"[Agent] Not connected, dropping {len(audio_bytes)} bytes")
+            return
+
+        # print(f"[Agent] Appending {len(audio_bytes)} bytes")
+        
+        # Check if resampling is needed
+        # We assume input is matching configured input_sample_rate (negotiated by ChatSession)
+        # Gemini expects 16kHz usually.
+        # If we are already sending 16k, pass through.
+        
+        # Note: If we need resampling in the future, we should implement a generic _resample(bytes, src, dst)
+        # For now, since we aligned everything to 16k, we pass through.
+        target_rate = 16000 # Gemini native
+        current_rate = self.input_sample_rate
+        
+        if current_rate != target_rate:
+             # Implement resampling if needed, but for now we expect 16k=16k
+             pass
+        
+        asyncio.create_task(self._send_audio_async(audio_bytes))
 
     def set_event_handlers(
         self,
@@ -123,7 +176,8 @@ class SampleGeminiAgent(BaseAgent):
 
         # Initialize client if needed
         if not self._client:
-            self._client = genai.Client(
+            # Use v1alpha to match working simple_gemini_test.py
+            self._client = Client(
                 api_key=self._gemini_settings.gemini_api_key,
                 http_options={"api_version": "v1alpha"}
             )
@@ -152,13 +206,19 @@ class SampleGeminiAgent(BaseAgent):
         Uses `async with` to ensure proper resource management.
         Auto-reconnects if the session closes unexpectedly.
         """
-        config = self._build_live_config()
         model_id = self._gemini_settings.gemini_model
 
         logger.info(f"Starting connection loop for model: {model_id}")
 
         while True:
             try:
+                # [FIX] Reset reconnect request flag at start of loop to prevent infinite cycling
+                # This ensures that a previous request is cleared and only new requests trigger break
+                self._reconnect_requested = False
+                
+                # [FIX] Build config INSIDE loop to apply dynamic changes (e.g. VAD)
+                config = self._build_live_config()
+                
                 # Connect using async context manager - keeping it alive for the duration of the session
                 logger.info("Initiating connection to Gemini Live API...")
                 async with self._client.aio.live.connect(model=model_id, config=config) as session:
@@ -166,7 +226,7 @@ class SampleGeminiAgent(BaseAgent):
                     self._connected = True
                     self._connection_ready.set()
                     
-                    # [FIX] Reset conversation state on new connection to prevent stale flags
+                    # Reset conversation state on new connection to prevent stale flags
                     self._state.is_responding = False
                     self._state.transcript_buffer = ""
                     self._response_cancelled = False
@@ -176,13 +236,24 @@ class SampleGeminiAgent(BaseAgent):
                     
                     # Run receive loop inside the context
                     try:
-                        while True: # Keep loop running until session ends or error
+                        while not self._reconnect_requested: # Keep loop running until session ends or error or reconnect requested
                             async for response in session.receive():
                                 await self._handle_response(response)
+                                if self._reconnect_requested:
+                                    logger.info("Reconnect requested - breaking receive loop")
+                                    break
                             
+                            if self._reconnect_requested:
+                                break
+
                             logger.info("Gemini receive iterator finished. Re-entering receive loop (Session Active).")
                             # Do NOT break. Loop back to call session.receive() again.
                             await asyncio.sleep(0.01) 
+                        
+                        if self._reconnect_requested:
+                           logger.info("Closing session for reconnect...")
+                           # Async context exit will close session
+ 
 
                     except asyncio.CancelledError:
                         logger.info("Connection loop cancelled")
@@ -218,16 +289,22 @@ class SampleGeminiAgent(BaseAgent):
         self._connected = False
         self._session = None
         self._connection_ready.set() # Ensure any waiters unblock (though they observe not connected)
+        
+        if self._reconnect_requested:
+             # Reset flag if we exited loop due to request (loop handles retry logic usually)
+             self._reconnect_requested = False
 
-    def _build_live_config(self) -> dict | types.LiveConnectConfig:
-        """Build the configuration object for Gemini Live."""
-        # Build tools list
-        tools = []
-        if self._gemini_settings.gemini_google_search_grounding:
-            tools.append(types.Tool(google_search=types.GoogleSearch()))
 
-        # Configure Live API session
-        # Configure Live API session (Using dict to match verified simple_gemini_test.py)
+    def _build_live_config(self) -> dict:
+        """
+        Builds the LiveConnectConfig dictionary for the session.
+        Simplified to match the working pattern in simple_gemini_test.py.
+        """
+        # Determine voice settings
+        voice_name = self._gemini_settings.gemini_voice
+        
+        # Determine audio format
+        # Gemini usually expects 16kHz or 24kHz.
         config = {
             "response_modalities": ["AUDIO"],
             "speech_config": {
@@ -240,20 +317,21 @@ class SampleGeminiAgent(BaseAgent):
             # Configs at root level (verified working)
             "input_audio_transcription": {},
             "output_audio_transcription": {},
+            # [DEBUG] Disabled to match simple_gemini_test.py for stability check
             "system_instruction": {
-                # "parts": [{"text": self._settings.assistant_instructions}]
-                # [DEBUG] Disabled to match simple_gemini_test.py for stability check
                 "parts": []
             },
-            "realtime_input_config": {
-                "automatic_activity_detection": {
-                    "disabled": False,
-                    "start_of_speech_sensitivity": "START_SENSITIVITY_LOW",
-                    "end_of_speech_sensitivity": "END_SENSITIVITY_LOW",
-                    "prefix_padding_ms": 100,
-                    "silence_duration_ms": 300,
-                }
-            },
+            
+            # [CRITICAL] Commenting out realtime_input_config to MATCH simple_gemini_test.py EXACTLY
+            # This relies on server-side defaults which are confirmed working.
+            # "realtime_input_config": {
+            #     "automatic_activity_detection": {
+            #         "start_of_speech_sensitivity": self._vad_start_sensitivity,
+            #         "end_of_speech_sensitivity": self._vad_end_sensitivity,
+            #     },
+            #     "turn_coverage": self._gemini_settings.gemini_turn_coverage,
+            # },
+            
             "generation_config": {
                 "thinking_config": {
                      "include_thoughts": False
@@ -267,93 +345,117 @@ class SampleGeminiAgent(BaseAgent):
 
         return config
 
-    async def _handle_response(self, response: Any) -> None:
+    async def _handle_response(self, response: types.LiveServerMessage) -> None:
         """Handle a response from Gemini Live API."""
-        try:
-            # Skip processing if already cancelled (from previous interruption)
-            if self._response_cancelled:
-                # But still check for new response start to reset the flag
-                server_content = getattr(response, "server_content", None)
-                if server_content:
-                    model_turn = getattr(server_content, "model_turn", None)
-                    if model_turn and not self._state.is_responding:
-                        # New response starting, reset cancelled flag
-                        self._response_cancelled = False
-                    else:
-                        return  # Skip processing cancelled response data
+        # try:
+        #      # [DEBUG] Log raw response structure to trace audio flow
+        #      # logger.debug(f"[GEMINI RX] Response keys: {[k for k in dir(response) if not k.startswith('_')]}")
+        #      pass
+        # except:
+        #      pass
 
-            server_content = getattr(response, "server_content", None)
+        try:
+            server_content = response.server_content
             if not server_content:
-                # logger.debug("Response missing server_content")
                 return
 
+            # [ALWAYS] Handle input transcription (user's speech)
+            # This must be processed regardless of agent state (responding, cancelled, etc.)
+            if server_content.input_transcription:
+                text = server_content.input_transcription.text
+                if text:
+                     # Buffer the text
+                     self._current_user_transcript += text
 
-
-            # Check for interruption FIRST - this must be handled immediately
-            if getattr(server_content, "interrupted", False):
-                logger.info("Gemini detected interruption - triggering robust handler")
-                # Call robust interrupt handler
+            # [ALWAYS] Check for interruption
+            if server_content.interrupted:
+                logger.info("Gemini detected interruption - canceling immediately")
+                
+                # Update state SYNCHRONOUSLY
+                self._response_cancelled = True
+                self._state.is_responding = False
+                self._current_turn_id = None
+                
                 asyncio.create_task(self._handle_interruption_signal())
                 return
 
-            # Handle model turn (audio/text response)
-            model_turn = getattr(server_content, "model_turn", None)
-            if model_turn:
-                # Signal response start if this is a new turn
-                if not self._state.is_responding:
-                    self._state.session_id = f"session_{int(time.time() * 1000)}"
-                    self._current_turn_id = self._state.session_id
-                    self._state.is_responding = True
-                    self._state.transcript_buffer = ""
-                    self._response_cancelled = False
-                    if self._on_response_start:
-                        await self._on_response_start(self._state.session_id)
+            # [CONDITIONAL] Handle Agent Response (Audio/Text)
+            # If cancelled, we only proceed if this packet marks the start of a NEW turn.
+            if self._response_cancelled:
+                # [DEBUG] Log packet in cancelled state
+                mt = server_content.model_turn
+                ot = server_content.output_transcription
+                tc = server_content.turn_complete
+                logger.info(f"CANCELLED STATE: Ignoring packet. MT={bool(mt)}, OT={bool(ot)}, TC={tc}")
 
+                # Check for new response start (Audio OR Text)
+                if (mt or ot) and not self._state.is_responding:
+                     # New response starting, reset cancelled flag
+                     self._response_cancelled = False
+                else:
+                    return  # Skip processing cancelled response data
+
+
+
+            # Handle model turn (audio/text response)
+            model_turn = server_content.model_turn
+            output_transcription = server_content.output_transcription
+            
+            # Check for turn start signal (from either audio OR text)
+            # If we are not responding, and we receive content, we must start a new turn.
+            # This handles the case where text arrives before audio after an interruption.
+            if (model_turn or output_transcription) and not self._state.is_responding:
+                # [USER TURN COMPLETE]
+                # Since the model is responding, the user's turn is effectively over.
+                # Send the accumulated user transcript as "final" to close the user bubble.
+                if self._current_user_transcript and self._on_user_transcript:
+                        logger.debug(f"Finalizing User Transcript: {self._current_user_transcript}")
+                        await self._on_user_transcript(self._current_user_transcript)
+                        self._current_user_transcript = ""
+
+                self._state.session_id = f"session_{int(time.time() * 1000)}"
+                self._current_turn_id = self._state.session_id
+                self._state.is_responding = True
+                self._state.transcript_buffer = ""
+                self._response_cancelled = False
+                if self._on_response_start:
+                    await self._on_response_start(self._state.session_id)
+
+            if model_turn:
                 # Process parts (audio and text)
-                parts = getattr(model_turn, "parts", [])
+                parts = model_turn.parts or []
                 for part in parts:
                     if self._response_cancelled:
                         break
 
                     # Handle audio data
-                    inline_data = getattr(part, "inline_data", None)
+                    inline_data = part.inline_data
                     if inline_data:
-                        audio_data = getattr(inline_data, "data", None)
-                        if audio_data and isinstance(audio_data, bytes):
+                        audio_data = inline_data.data
+                        if audio_data:
                             if self._on_audio_delta and not self._response_cancelled:
                                 # logger.debug(f"Received audio chunk from Gemini ({len(audio_data)} bytes)")
                                 # Send raw 24kHz audio directly (Client expects 24kHz)
                                 await self._on_audio_delta(audio_data)
 
                     # Handle text data (IGNORING: This contains "Thinking" process in preview model)
-                    text = getattr(part, "text", None)
+                    text = part.text
                     if text:
-                        # print(f"DEBUG: Ignored part.text: {text[:50]}...")
-                        pass
-                    #    self._state.transcript_buffer += text
-                    #    if self._on_transcript_delta and not self._response_cancelled:
-                    #        await self._on_transcript_delta(text, "assistant", self._current_turn_id, None)
+                        logger.debug(f"DEBUG: Ignored part.text: {text[:50]}...")
+                        # pass
 
             # Handle output transcription (assistant's speech as text)
-            output_transcription = getattr(server_content, "output_transcription", None)
+            output_transcription = server_content.output_transcription
             if output_transcription:
-                text = getattr(output_transcription, "text", "")
+                text = output_transcription.text
                 if text:
+                    # logger.debug(f"[{self._state.session_id}] Gemini Output Transcription: '{text}'")
                     self._state.transcript_buffer += text
                     if self._on_transcript_delta and not self._response_cancelled:
                         await self._on_transcript_delta(text, "assistant", self._current_turn_id, None)
 
-            # Handle input transcription (user's speech as text)
-            input_transcription = getattr(server_content, "input_transcription", None)
-            if input_transcription:
-                text = getattr(input_transcription, "text", "")
-                if text and self._on_user_transcript:
-                    logger.debug(f"User: {text}")
-                    await self._on_user_transcript(text)
-
             # Check for turn completion
-            turn_complete = getattr(server_content, "turn_complete", False)
-            if turn_complete and self._state.is_responding:
+            if server_content.turn_complete and self._state.is_responding:
                 transcript = self._state.transcript_buffer
                 self._state.is_responding = False
                 self._current_turn_id = None
@@ -426,6 +528,29 @@ class SampleGeminiAgent(BaseAgent):
         # Gemini specific: We don't have a client.cancel_response() method,
         # so we rely on ignoring subsequent events via the _response_cancelled flag.
 
+    def update_vad_settings(self, start_sensitivity: int, end_sensitivity: int) -> None:
+        """
+        Update VAD sensitivity settings and trigger a fast reconnect to apply them.
+        Only reconnects if values actually change.
+        
+        Args:
+            start_sensitivity: New start sensitivity
+            end_sensitivity: New end sensitivity
+        """
+        if (self._vad_start_sensitivity == start_sensitivity and 
+            self._vad_end_sensitivity == end_sensitivity):
+            # No change, avoid disruptive reconnect
+            logger.debug("VAD Settings unchanged, skipping reconnect.")
+            return
+
+        logger.info(f"Updating VAD Settings: Start={start_sensitivity}, End={end_sensitivity}")
+        self._vad_start_sensitivity = start_sensitivity
+        self._vad_end_sensitivity = end_sensitivity
+        
+        if self._connected:
+            logger.info("Triggering reconnect to apply VAD settings...")
+            self._reconnect_requested = True
+
     def send_text_message(self, text: str) -> None:
         """
         Send a text message to the agent.
@@ -444,96 +569,52 @@ class SampleGeminiAgent(BaseAgent):
         logger.debug(f"User text: {text}")
         asyncio.create_task(self._send_text_async(text))
 
+    # Removed duplicate append_audio and _resample_audio methods that were causing conflicts
+
     async def _send_text_async(self, text: str) -> None:
-        """Send text message asynchronously."""
-        try:
-            async with self._session_lock:
-                if self._session:
-                    await self._session.send(input=text, end_of_turn=True)
-        except Exception as e:
-            logger.error(f"Error sending text: {e}", exc_info=True)
-
-    def append_audio(self, audio_bytes: bytes) -> None:
         """
-        Append audio to the input buffer.
-
-        The widget sends 24kHz audio (OpenAI format), but Gemini expects 16kHz.
-        We resample here to maintain compatibility with the existing widget.
-
+        Send text message to Gemini Live API.
+        
         Args:
-            audio_bytes: PCM16 audio bytes (24kHz from widget)
+            text: Text content
         """
-        if not self._connected or not self._session:
+        if not self._session:
             return
 
-        # Gemini natively expects 16kHz input, but can accept 24kHz via mime_type
-        # Our widget sends 24kHz. For simplicity, we send 24kHz and label it.
-        # However, to be safe with v1alpha strictness, we might still want to resample input if recognition fails.
-        # For now, let's try sending raw 24k and see if Gemini complains. 
-        # Actually, simpler: Let's assume input needs to be 16k for best recognition?
-        # NO, user wants high freq output. Input is separate.
-        # But wait, input logic was also resampling.
-        
-    def _resample_24k_to_16k(self, audio_bytes: bytes) -> bytes:
-        """
-        Simple resampler from 24kHz to 16kHz (3:2 ratio).
-        Uses simple linear interpolation/decimation for speed.
-        """
-        # 3 input samples -> 2 output samples
-        # Very distinct logic: 24000 / 16000 = 1.5
-        # We can just take every 1.5th sample? No, better to use numpy or simple slicing if possible.
-        # But we don't assume numpy is available in the minimal env (though it is imported as np).
-        # SampleGeminiAgent imports numpy as np at top of file.
-        
         try:
-             audio_np = np.frombuffer(audio_bytes, dtype=np.int16)
-             # Resample: 24000 -> 16000 is factor of 2/3
-             # Create indices for 16k based on 24k length
-             num_samples = len(audio_np)
-             new_num_samples = int(num_samples * 16000 / 24000)
-             
-             # Linear interpolation
-             indices = np.linspace(0, num_samples - 1, new_num_samples)
-             resampled_np = np.interp(indices, np.arange(num_samples), audio_np).astype(np.int16)
-             
-             return resampled_np.tobytes()
+            # Send text input
+            # Use self._session.send(..., end_of_turn=True) for text
+            await self._session.send(
+                input=text,
+                end_of_turn=True
+            )
         except Exception as e:
-             logger.error(f"Error resampling audio: {e}")
-             return audio_bytes # Fallback to original
-
-    def append_audio(self, audio_bytes: bytes) -> None:
-        """
-        Append audio to the input buffer.
-
-        The widget sends 24kHz audio (OpenAI format), but Gemini expects 16kHz.
-        We resample here to maintain compatibility with the existing widget.
-
-        Args:
-            audio_bytes: PCM16 audio bytes (24kHz from widget)
-        """
-        if not self._connected or not self._session:
-            return
-
-        # [STABILITY FIX] Gemini Live API prefers 16kHz input.
-        # simple_gemini_test.py sends 16kHz and is stable.
-        # Server was sending 24kHz and getting Remote Close.
-        # Restoring resampling for INPUT only.
-        
-        # Resample 24k -> 16k
-        audio_16k = self._resample_24k_to_16k(audio_bytes)
-        
-        asyncio.create_task(self._send_audio_async(audio_16k))
+            logger.error(f"Error sending text to Gemini: {e}")
+            if self._on_error:
+                await self._on_error({"error": str(e)})
 
     async def _send_audio_async(self, audio_bytes: bytes) -> None:
-        """Send audio data asynchronously."""
+        """
+        Send audio bytes to Gemini Live API.
+        
+        Args:
+            audio_bytes: PCM16 audio bytes
+        """
+        if not self._session:
+            return
+
         try:
-            async with self._session_lock:
-                if self._session:
-                    await self._session.send_realtime_input(
-                        audio=types.Blob(data=audio_bytes, mime_type="audio/pcm")
-                    )
+            # Send audio data
+            # Using v1alpha style with types.Blob
+            # Explicitly setting rate=16000 as per user request/docs
+            mime_type = "audio/pcm;rate=16000"
+            await self._session.send_realtime_input(
+                audio=types.Blob(data=audio_bytes, mime_type=mime_type)
+            )
         except Exception as e:
-            logger.error(f"Error sending audio: {e}", exc_info=True)
+            logger.error(f"Error sending audio to Gemini: {e}")
+            if self._on_error:
+                await self._on_error({"error": str(e)})
 
     async def disconnect(self) -> None:
         """Disconnect from Gemini Live API."""

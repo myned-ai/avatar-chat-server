@@ -17,10 +17,13 @@ except ImportError:
 
 # Configuration
 SERVER_URL = "ws://localhost:8080/ws"
-SAMPLE_RATE = 24000
+# Input: 16k (matches server default / working simple test)
+INPUT_SAMPLE_RATE = 16000
+# Output: 24k (Gemini native)
+OUTPUT_SAMPLE_RATE = 24000
 CHANNELS = 1
 FORMAT = pyaudio.paInt16
-CHUNK_SIZE = 2400  # 100ms
+CHUNK_SIZE = 1024
 MIC_GAIN = 10.0    # Boost mic for VAD testing
 
 # Global flags
@@ -189,7 +192,7 @@ async def run():
     output_stream = p.open(
         format=FORMAT,
         channels=CHANNELS,
-        rate=SAMPLE_RATE,
+        rate=OUTPUT_SAMPLE_RATE,
         output=True
     )
     
@@ -197,7 +200,7 @@ async def run():
     input_stream = p.open(
         format=FORMAT,
         channels=CHANNELS,
-        rate=SAMPLE_RATE,
+        rate=INPUT_SAMPLE_RATE,
         input=True,
         input_device_index=input_dev,
         frames_per_buffer=CHUNK_SIZE

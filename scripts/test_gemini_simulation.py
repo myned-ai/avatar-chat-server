@@ -6,7 +6,7 @@ import websockets
 
 WS_URL = "ws://localhost:8080/ws"
 
-class ChatClientSimulator:
+class GeminiChatClientSimulator:
     def __init__(self):
         self.current_turn_id = None
         self.turn_text = ""
@@ -15,6 +15,10 @@ class ChatClientSimulator:
         self.session_active = True
 
     async def run(self):
+        print("="*60)
+        print("GEMINI AGENT SIMULATION CLIENT TEST")
+        print("Ensure AGENT_TYPE=sample_gemini is set in .env")
+        print("="*60)
         try:
             async with websockets.connect(WS_URL) as websocket:
                 self.ws = websocket
@@ -119,7 +123,7 @@ class ChatClientSimulator:
             pass
 
 if __name__ == "__main__":
-    client = ChatClientSimulator()
+    client = GeminiChatClientSimulator()
     try:
         asyncio.run(client.run())
     except KeyboardInterrupt:

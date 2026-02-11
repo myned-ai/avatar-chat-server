@@ -15,14 +15,19 @@ except ImportError:
     print("pip install pyaudio websockets")
     sys.exit(1)
 
+import logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(name)s: %(message)s')
+
 # Configuration
 SERVER_URL = "ws://localhost:8080/ws"
-# OpenAI/Server expects 24kHz. Windows PyAudio usually handles resampling automatically.
-SAMPLE_RATE = 24000
+# OpenAI/Server expects 24kHz input (from Widget). 
+# Server sends back 16kHz audio (after internal downsampling).
+INPUT_SAMPLE_RATE = 24000
+OUTPUT_SAMPLE_RATE = 16000
 CHANNELS = 1
 FORMAT = pyaudio.paInt16
 CHUNK_SIZE = 2400  # 100ms at 24kHz
-MIC_GAIN = 20.0    # Boost microphone input by 20x to fix low volume issues
+MIC_GAIN = 5.0    # Boost microphone input by 5x (20x was too high and caused self-interruption)
 
 # Global flags
 is_running = True
@@ -124,7 +129,7 @@ async def send_audio(websocket, input_stream, loop):
     
     await websocket.send(json.dumps({
         "type": "audio_stream_start",
-        "userId": "test_client"
+        "userId": "test_gemini_client"
     }))
 
     chunk_counter = 0
@@ -200,28 +205,42 @@ async def receive_audio(websocket):
                 # Check if sync_frame arrived before audio_start
                 if not audio_start_received:
                     sync_frames_before_start += 1
-                    print(f"\n[WARNING] sync_frame received BEFORE audio_start! (count: {sync_frames_before_start})")
+                    # print(f"\n[WARNING] sync_frame received BEFORE audio_start! (count: {sync_frames_before_start})")
                 
                 if not is_ai_speaking:
                     continue  # Ignore audio frame if we are interrupted/not speaking
 
-                audio_b64 = data.get("audio")
-                if audio_b64:
-                    print(".", end="", flush=True) # [DEBUG]
-                    audio_bytes = base64.b64decode(audio_b64)
-                    # Put to queue instead of writing directly
+                b64_audio = data.get("data") if msg_type == "audio_chunk" else data.get("audio")
+                if b64_audio:
+                    audio_bytes = base64.b64decode(b64_audio)
+                    print(f"\n[RX] Audio Chunk: {len(audio_bytes)} bytes")
                     playback_queue.put(audio_bytes)
+                    is_ai_speaking = True # Ensure this is set if audio is received
+                else:
+                     if msg_type == "sync_frame":
+                          # sync_frame might be empty audio (weights only)
+                          if "audio" in data: # Check if 'audio' key exists, even if value is null
+                              print("\n[RX] Sync Frame (No Audio)")
             
+            elif msg_type == "avatar_state":
+                state = data.get("state")
+                print(f"\n[System] Avatar State: {state}")
+
             elif msg_type == "transcript_delta":
                 print(f"\r[AI] {data.get('text'):<60}", end="", flush=True)
             
             elif msg_type == "transcript_done":
                 text = data.get('text', '')
                 print(f"\n[AI COMPLETE] {text}")
+                if data.get("interrupted"):
+                    print("\n[!!!] SERVER CONFIRMED INTERRUPTION - Clearing queue")
+                    is_ai_speaking = False
+                    with playback_queue.mutex:
+                        playback_queue.queue.clear()
 
             elif msg_type == "audio_start":
                  if sync_frames_before_start > 0:
-                     print(f"\n[ERROR] Received {sync_frames_before_start} sync_frames BEFORE audio_start!")
+                     print(f"\n[WARNING] Received {sync_frames_before_start} sync_frames BEFORE audio_start!")
                  print(f"\n[SERVER] Audio Start - Turn ID: {data.get('turnId')}")
                  is_ai_speaking = True
                  audio_start_received = True
@@ -248,6 +267,11 @@ async def receive_audio(websocket):
 async def run_client():
     global is_running
     
+    print("="*60)
+    print("GEMINI AGENT AUDIO CLIENT TEST")
+    print("Ensure AGENT_TYPE=sample_gemini is set in .env")
+    print("="*60)
+
     p = pyaudio.PyAudio()
     
     # 1. Select Device
@@ -258,7 +282,7 @@ async def run_client():
         input_stream = p.open(
             format=FORMAT,
             channels=CHANNELS,
-            rate=SAMPLE_RATE,
+            rate=INPUT_SAMPLE_RATE,
             input=True,
             input_device_index=device_index, # [FIX] Use selected device
             frames_per_buffer=CHUNK_SIZE
@@ -268,7 +292,7 @@ async def run_client():
         output_stream = p.open(
             format=FORMAT,
             channels=CHANNELS,
-            rate=SAMPLE_RATE,
+            rate=OUTPUT_SAMPLE_RATE,
             output=True
         )
     except Exception as e:
@@ -317,21 +341,23 @@ async def run_client():
             key_thread = threading.Thread(target=key_listener, args=(loop, websocket), daemon=True)
             key_thread.start()
 
-            sender_task = asyncio.create_task(send_audio(websocket, input_stream, loop))
-            receiver_task = asyncio.create_task(receive_audio(websocket))
+            send_task = asyncio.create_task(send_audio(websocket, input_stream, loop))
+            receive_task = asyncio.create_task(receive_audio(websocket))
             
-            _done, pending = await asyncio.wait(
-                [sender_task, receiver_task],
-                return_when=asyncio.FIRST_COMPLETED
+            # Wait for tasks
+            done, pending = await asyncio.wait(
+                [receive_task, send_task],
+                return_when=asyncio.FIRST_COMPLETED,
             )
+            
+            print("\n[System] Session ended (Connection closed).")
             
             for task in pending:
                 task.cancel()
                 
-    except KeyboardInterrupt:
-        print("\nStopping...")
     except Exception as e:
-        print(f"\nConnection Error: {e}")
+        print(f"\n[System] Connection Failed: {e}")
+        return
     finally:
         is_running = False
         print("\nCleaning up...")

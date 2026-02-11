@@ -152,6 +152,7 @@ class Wav2ArkitService:
     def process_audio_chunk(
         self,
         audio_bytes: bytes,
+        sample_rate: int | None = None,
     ) -> list[dict[str, Any]]:
         """
         Process audio chunk and return paired audio+blendshape frames.
@@ -163,6 +164,7 @@ class Wav2ArkitService:
 
         Args:
             audio_bytes: PCM16 audio at OpenAI sample rate (24kHz)
+            sample_rate: Optional override for input sample rate
 
         Returns:
             List of dicts with 'weights' (dict) and 'audio' (base64 string) for each frame
@@ -177,7 +179,7 @@ class Wav2ArkitService:
         # Run inference
         result, _ = self.infer_streaming(
             audio_float,
-            sample_rate=self.settings.input_sample_rate,
+            sample_rate=sample_rate or self.settings.input_sample_rate,
         )
 
         expression = result.get("expression")

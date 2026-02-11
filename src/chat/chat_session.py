@@ -2,6 +2,7 @@ import asyncio
 import base64
 import concurrent.futures
 import time
+from pathlib import Path
 from typing import Any
 
 import orjson
@@ -35,10 +36,25 @@ class ChatSession:
 
         # Unique Agent Instance per Session
         self.agent = create_agent_instance()
+        
+        # Determine negotiated input sample rate
+        self.input_sample_rate = self.agent.input_sample_rate
+        logger.info(f"Session {self.session_id}: Negotiated input sample rate: {self.input_sample_rate}")
+
+        # Determine negotiated output sample rate
+        self.output_sample_rate = self.agent.output_sample_rate
+        logger.info(f"Session {self.session_id}: Negotiated output sample rate: {self.output_sample_rate}")
 
         # Client State
         self.is_streaming_audio = False
         self.user_id = ""
+        
+        # Audio Debugging
+        self.debug_file_path = None
+        if self.settings.debug_audio_capture:
+            timestamp = int(time.time())
+            self.debug_file_path = Path(f"debug_input_{self.session_id[:8]}_{timestamp}.pcm")
+            logger.info(f"Session {self.session_id}: Debug audio capture ENABLED -> {self.debug_file_path}")
         self.is_active = True
 
         # Audio and frame processing state
@@ -49,13 +65,6 @@ class ChatSession:
         # Tracking state
         self.current_turn_id: str | None = None
         self.current_turn_session_id: str | None = None  # Turn-level session ID from agent
-        self.speech_start_time: float = 0
-        self.actual_audio_start_time: float = 0
-        self.total_frames_emitted: int = 0
-        self.total_audio_received: float = 0
-        self.blendshape_frame_idx: int = 0
-        self.speech_ended: bool = False
-        self.is_interrupted: bool = False
         self.first_audio_received: bool = False
 
         # Track accumulated text for accurate interruption cutting
@@ -65,7 +74,8 @@ class ChatSession:
         self.virtual_cursor_text_ms = 0.0
         
         # Calibration constant for transcript timing (configurable via settings)
-        self.chars_per_second = settings.transcript_chars_per_second
+        self.chars_per_second = self.agent.transcript_speed
+        logger.info(f"Session {self.session_id}: Using agent-specific transcript speed: {self.chars_per_second} chars/sec")
         
         # Background tasks
         self.frame_emit_task: asyncio.Task | None = None
@@ -92,6 +102,15 @@ class ChatSession:
 
     async def start(self) -> None:
         """Initialize connection to agent."""
+        
+        # [PROTOCOL] Configure client with negotiated sample rate
+        await self.send_json({
+            "type": "config",
+            "audio": {
+                "inputSampleRate": self.input_sample_rate
+            }
+        })
+        
         if not self.agent.is_connected:
             await self.agent.connect()
 
@@ -182,7 +201,7 @@ class ChatSession:
                 "type": "audio_start",
                 "sessionId": self.current_turn_session_id,
                 "turnId": self.current_turn_id,
-                "sampleRate": self.settings.input_sample_rate,
+                "sampleRate": self.output_sample_rate,
                 "format": "audio/pcm16",
                 "timestamp": int(time.time() * 1000),
             }
@@ -221,15 +240,15 @@ class ChatSession:
         self.audio_buffer.extend(audio_bytes)
         
         chunk_samples = len(audio_bytes) // 2
-        chunk_duration = chunk_samples / self.settings.input_sample_rate
+        chunk_duration = chunk_samples / self.input_sample_rate
         self.total_audio_received += chunk_duration
         
         buffer_samples = len(self.audio_buffer) // 2
-        buffer_duration = buffer_samples / self.settings.input_sample_rate
+        buffer_duration = buffer_samples / self.input_sample_rate
 
         if buffer_duration >= self.settings.audio_chunk_duration:
             chunk_bytes_size = int(
-                self.settings.audio_chunk_duration * self.settings.input_sample_rate * 2
+                self.settings.audio_chunk_duration * self.input_sample_rate * 2
             )
             chunk_bytes = bytes(self.audio_buffer[:chunk_bytes_size])
             self.audio_buffer = bytearray(self.audio_buffer[chunk_bytes_size:])
@@ -264,7 +283,7 @@ class ChatSession:
         # Flush remaining audio
         buffer_samples = len(self.audio_buffer) // 2
         if buffer_samples > 0 and self.wav2arkit_service.is_available:
-            min_samples = int(0.3 * self.settings.input_sample_rate)
+            min_samples = int(0.3 * self.input_sample_rate)
             remaining_bytes = bytes(self.audio_buffer)
             if buffer_samples < min_samples:
                 padding = bytes((min_samples - buffer_samples) * 2)
@@ -361,6 +380,7 @@ class ChatSession:
             "startOffset": int(start_offset),
             "endOffset": int(end_offset)
         }
+        
         if item_id:
             msg["itemId"] = item_id
         if previous_item_id:
@@ -475,7 +495,7 @@ class ChatSession:
         # Immediate client notification
         try:
             await self.send_json({
-                "type": "interrupt", 
+                "type": "interrupt",
                 "timestamp": int(time.time() * 1000),
                 "turnId": self.current_turn_id,   # Add context
                 "offsetMs": current_offset_ms     # Add exact cut point
@@ -512,7 +532,8 @@ class ChatSession:
             
             while True:
                 if self.is_interrupted:
-                    break
+                    await asyncio.sleep(0.01)
+                    continue
                 
                 try:
                     audio_bytes = await asyncio.wait_for(
@@ -525,13 +546,17 @@ class ChatSession:
                     continue
                 
                 if self.is_interrupted:
-                    break
+                    await asyncio.sleep(0.01)
+                    continue
 
                 # Run inference in default executor
                 try:
                     # Use dedicated executor to prevent blocking
                     frames = await loop.run_in_executor(
-                        self._inference_executor, self.wav2arkit_service.process_audio_chunk, audio_bytes
+                        self._inference_executor,
+                        self.wav2arkit_service.process_audio_chunk,
+                        audio_bytes,
+                        self.output_sample_rate
                     )
                 except Exception as e:
                     logger.error(f"Inference processing failed: {e}", exc_info=True)
@@ -540,11 +565,13 @@ class ChatSession:
                     continue
 
                 if self.is_interrupted:
-                    break
+                    await asyncio.sleep(0.01)
+                    continue
 
                 if frames:
                     for frame in frames:
                         if self.is_interrupted:
+                            # Break inner loop but continue outer loop
                             break
                         await self.frame_queue.put(frame)
                 else:
@@ -560,7 +587,8 @@ class ChatSession:
         try:
             while True:
                 if self.is_interrupted:
-                    break
+                    await asyncio.sleep(0.01)
+                    continue
 
                 # Pacing logic
                 elapsed_time = time.time() - self.speech_start_time
@@ -581,7 +609,8 @@ class ChatSession:
                     continue
                 
                 if self.is_interrupted:
-                    break
+                    await asyncio.sleep(0.01)
+                    continue
 
                 if self.blendshape_frame_idx % 30 == 0:
                     audio_b64 = frame_data.get("audio", "")
@@ -644,6 +673,15 @@ class ChatSession:
                 audio_b64 = data.get("data", "")
                 if audio_b64:
                     audio_bytes = base64.b64decode(audio_b64)
+                    
+                    # Debug: Save raw input audio
+                    if self.debug_file_path:
+                        try:
+                            with open(self.debug_file_path, "ab") as f:
+                                f.write(audio_bytes)
+                        except Exception as e:
+                            logger.warning(f"Failed to write debug audio: {e}")
+
                     self.agent.append_audio(audio_bytes)
 
         elif msg_type == "interrupt":

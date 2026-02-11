@@ -69,6 +69,11 @@ class SampleOpenAIAgent(BaseAgent):
         """Get current conversation state."""
         return self._state
 
+    @property
+    def transcript_speed(self) -> float:
+        """Get transcript speed (chars/sec) for this agent."""
+        return self._openai_settings.openai_transcript_speed
+
     def set_event_handlers(
         self,
         on_audio_delta: Callable[[bytes], Awaitable[None]] | None = None,
@@ -225,7 +230,7 @@ class SampleOpenAIAgent(BaseAgent):
                 item_id = item.get("id", "")[:12] if item.get("id") else ""
                 logger.debug(f"[{source}] {event_type}: type={item_type}, role={role}, id={item_id}...")
             # Enrich response events
-            elif event_type == "response.created":
+            elif event_type == "response.created":  # noqa: SIM114
                 response = evt.get("response", {})
                 response_id = response.get("id", "")[:12] if response.get("id") else ""
                 status = response.get("status", "")
@@ -257,7 +262,7 @@ class SampleOpenAIAgent(BaseAgent):
         logger.error(f"OpenAI Realtime API Error: {error}")
         logger.info(f"Full error event: {event}")
         if self._on_error:
-            asyncio.create_task(self._on_error(error))
+            asyncio.create_task(self._on_error(error)) # type: ignore
 
     def _handle_conversation_updated(self, event: dict) -> None:
         """Handle conversation updates (delta events)."""

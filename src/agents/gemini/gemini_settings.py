@@ -31,16 +31,45 @@ class GeminiSettings(BaseSettings):
 
     # Gemini Configuration
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-2.0-flash-exp"
-    gemini_voice: Literal["Puck", "Charon", "Kore", "Fenrir", "Aoede", "Leda", "Orus", "Zephyr"] = "Puck"
+    gemini_api_version: str = "v1alpha"
+    gemini_model: str = "gemini-2.5-flash-native-audio-preview-12-2025"
+    gemini_voice: Literal["Puck", "Charon", "Kore", "Fenrir", "Aoede", "Leda", "Orus", "Zephyr"] = "Leda"
     # Thinking budget: 0=disabled, -1=dynamic, 1-32768=fixed token budget
     gemini_thinking_budget: int = -1
     # Enable Google Search grounding for real-time information
     gemini_google_search_grounding: bool = False
     # Proactive audio: model can decide not to respond if content is not relevant
+    # DISABLED to prevent early cutoff/interruption of user speech (user report: immediate response)
     gemini_proactive_audio: bool = False
     # Context window compression: enables longer sessions (beyond 15min audio-only limit)
     gemini_context_window_compression: bool = True
+    
+    # Transcript timing (chars per second)
+    # Gemini voice is slightly slower than OpenAI, so we retard the transcript cursor
+    # Default global is 16.0. Slower value = truncated text stays longer/appears slower.
+    gemini_transcript_speed: float = 15.0
+    
+    # Audio Input Configuration
+    # Sample rate to send to Gemini (default 16000 for best recognition)
+    # Reverting to 16000 to match working simple_gemini_test.py
+    gemini_input_sample_rate: int = 16000
+    
+    # Audio Output Configuration
+    # Sample rate received from Gemini (default 24000 to match native output)
+    gemini_output_sample_rate: int = 24000
+
+    # VAD Configuration
+    # Sensitivity: "sensitivity_unspecified", "start_sensitivity_low", "start_sensitivity_medium", "start_sensitivity_high"
+    # Defaults to UNSPECIFIED (Balanced)
+    gemini_vad_start_sensitivity: str = "START_SENSITIVITY_LOW"
+    gemini_vad_end_sensitivity: str = "END_SENSITIVITY_LOW"
+
+    # Turn Coverage: "TURN_COVERAGE_UNSPECIFIED", "TURN_INCLUDES_ONLY_ACTIVITY", "TURN_INCLUDES_ALL_INPUT"
+    # Default: UNSPECIFIED (Only Activity)
+    gemini_turn_coverage: str = "TURN_INCLUDES_ALL_INPUT"
+
+    # --- Client Sync ---
+    gemini_transcript_speed: float = 15.0
 
 
 @lru_cache

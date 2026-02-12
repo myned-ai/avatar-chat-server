@@ -1,11 +1,11 @@
 # Avatar Chat Client Implementation Specification
 
-**Version:** 1.3
-**Date:** January 31, 2026
+**Version:** 1.4
+**Date:** February 12, 2026
 **Target:** Client-Side Developers & AI Agents
 
 ## 1. Overview
-This document specifies the communication protocol and implementation requirements for a client connecting to the Avatar Chat Server. The server wraps the OpenAI Realtime API and provides specific orchestration for 3D Avatars (audio, blendshapes, transcripts) and handles server-side Voice Activity Detection (VAD) for interruptions.
+This document specifies the communication protocol and implementation requirements for a client connecting to the Avatar Chat Server. The server provides real-time conversational AI with specific orchestration for 3D Avatars (audio, blendshapes, transcripts) and handles server-side Voice Activity Detection (VAD) for interruptions. The server supports multiple backend agents (OpenAI, Gemini, or remote agents).
 
 ### 1.1 Transport
 - **Protocol:** WebSocket (WS/WSS)
@@ -51,20 +51,32 @@ Signals the beginning of a new audio response turn from the Avatar.
 | `format` | string | Yes | Audio format (default `"audio/pcm16"`) |
 | `timestamp` | number | Yes | Server timestamp (ms) |
 
-### 3.2 `sync_frame`
+### 3.3 `sync_frame`
 Contains a chunk of audio and the corresponding blendshapes (visemes) for facial animation.
 *Frequency:* high (e.g., 30fps or 60fps depending on server settings).
+**Note:** This event is only sent when the Wav2Arkit blendshape service is available.
 
 | Field | Type | Required | Description |
-|-------|------|----------|-------------|
+|-------|------|----------|-----------|
 | `type` | string | Yes | Value: `"sync_frame"` |
 | `audio` | string | Yes | Base64 encoded PCM16 raw audio bytes |
 | `weights` | number[] | Yes | Array of 52 ARKit blendshape values (0.0 - 1.0) |
 | `frameIndex` | number | Yes | Sequential index of the frame in this turn |
 | `turnId` | string | Yes | Correlates to `audio_start.turnId` |
+| `sessionId` | string | Yes | Turn-level session ID |
 | `timestamp` | number | Yes | Server timestamp (ms) |
 
-### 3.3 `audio_end`
+### 3.4 `audio_chunk` (Fallback Mode)
+Sent instead of `sync_frame` when the blendshape service is unavailable. Contains audio only without facial animation data.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-----------|
+| `type` | string | Yes | Value: `"audio_chunk"` |
+| `data` | string | Yes | Base64 encoded PCM16 raw audio bytes |
+| `sessionId` | string | Yes | Current Session ID |
+| `timestamp` | number | Yes | Server timestamp (ms) |
+
+### 3.5 `audio_end`
 Signals that the current audio turn has finished streaming from the server.
 *Trigger:* AI finishes response generation.
 
@@ -75,23 +87,25 @@ Signals that the current audio turn has finished streaming from the server.
 | `sessionId` | string | Yes | Current Session ID |
 | `timestamp` | number | Yes | Server timestamp (ms) |
 
-### 3.4 `transcript_delta`
+### 3.6 `transcript_delta`
 Streaming text updates for UI display (User or Assistant).
 
 > **Important:** Transcript deltas often arrive **faster** than the audio playback. The client is responsible for synchronizing the display of text with the audio, or handling the "rollback" if the text is displayed ahead of an interruption.
 
 | Field | Type | Required | Description |
-|-------|------|----------|-------------|
+|-------|------|----------|-----------|
 | `type` | string | Yes | Value: `"transcript_delta"` |
 | `role` | string | Yes | `"assistant"` or `"user"` |
 | `text` | string | Yes | The chunk of text (token) to append |
 | `turnId` | string | Yes | Correlates to audio turn |
-| `startOffset` | number | No | Estimated start time in ms relative to turn (assistant only) |
-| `endOffset` | number | No | Estimated end time in ms relative to turn (assistant only) |
+| `sessionId` | string | Yes | Current Session ID |
+| `startOffset` | number | Yes | Estimated start time in ms relative to turn |
+| `endOffset` | number | Yes | Estimated end time in ms relative to turn |
+| `timestamp` | number | Yes | Server timestamp (ms) |
 | `itemId` | string | No | Source Item ID (if available) |
 | `previousItemId` | string | No | Previous Item ID (if available) |
 
-### 3.5 `transcript_done`
+### 3.7 `transcript_done`
 Final confirmed text for a turn. Sent when silence is detected (user) or generation finishes (assistant).
 
 > **Interruption Handling:** If `interrupted` is true, this event contains the **truncated** text representing what was actually spoken before the cut-off. The client **must** replace its current displayed text with this value to fix any "future text" that was displayed but never spoken.
@@ -102,10 +116,11 @@ Final confirmed text for a turn. Sent when silence is detected (user) or generat
 | `role` | string | Yes | `"assistant"` or `"user"` |
 | `text` | string | Yes | Full text of the turn |
 | `turnId` | string | Yes | Turn ID |
+| `timestamp` | number | Yes | Server timestamp (ms) |
 | `interrupted`| boolean| No | `true` if this transcript was cut short by interruption |
 | `itemId` | string | No | Item ID (if available) |
 
-### 3.6 `interrupt` (CRITICAL)
+### 3.8 `interrupt` (CRITICAL)
 Sent when Server VAD detects user speech while Avatar is outputting audio.
 
 | Field | Type | Required | Description |
@@ -120,15 +135,15 @@ Sent when Server VAD detects user speech while Avatar is outputting audio.
 2.  **Prune Buffer**: Discard any `sync_frames` in queue.
 3.  **UI Feedback**: Visual indication that avatar stopped listening/speaking.
 
-### 3.7 `avatar_state`
+### 3.9 `avatar_state`
 High-level state for UI status indicators.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `type` | string | Yes | Value: `"avatar_state"` |
-| `state` | string | Yes | `"Listening"`, `"Responding"`, or `"Processing"` |
+| `state` | string | Yes | `"Listening"` or `"Responding"` |
 
-### 3.8 `pong`
+### 3.10 `pong`
 Response to client ping.
 
 | Field | Type | Required | Description |

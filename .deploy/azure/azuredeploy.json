@@ -54,6 +54,31 @@
       "metadata": {
         "description": "Comma-separated list of allowed CORS origins (e.g. https://myned.ai,https://www.myned.ai). Required if authentication is enabled."
       }
+    },
+    "agentType": {
+      "type": "string",
+      "defaultValue": "sample_gemini",
+      "allowedValues": [
+        "sample_gemini",
+        "sample_openai"
+      ],
+      "metadata": {
+        "description": "The AI agent to use. Choose sample_gemini for Google Gemini or sample_openai for OpenAI."
+      }
+    },
+    "geminiApiKey": {
+      "type": "securestring",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Google Gemini API key. Required if agentType is sample_gemini."
+      }
+    },
+    "openaiApiKey": {
+      "type": "securestring",
+      "defaultValue": "",
+      "metadata": {
+        "description": "OpenAI API key. Required if agentType is sample_openai."
+      }
     }
   },
   "variables": {
@@ -122,6 +147,82 @@
             {
               "name": "DOCKER_REGISTRY_SERVER_URL",
               "value": "https://ghcr.io"
+            },
+            {
+              "name": "AGENT_TYPE",
+              "value": "[parameters('agentType')]"
+            },
+            {
+              "name": "GEMINI_API_KEY",
+              "value": "[parameters('geminiApiKey')]"
+            },
+            {
+              "name": "OPENAI_API_KEY",
+              "value": "[parameters('openaiApiKey')]"
+            },
+            {
+              "name": "GEMINI_MODEL",
+              "value": "gemini-2.5-flash-native-audio-preview-12-2025"
+            },
+            {
+              "name": "GEMINI_VOICE",
+              "value": "Kore"
+            },
+            {
+              "name": "GEMINI_THINKING_BUDGET",
+              "value": "-1"
+            },
+            {
+              "name": "GEMINI_GOOGLE_SEARCH_GROUNDING",
+              "value": "false"
+            },
+            {
+              "name": "GEMINI_PROACTIVE_AUDIO",
+              "value": "false"
+            },
+            {
+              "name": "GEMINI_CONTEXT_WINDOW_COMPRESSION",
+              "value": "true"
+            },
+            {
+              "name": "OPENAI_VOICE",
+              "value": "alloy"
+            },
+            {
+              "name": "OPENAI_NOISE_REDUCTION",
+              "value": "near_field"
+            },
+            {
+              "name": "OPENAI_MODEL",
+              "value": "gpt-realtime"
+            },
+            {
+              "name": "OPENAI_TRANSCRIPTION_MODEL",
+              "value": "gpt-4o-transcribe"
+            },
+            {
+              "name": "OPENAI_TRANSCRIPTION_LANGUAGE",
+              "value": "en"
+            },
+            {
+              "name": "OPENAI_VOICE_SPEED",
+              "value": "1.1"
+            },
+            {
+              "name": "DEBUG",
+              "value": "false"
+            },
+            {
+              "name": "DEBUG_AUDIO_CAPTURE",
+              "value": "false"
+            },
+            {
+              "name": "ONNX_MODEL_PATH",
+              "value": "./src/pretrained_models/wav2arkit_cpu.onnx"
+            },
+            {
+              "name": "ASSISTANT_INSTRUCTIONS",
+              "value": "You are a helpful and friendly AI assistant. Always respond in English only, even if the user speaks another language. Keep your responses brief and conversational - no more than 2-3 sentences unless specifically asked for more detail. Only respond to clear audio or text. If the user's audio is not clear (e.g., ambiguous input/background noise/silent/unintelligible) or if you did not fully hear or understand the user, ask for clarification. If interrupted, assume the user wants to change topics. Do not apologize for the interruption; simply address the new input. Speak in a natural, conversational pace. You do not need to fill every silence immediately."
             }
           ]
         }

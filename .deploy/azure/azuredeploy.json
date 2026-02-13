@@ -52,14 +52,14 @@
       "type": "securestring",
       "defaultValue": "",
       "metadata": {
-        "description": "Secret key used for token signing. Leave empty to auto-generate."
+        "description": "Secret key used for token signing. Required if authentication is enabled."
       }
     },
     "authAllowedOrigins": {
       "type": "string",
       "defaultValue": "",
       "metadata": {
-        "description": "Comma-separated list of allowed CORS origins (e.g. https://myned.ai,https://www.myned.ai). Leave empty to allow all."
+        "description": "Comma-separated list of allowed CORS origins (e.g. https://myned.ai,https://www.myned.ai). Required if authentication is enabled."
       }
     }
   },

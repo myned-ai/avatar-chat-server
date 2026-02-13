@@ -1,6 +1,5 @@
 {
   "name": "avatar-sample-chat-server",
-  "image": "ghcr.io/myned-ai/avatar-chat-server:latest",
   "env": {
     "AGENT_TYPE": {
       "description": "The AI agent to use: sample_gemini or sample_openai.",

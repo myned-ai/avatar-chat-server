@@ -28,11 +28,3 @@ jobs:
         context: .
         push: true
         tags: ghcr.io/${{ github.repository_owner }}/avatar-chat-server:latest
-
-    - name: Make package public
-      run: |
-        curl -X PUT \
-          -H "Accept: application/vnd.github.v3+json" \
-          -H "Authorization: Bearer ${{ secrets.GHCR_PAT }}" \
-          https://api.github.com/orgs/${{ github.repository_owner }}/packages/container/avatar-chat-server/visibility \
-          -d '{"visibility":"public"}'

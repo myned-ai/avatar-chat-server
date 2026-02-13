@@ -15,6 +15,7 @@ from google.genai import Client, types
 
 from core.logger import get_logger
 from core.settings import get_settings
+from services.knowledge_service import KnowledgeService
 
 from ..base_agent import BaseAgent, ConversationState
 from .gemini_settings import get_gemini_settings
@@ -207,14 +208,18 @@ class SampleGeminiAgent(BaseAgent):
 
         logger.info(f"Starting connection loop for model: {model_id}")
 
+        # Load Knowledge Base once per connection loop
+        knowledge = await KnowledgeService.load_knowledge_base(self._settings.knowledge_base_source)
+
+
         while True:
             try:
-                # [FIX] Reset reconnect request flag at start of loop to prevent infinite cycling
+                # Reset reconnect request flag at start of loop to prevent infinite cycling
                 # This ensures that a previous request is cleared and only new requests trigger break
                 self._reconnect_requested = False
                 
-                # [FIX] Build config INSIDE loop to apply dynamic changes (e.g. VAD)
-                config = self._build_live_config()
+                # Build config INSIDE loop to apply dynamic changes (e.g. VAD)
+                config = self._build_live_config(knowledge)
                 
                 # Connect using async context manager - keeping it alive for the duration of the session
                 logger.info("Initiating connection to Gemini Live API...")
@@ -298,12 +303,15 @@ class SampleGeminiAgent(BaseAgent):
              self._reconnect_requested = False
 
 
-    def _build_live_config(self) -> dict:
+    def _build_live_config(self, knowledge_content: str = "") -> dict:
         """
         Builds the LiveConnectConfig dictionary for the session.
         Simplified to match the working pattern in simple_gemini_test.py.
         """
         
+        # Format Instructions
+        full_instructions = KnowledgeService.format_instructions(self._settings.assistant_instructions, knowledge_content)
+                                            
         # Determine audio format
         # Gemini usually expects 16kHz or 24kHz.
         config = {
@@ -318,9 +326,9 @@ class SampleGeminiAgent(BaseAgent):
             # Configs at root level (verified working)
             "input_audio_transcription": {},
             "output_audio_transcription": {},
-            # [DEBUG] Disabled to match simple_gemini_test.py for stability check
+            # Disabled to match simple_gemini_test.py for stability check
             "system_instruction": {
-                "parts": []
+                "parts": [{"text": full_instructions}]
             },
             
             # [CRITICAL] Commenting out realtime_input_config to MATCH simple_gemini_test.py EXACTLY

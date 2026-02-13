@@ -67,6 +67,7 @@ FROM dependencies AS production
 
 # Copy application code (already running as appuser)
 COPY --chown=appuser:appuser ./src ./src
+COPY --chown=appuser:appuser ./data ./data
 RUN mv ./pretrained_models/ ./src/
 
 # Environment variables

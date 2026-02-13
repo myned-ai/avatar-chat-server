@@ -50,6 +50,8 @@ services:
       - GEMINI_PROACTIVE_AUDIO=${GEMINI_PROACTIVE_AUDIO}
       - GEMINI_CONTEXT_WINDOW_COMPRESSION=${GEMINI_CONTEXT_WINDOW_COMPRESSION}
     volumes:
+      # Mount Knowledge Base
+      - ./data:/app/data
       # Mount ONNX model (CPU-only)
       - ./src/pretrained_models/wav2arkit_cpu.onnx:/app/pretrained_models/wav2arkit_cpu.onnx:ro
       - ./src/pretrained_models/wav2arkit_cpu.onnx.data:/app/pretrained_models/wav2arkit_cpu.onnx.data:ro

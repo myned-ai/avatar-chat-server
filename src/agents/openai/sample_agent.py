@@ -12,6 +12,7 @@ from typing import Any
 
 from core.logger import get_logger
 from core.settings import get_settings
+from services.knowledge_service import KnowledgeService
 
 from ..base_agent import BaseAgent, ConversationState
 from .openai_settings import get_openai_settings
@@ -148,9 +149,15 @@ class SampleOpenAIAgent(BaseAgent):
         if self._openai_settings.openai_transcription_language:
             transcription_config["language"] = self._openai_settings.openai_transcription_language
 
+        # Load Knowledge Base
+        knowledge = await KnowledgeService.load_knowledge_base(self._settings.knowledge_base_source)
+
+        # Format Instructions
+        full_instructions = KnowledgeService.format_instructions(self._settings.assistant_instructions, knowledge)
+
         # Configure session using original flat format
         session_config = {
-            "instructions": self._settings.assistant_instructions,
+            "instructions": full_instructions,
             "modalities": ["text", "audio"],
             "voice": self._openai_settings.openai_voice,
             "speed": self._openai_settings.openai_voice_speed,

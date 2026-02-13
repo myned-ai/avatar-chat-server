@@ -1,0 +1,148 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "Deploys the Avatar Chat Server to an Azure Web App for Containers (Linux)."
+  },
+  "parameters": {
+    "webAppName": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 60,
+      "metadata": {
+        "description": "The name of the Web App. Must be globally unique."
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for all resources."
+      }
+    },
+    "sku": {
+      "type": "string",
+      "defaultValue": "B1",
+      "allowedValues": [
+        "B1",
+        "B2",
+        "B3",
+        "S1",
+        "S2",
+        "S3",
+        "P1v2",
+        "P2v2",
+        "P3v2",
+        "P1v3",
+        "P2v3",
+        "P3v3"
+      ],
+      "metadata": {
+        "description": "The pricing tier (SKU) of the App Service Plan."
+      }
+    },
+    "authEnabled": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Enable or disable built-in authentication for the server."
+      }
+    },
+    "authSecretKey": {
+      "type": "securestring",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Secret key used for token signing. Leave empty to auto-generate."
+      }
+    },
+    "authAllowedOrigins": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Comma-separated list of allowed CORS origins (e.g. https://myned.ai,https://www.myned.ai). Leave empty to allow all."
+      }
+    }
+  },
+  "variables": {
+    "appServicePlanName": "[concat('plan-', parameters('webAppName'))]",
+    "linuxFxVersion": "DOCKER|ghcr.io/myned-ai/avatar-chat-server:latest",
+    "generatedSecretKey": "[uniqueString(resourceGroup().id, parameters('webAppName'), subscription().subscriptionId)]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2022-09-01",
+      "name": "[variables('appServicePlanName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "[parameters('sku')]"
+      },
+      "kind": "linux",
+      "properties": {
+        "reserved": true
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2022-09-01",
+      "name": "[parameters('webAppName')]",
+      "location": "[parameters('location')]",
+      "kind": "app,linux,container",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]"
+      ],
+      "properties": {
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
+        "httpsOnly": true,
+        "siteConfig": {
+          "linuxFxVersion": "[variables('linuxFxVersion')]",
+          "alwaysOn": true,
+          "appSettings": [
+            {
+              "name": "WEBSITES_ENABLE_APP_SERVICE_STORAGE",
+              "value": "false"
+            },
+            {
+              "name": "WEBSITES_PORT",
+              "value": "8080"
+            },
+            {
+              "name": "SERVER_HOST",
+              "value": "0.0.0.0"
+            },
+            {
+              "name": "SERVER_PORT",
+              "value": "8080"
+            },
+            {
+              "name": "AUTH_ENABLED",
+              "value": "[string(parameters('authEnabled'))]"
+            },
+            {
+              "name": "AUTH_SECRET_KEY",
+              "value": "[if(empty(parameters('authSecretKey')), variables('generatedSecretKey'), parameters('authSecretKey'))]"
+            },
+            {
+              "name": "AUTH_ALLOWED_ORIGINS",
+              "value": "[parameters('authAllowedOrigins')]"
+            },
+            {
+              "name": "DOCKER_REGISTRY_SERVER_URL",
+              "value": "https://ghcr.io"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "webAppUrl": {
+      "type": "string",
+      "value": "[concat('https://', reference(resourceId('Microsoft.Web/sites', parameters('webAppName'))).defaultHostName)]"
+    },
+    "webAppName": {
+      "type": "string",
+      "value": "[parameters('webAppName')]"
+    }
+  }
+}

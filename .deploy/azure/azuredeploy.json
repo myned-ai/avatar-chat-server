@@ -13,12 +13,6 @@
         "description": "The name of the Web App. Must be globally unique."
       }
     },
-    "location": {
-      "type": "string",
-      "metadata": {
-        "description": "Location for all resources (e.g. eastus, westeurope, northeurope)."
-      }
-    },
     "sku": {
       "type": "string",
       "defaultValue": "B1",
@@ -72,7 +66,7 @@
       "type": "Microsoft.Web/serverfarms",
       "apiVersion": "2022-09-01",
       "name": "[variables('appServicePlanName')]",
-      "location": "[parameters('location')]",
+      "location": "[resourceGroup().location]",
       "sku": {
         "name": "[parameters('sku')]"
       },
@@ -85,7 +79,7 @@
       "type": "Microsoft.Web/sites",
       "apiVersion": "2022-09-01",
       "name": "[parameters('webAppName')]",
-      "location": "[parameters('location')]",
+      "location": "[resourceGroup().location]",
       "kind": "app,linux,container",
       "dependsOn": [
         "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]"

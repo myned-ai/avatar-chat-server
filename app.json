@@ -2,18 +2,18 @@
   "name": "avatar-sample-chat-server",
   "env": {
     "AGENT_TYPE": {
-      "description": "The AI agent to use: sample_gemini or sample_openai.",
+      "description": "The AI agent to use: sample_gemini or sample_openai or remote.",
       "value": "sample_gemini",
       "required": true
     },
     "GEMINI_API_KEY": {
       "description": "Google Gemini API key. Required if AGENT_TYPE is sample_gemini.",
-      "value": "",
+      "value": "..",
       "required": false
     },
     "OPENAI_API_KEY": {
       "description": "OpenAI API key. Required if AGENT_TYPE is sample_openai.",
-      "value": "",
+      "value": "..",
       "required": false
     },
     "AUTH_ENABLED": {
@@ -22,12 +22,12 @@
     },
     "AUTH_SECRET_KEY": {
       "description": "Secret key used for token signing. Required if authentication is enabled.",
-      "value": "",
+      "value": "..",
       "required": false
     },
     "AUTH_ALLOWED_ORIGINS": {
       "description": "Comma-separated list of allowed CORS origins (e.g. https://myned.ai,https://www.myned.ai). Required if authentication is enabled.",
-      "value": "",
+      "value": "..",
       "required": false
     },
     "GEMINI_MODEL": {

@@ -60,7 +60,8 @@
       "defaultValue": "sample_gemini",
       "allowedValues": [
         "sample_gemini",
-        "sample_openai"
+        "sample_openai",
+        "remote"
       ],
       "metadata": {
         "description": "The AI agent to use. Choose sample_gemini for Google Gemini or sample_openai for OpenAI."

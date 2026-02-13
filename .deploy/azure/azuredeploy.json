@@ -121,6 +121,10 @@
               "value": "false"
             },
             {
+              "name": "WEBSITES_CONTAINER_START_TIME_LIMIT",
+              "value": "300"
+            },
+            {
               "name": "WEBSITES_PORT",
               "value": "8080"
             },

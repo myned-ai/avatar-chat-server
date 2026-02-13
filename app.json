@@ -113,8 +113,9 @@
   },
   "options": {
     "allow-unauthenticated": true,
-    "memory": "1Gi",
+    "memory": "2Gi",
     "cpu": "1",
-    "port": 8080
+    "port": 8080,
+    "min-instances": 1
   }
 }

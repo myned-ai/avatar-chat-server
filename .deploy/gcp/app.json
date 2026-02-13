@@ -1,0 +1,25 @@
+{
+  "name": "avatar-sample-chat-server",
+  "env": {
+    "AUTH_ENABLED": {
+      "description": "Enable or disable built-in authentication for the server.",
+      "value": "false"
+    },
+    "AUTH_SECRET_KEY": {
+      "description": "Secret key used for token signing. Required if authentication is enabled.",
+      "value": "",
+      "required": false
+    },
+    "AUTH_ALLOWED_ORIGINS": {
+      "description": "Comma-separated list of allowed CORS origins (e.g. https://myned.ai,https://www.myned.ai). Required if authentication is enabled.",
+      "value": "",
+      "required": false
+    }
+  },
+  "options": {
+    "allow-unauthenticated": true,
+    "memory": "1Gi",
+    "cpu": "1",
+    "port": 8080
+  }
+}

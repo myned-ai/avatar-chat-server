@@ -44,6 +44,7 @@ Parameters:
     AllowedValues:
       - sample_gemini
       - sample_openai
+      - remote
     Description: The AI agent to use. Choose sample_gemini for Google Gemini or sample_openai for OpenAI.
 
   GeminiApiKey:

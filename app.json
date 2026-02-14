@@ -1,5 +1,5 @@
 {
-  "name": "avatar-sample-chat-server",
+  "name": "avatar-chat-server",
   "env": {
     "AGENT_TYPE": {
       "description": "The AI agent to use: sample_gemini or sample_openai or remote.",

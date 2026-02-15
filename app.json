@@ -1,0 +1,120 @@
+{
+  "name": "avatar-chat-server",
+  "env": {
+    "AGENT_TYPE": {
+      "description": "The AI agent to use: sample_gemini or sample_openai or remote.",
+      "value": "sample_gemini",
+      "required": true
+    },
+    "GEMINI_API_KEY": {
+      "description": "Google Gemini API key. Required if AGENT_TYPE is sample_gemini.",
+      "value": "..",
+      "required": false
+    },
+    "OPENAI_API_KEY": {
+      "description": "OpenAI API key. Required if AGENT_TYPE is sample_openai.",
+      "value": "..",
+      "required": false
+    },
+    "AUTH_ENABLED": {
+      "description": "Enable or disable built-in authentication for the server.",
+      "value": "false"
+    },
+    "AUTH_SECRET_KEY": {
+      "description": "Secret key used for token signing. Required if authentication is enabled.",
+      "value": "..",
+      "required": false
+    },
+    "AUTH_ALLOWED_ORIGINS": {
+      "description": "Comma-separated list of allowed CORS origins (e.g. https://myned.ai,https://www.myned.ai). Required if authentication is enabled.",
+      "value": "..",
+      "required": false
+    },
+    "GEMINI_MODEL": {
+      "description": "Gemini model name.",
+      "value": "gemini-2.5-flash-native-audio-preview-12-2025",
+      "required": false
+    },
+    "GEMINI_VOICE": {
+      "description": "Gemini voice.",
+      "value": "Kore",
+      "required": false
+    },
+    "GEMINI_THINKING_BUDGET": {
+      "description": "Gemini thinking budget (-1 for unlimited).",
+      "value": "-1",
+      "required": false
+    },
+    "GEMINI_GOOGLE_SEARCH_GROUNDING": {
+      "description": "Enable Gemini Google search grounding.",
+      "value": "false",
+      "required": false
+    },
+    "GEMINI_PROACTIVE_AUDIO": {
+      "description": "Enable Gemini proactive audio.",
+      "value": "false",
+      "required": false
+    },
+    "GEMINI_CONTEXT_WINDOW_COMPRESSION": {
+      "description": "Enable Gemini context window compression.",
+      "value": "true",
+      "required": false
+    },
+    "OPENAI_VOICE": {
+      "description": "OpenAI voice.",
+      "value": "alloy",
+      "required": false
+    },
+    "OPENAI_NOISE_REDUCTION": {
+      "description": "OpenAI noise reduction mode.",
+      "value": "near_field",
+      "required": false
+    },
+    "OPENAI_MODEL": {
+      "description": "OpenAI model name.",
+      "value": "gpt-realtime",
+      "required": false
+    },
+    "OPENAI_TRANSCRIPTION_MODEL": {
+      "description": "OpenAI transcription model.",
+      "value": "gpt-4o-transcribe",
+      "required": false
+    },
+    "OPENAI_TRANSCRIPTION_LANGUAGE": {
+      "description": "OpenAI transcription language.",
+      "value": "en",
+      "required": false
+    },
+    "OPENAI_VOICE_SPEED": {
+      "description": "OpenAI voice speed.",
+      "value": "1.1",
+      "required": false
+    },
+    "DEBUG": {
+      "description": "Enable debug mode.",
+      "value": "false",
+      "required": false
+    },
+    "DEBUG_AUDIO_CAPTURE": {
+      "description": "Save incoming audio to files for debugging.",
+      "value": "false",
+      "required": false
+    },
+    "ONNX_MODEL_PATH": {
+      "description": "Path to the ONNX model file.",
+      "value": "./src/pretrained_models/wav2arkit_cpu.onnx",
+      "required": false
+    },
+    "ASSISTANT_INSTRUCTIONS": {
+      "description": "System instructions for the AI assistant.",
+      "value": "You are a helpful and friendly AI assistant. Always respond in English only, even if the user speaks another language. Keep your responses brief and conversational - no more than 2-3 sentences unless specifically asked for more detail. Only respond to clear audio or text. If the user's audio is not clear (e.g., ambiguous input/background noise/silent/unintelligible) or if you did not fully hear or understand the user, ask for clarification. If interrupted, assume the user wants to change topics. Do not apologize for the interruption; simply address the new input. Speak in a natural, conversational pace. You do not need to fill every silence immediately.",
+      "required": false
+    }
+  },
+  "options": {
+    "allow-unauthenticated": true,
+    "memory": "2Gi",
+    "cpu": "1",
+    "port": 8080
+  }
+}

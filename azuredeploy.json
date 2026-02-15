@@ -1,0 +1,247 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "Deploys the Avatar Chat Server to an Azure Web App for Containers (Linux)."
+  },
+  "parameters": {
+    "webAppName": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 60,
+      "metadata": {
+        "description": "The name of the Web App. Must be globally unique."
+      }
+    },
+    "sku": {
+      "type": "string",
+      "defaultValue": "B1",
+      "allowedValues": [
+        "B1",
+        "B2",
+        "B3",
+        "S1",
+        "S2",
+        "S3",
+        "P1v2",
+        "P2v2",
+        "P3v2",
+        "P1v3",
+        "P2v3",
+        "P3v3"
+      ],
+      "metadata": {
+        "description": "The pricing tier (SKU) of the App Service Plan."
+      }
+    },
+    "authEnabled": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Enable or disable built-in authentication for the server."
+      }
+    },
+    "authSecretKey": {
+      "type": "securestring",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Secret key used for token signing. Required if authentication is enabled."
+      }
+    },
+    "authAllowedOrigins": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Comma-separated list of allowed CORS origins (e.g. https://myned.ai,https://www.myned.ai). Required if authentication is enabled."
+      }
+    },
+    "agentType": {
+      "type": "string",
+      "defaultValue": "sample_gemini",
+      "allowedValues": [
+        "sample_gemini",
+        "sample_openai",
+        "remote"
+      ],
+      "metadata": {
+        "description": "The AI agent to use. Choose sample_gemini for Google Gemini or sample_openai for OpenAI."
+      }
+    },
+    "geminiApiKey": {
+      "type": "securestring",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Google Gemini API key. Required if agentType is sample_gemini."
+      }
+    },
+    "openaiApiKey": {
+      "type": "securestring",
+      "defaultValue": "",
+      "metadata": {
+        "description": "OpenAI API key. Required if agentType is sample_openai."
+      }
+    }
+  },
+  "variables": {
+    "appServicePlanName": "[concat('plan-', parameters('webAppName'))]",
+    "linuxFxVersion": "DOCKER|ghcr.io/myned-ai/avatar-chat-server:latest",
+    "generatedSecretKey": "[uniqueString(resourceGroup().id, parameters('webAppName'), subscription().subscriptionId)]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2022-09-01",
+      "name": "[variables('appServicePlanName')]",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "[parameters('sku')]"
+      },
+      "kind": "linux",
+      "properties": {
+        "reserved": true
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2022-09-01",
+      "name": "[parameters('webAppName')]",
+      "location": "[resourceGroup().location]",
+      "kind": "app,linux,container",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]"
+      ],
+      "properties": {
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
+        "httpsOnly": true,
+        "siteConfig": {
+          "linuxFxVersion": "[variables('linuxFxVersion')]",
+          "alwaysOn": true,
+          "appSettings": [
+            {
+              "name": "WEBSITES_ENABLE_APP_SERVICE_STORAGE",
+              "value": "false"
+            },
+            {
+              "name": "WEBSITES_CONTAINER_START_TIME_LIMIT",
+              "value": "300"
+            },
+            {
+              "name": "WEBSITES_PORT",
+              "value": "8080"
+            },
+            {
+              "name": "SERVER_HOST",
+              "value": "0.0.0.0"
+            },
+            {
+              "name": "SERVER_PORT",
+              "value": "8080"
+            },
+            {
+              "name": "AUTH_ENABLED",
+              "value": "[string(parameters('authEnabled'))]"
+            },
+            {
+              "name": "AUTH_SECRET_KEY",
+              "value": "[if(empty(parameters('authSecretKey')), variables('generatedSecretKey'), parameters('authSecretKey'))]"
+            },
+            {
+              "name": "AUTH_ALLOWED_ORIGINS",
+              "value": "[parameters('authAllowedOrigins')]"
+            },
+            {
+              "name": "DOCKER_REGISTRY_SERVER_URL",
+              "value": "https://ghcr.io"
+            },
+            {
+              "name": "AGENT_TYPE",
+              "value": "[parameters('agentType')]"
+            },
+            {
+              "name": "GEMINI_API_KEY",
+              "value": "[parameters('geminiApiKey')]"
+            },
+            {
+              "name": "OPENAI_API_KEY",
+              "value": "[parameters('openaiApiKey')]"
+            },
+            {
+              "name": "GEMINI_MODEL",
+              "value": "gemini-2.5-flash-native-audio-preview-12-2025"
+            },
+            {
+              "name": "GEMINI_VOICE",
+              "value": "Kore"
+            },
+            {
+              "name": "GEMINI_THINKING_BUDGET",
+              "value": "-1"
+            },
+            {
+              "name": "GEMINI_GOOGLE_SEARCH_GROUNDING",
+              "value": "false"
+            },
+            {
+              "name": "GEMINI_PROACTIVE_AUDIO",
+              "value": "false"
+            },
+            {
+              "name": "GEMINI_CONTEXT_WINDOW_COMPRESSION",
+              "value": "true"
+            },
+            {
+              "name": "OPENAI_VOICE",
+              "value": "alloy"
+            },
+            {
+              "name": "OPENAI_NOISE_REDUCTION",
+              "value": "near_field"
+            },
+            {
+              "name": "OPENAI_MODEL",
+              "value": "gpt-realtime"
+            },
+            {
+              "name": "OPENAI_TRANSCRIPTION_MODEL",
+              "value": "gpt-4o-transcribe"
+            },
+            {
+              "name": "OPENAI_TRANSCRIPTION_LANGUAGE",
+              "value": "en"
+            },
+            {
+              "name": "OPENAI_VOICE_SPEED",
+              "value": "1.1"
+            },
+            {
+              "name": "DEBUG",
+              "value": "false"
+            },
+            {
+              "name": "DEBUG_AUDIO_CAPTURE",
+              "value": "false"
+            },
+            {
+              "name": "ONNX_MODEL_PATH",
+              "value": "./src/pretrained_models/wav2arkit_cpu.onnx"
+            },
+            {
+              "name": "ASSISTANT_INSTRUCTIONS",
+              "value": "You are a helpful and friendly AI assistant. Always respond in English only, even if the user speaks another language. Keep your responses brief and conversational - no more than 2-3 sentences unless specifically asked for more detail. Only respond to clear audio or text. If the user's audio is not clear (e.g., ambiguous input/background noise/silent/unintelligible) or if you did not fully hear or understand the user, ask for clarification. If interrupted, assume the user wants to change topics. Do not apologize for the interruption; simply address the new input. Speak in a natural, conversational pace. You do not need to fill every silence immediately."
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "webAppUrl": {
+      "type": "string",
+      "value": "[concat('https://', reference(resourceId('Microsoft.Web/sites', parameters('webAppName'))).defaultHostName)]"
+    },
+    "webAppName": {
+      "type": "string",
+      "value": "[parameters('webAppName')]"
+    }
+  }
+}

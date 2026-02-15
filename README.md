@@ -2,9 +2,7 @@
 
 **Sample backend server for the [Avatar Chat Widget](https://github.com/myned-ai/avatar-chat-widget)**
 
-> **See the Avatar Chat Widget in action:**
->
-> [Watch Demo Video](https://github.com/myned-ai/avatar-chat-widget/raw/main/assets/demo.gif) *(Link to widget demo)*
+> **See the Avatar Chat Widget in action -> [Try Nyx](https://myned.ai)**
 
 Real-time voice-to-avatar interaction server combining AI agents (OpenAI Realtime API, Google Gemini Live API or your custom agent) with the Wav2Arkit model for synchronized avatar facial animation. This is an example server that powers the [Avatar Chat Widget](https://github.com/myned-ai/avatar-chat-widget) by processing audio streams and generating ARKit blendshapes for realistic facial animations.
 

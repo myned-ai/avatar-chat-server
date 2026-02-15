@@ -1,0 +1,170 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Deploys the Avatar Chat Server to AWS App Runner from a public GHCR container image.
+
+Parameters:
+  ServiceName:
+    Type: String
+    Default: avatar-chat-server
+    MinLength: 2
+    MaxLength: 40
+    Description: The name of the App Runner service.
+
+  InstanceCpu:
+    Type: String
+    Default: '1024'
+    AllowedValues:
+      - '256'
+      - '512'
+      - '1024'
+      - '2048'
+      - '4096'
+    Description: >
+      CPU units for the App Runner instance.
+      256 = 0.25 vCPU, 512 = 0.5 vCPU, 1024 = 1 vCPU, 2048 = 2 vCPU, 4096 = 4 vCPU.
+
+  InstanceMemory:
+    Type: String
+    Default: '2048'
+    AllowedValues:
+      - '512'
+      - '1024'
+      - '2048'
+      - '3072'
+      - '4096'
+      - '6144'
+      - '8192'
+      - '12288'
+    Description: >
+      Memory in MB for the App Runner instance.
+
+  AgentType:
+    Type: String
+    Default: sample_gemini
+    AllowedValues:
+      - sample_gemini
+      - sample_openai
+      - remote
+    Description: The AI agent to use. Choose sample_gemini for Google Gemini or sample_openai for OpenAI.
+
+  GeminiApiKey:
+    Type: String
+    Default: ''
+    NoEcho: true
+    Description: Google Gemini API key. Required if AgentType is sample_gemini.
+
+  OpenaiApiKey:
+    Type: String
+    Default: ''
+    NoEcho: true
+    Description: OpenAI API key. Required if AgentType is sample_openai.
+
+  AuthEnabled:
+    Type: String
+    Default: 'false'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: Enable or disable built-in authentication for the server.
+
+  AuthSecretKey:
+    Type: String
+    Default: ''
+    NoEcho: true
+    Description: Secret key used for token signing. Required if authentication is enabled.
+
+  AuthAllowedOrigins:
+    Type: String
+    Default: ''
+    Description: >
+      Comma-separated list of allowed CORS origins (e.g. https://myned.ai,https://www.myned.ai).
+      Required if authentication is enabled.
+
+Resources:
+  AppRunnerService:
+    Type: AWS::AppRunner::Service
+    Properties:
+      ServiceName: !Ref ServiceName
+      SourceConfiguration:
+        AuthenticationConfiguration: {}
+        ImageRepository:
+          ImageIdentifier: ghcr.io/myned-ai/avatar-chat-server:latest
+          ImageRepositoryType: ECR_PUBLIC
+          ImageConfiguration:
+            Port: '8080'
+            RuntimeEnvironmentVariables:
+              - Name: SERVER_HOST
+                Value: '0.0.0.0'
+              - Name: SERVER_PORT
+                Value: '8080'
+              - Name: AGENT_TYPE
+                Value: !Ref AgentType
+              - Name: GEMINI_API_KEY
+                Value: !Ref GeminiApiKey
+              - Name: OPENAI_API_KEY
+                Value: !Ref OpenaiApiKey
+              - Name: AUTH_ENABLED
+                Value: !Ref AuthEnabled
+              - Name: AUTH_SECRET_KEY
+                Value: !Ref AuthSecretKey
+              - Name: AUTH_ALLOWED_ORIGINS
+                Value: !Ref AuthAllowedOrigins
+              - Name: GEMINI_MODEL
+                Value: gemini-2.5-flash-native-audio-preview-12-2025
+              - Name: GEMINI_VOICE
+                Value: Kore
+              - Name: GEMINI_THINKING_BUDGET
+                Value: '-1'
+              - Name: GEMINI_GOOGLE_SEARCH_GROUNDING
+                Value: 'false'
+              - Name: GEMINI_PROACTIVE_AUDIO
+                Value: 'false'
+              - Name: GEMINI_CONTEXT_WINDOW_COMPRESSION
+                Value: 'true'
+              - Name: OPENAI_VOICE
+                Value: alloy
+              - Name: OPENAI_NOISE_REDUCTION
+                Value: near_field
+              - Name: OPENAI_MODEL
+                Value: gpt-realtime
+              - Name: OPENAI_TRANSCRIPTION_MODEL
+                Value: gpt-4o-transcribe
+              - Name: OPENAI_TRANSCRIPTION_LANGUAGE
+                Value: en
+              - Name: OPENAI_VOICE_SPEED
+                Value: '1.1'
+              - Name: DEBUG
+                Value: 'false'
+              - Name: DEBUG_AUDIO_CAPTURE
+                Value: 'false'
+              - Name: ONNX_MODEL_PATH
+                Value: ./src/pretrained_models/wav2arkit_cpu.onnx
+              - Name: ASSISTANT_INSTRUCTIONS
+                Value: >-
+                  You are a helpful and friendly AI assistant. Always respond in English
+                  only, even if the user speaks another language. Keep your responses brief
+                  and conversational - no more than 2-3 sentences unless specifically asked
+                  for more detail. Only respond to clear audio or text. If the user's audio
+                  is not clear (e.g., ambiguous input/background noise/silent/unintelligible)
+                  or if you did not fully hear or understand the user, ask for clarification.
+                  If interrupted, assume the user wants to change topics. Do not apologize
+                  for the interruption; simply address the new input. Speak in a natural,
+                  conversational pace. You do not need to fill every silence immediately.
+      InstanceConfiguration:
+        Cpu: !Ref InstanceCpu
+        Memory: !Ref InstanceMemory
+      HealthCheckConfiguration:
+        Protocol: HTTP
+        Path: /health
+        Interval: 10
+        Timeout: 5
+        HealthyThreshold: 1
+        UnhealthyThreshold: 5
+
+Outputs:
+  ServiceUrl:
+    Description: The URL of the deployed App Runner service.
+    Value: !Sub 'https://${AppRunnerService.ServiceUrl}'
+  ServiceArn:
+    Description: The ARN of the App Runner service.
+    Value: !GetAtt AppRunnerService.ServiceArn

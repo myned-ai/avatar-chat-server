@@ -45,6 +45,10 @@ class Settings(BaseSettings):
     debug: bool = False
     debug_audio_capture: bool = False  # Save incoming audio to files for debugging
 
+    # Knowledge Base Configuration
+    # Can be a local file path (e.g. "data/knowledge.md") or a URL
+    knowledge_base_source: str | None = None
+
     # Authentication Configuration
     auth_enabled: bool = False
     auth_secret_key: str = ""

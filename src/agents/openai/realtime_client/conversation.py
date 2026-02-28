@@ -174,7 +174,7 @@ class RealtimeConversation:
             new_item["formatted"]["tool"] = {
                 "type": "function",
                 "name": new_item.get("name", ""),
-                "call_id": new_item.get("call_id", ""),
+                "call_id": new_item.get("call_id") or new_item.get("id", ""),
                 "arguments": "",
             }
             new_item["status"] = "in_progress"
@@ -279,6 +279,14 @@ class RealtimeConversation:
                 "audio": np.array([], dtype=np.int16),
                 "text": "",
                 "transcript": "",
+            }
+        
+        if new_item.get("type") == "function_call":
+            new_item["formatted"]["tool"] = {
+                "type": "function",
+                "name": new_item.get("name", ""),
+                "call_id": new_item.get("call_id", ""),
+                "arguments": "",
             }
 
         if new_item["id"] not in self.item_lookup:

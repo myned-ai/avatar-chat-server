@@ -18,6 +18,7 @@ from core.settings import get_settings
 from services.knowledge_service import KnowledgeService
 
 from ..base_agent import BaseAgent, ConversationState
+from ..tools import GEMINI_NYX_ACTIONS
 from .gemini_settings import get_gemini_settings
 
 logger = get_logger(__name__)
@@ -51,6 +52,7 @@ class SampleGeminiAgent(BaseAgent):
         self._on_response_end: Callable | None = None
         self._on_user_transcript: Callable | None = None
         self._on_interrupted: Callable | None = None
+        self._on_tool_call: Callable | None = None
         self._on_error: Callable | None = None
 
         # Interruption handling
@@ -138,6 +140,7 @@ class SampleGeminiAgent(BaseAgent):
         on_response_end: Callable | None = None,
         on_user_transcript: Callable | None = None,
         on_interrupted: Callable | None = None,
+        on_tool_call: Callable | None = None,
         on_error: Callable | None = None,
     ) -> None:
         """
@@ -150,6 +153,7 @@ class SampleGeminiAgent(BaseAgent):
             on_response_end: Called when agent finishes responding, with full transcript
             on_user_transcript: Called with transcribed user speech
             on_interrupted: Called when user interrupts
+            on_tool_call: Called when the agent wants to trigger an action (name, arguments)
             on_error: Called on errors
         """
         self._on_audio_delta = on_audio_delta
@@ -158,6 +162,7 @@ class SampleGeminiAgent(BaseAgent):
         self._on_response_end = on_response_end
         self._on_user_transcript = on_user_transcript
         self._on_interrupted = on_interrupted
+        self._on_tool_call = on_tool_call
         self._on_error = on_error
 
     async def connect(self) -> None:
@@ -348,9 +353,7 @@ class SampleGeminiAgent(BaseAgent):
             }
         }
         
-        # [DEBUG] Disable tools to match simple_gemini_test.py
-        # if tools:
-        #      config["tools"] = tools
+        config["tools"] = [GEMINI_NYX_ACTIONS]
 
         return config
 
@@ -364,6 +367,39 @@ class SampleGeminiAgent(BaseAgent):
         #      pass
 
         try:
+            # Handle tool calls returned directly by the Live API
+            tool_call = getattr(response, 'tool_call', None)
+            if tool_call and hasattr(tool_call, 'function_calls'):
+                function_responses = []
+                for fc in tool_call.function_calls:
+                    name = fc.name
+                    args = fc.args
+                    if hasattr(args, 'items'):
+                        args_dict = dict(args.items())
+                    elif isinstance(args, dict):
+                        args_dict = args
+                    else:
+                        logger.error(f"Could not parse function_call args: {args}")
+                        args_dict = {}
+
+                    logger.info(f"Gemini Agent: Triggering action: {name} with args: {args_dict}")
+                    
+                    if self._on_tool_call:
+                        asyncio.create_task(self._on_tool_call(name, args_dict))
+                        
+                    tool_resp = types.FunctionResponse(
+                        id=fc.id,
+                        name=fc.name,
+                        response={"result": "ok"}
+                    )
+                    function_responses.append(tool_resp)
+                
+                # Acknowledge all calls
+                if function_responses:
+                    await self._session.send_tool_response(function_responses=function_responses)
+                    logger.debug(f"Sent {len(function_responses)} tool responses to Gemini")
+                return
+
             server_content = response.server_content
             if not server_content:
                 return
@@ -601,6 +637,26 @@ class SampleGeminiAgent(BaseAgent):
             logger.error(f"Error sending text to Gemini: {e}")
             if self._on_error:
                 await self._on_error({"error": str(e)})
+
+    async def _send_function_response(self, name: str, call_id: str) -> None:
+        """
+        Send a response back to the Gemini Live session after a function/tool call.
+        (NOTE: This is now mostly handled directly inline inside _handle_response, 
+        but kept for API compatibility if needed elsewhere).
+        """
+        if not self._session:
+            return
+        
+        try:
+            tool_resp = types.FunctionResponse(
+                name=name,
+                id=call_id,
+                response={"result": "ok"}
+            )
+            await self._session.send_tool_response(function_responses=[tool_resp])
+            logger.debug(f"Sent function response for {name} (id: {call_id})")
+        except Exception as e:
+            logger.error(f"Error sending function response for {name}: {e}")
 
     async def _send_audio_async(self, audio_bytes: bytes) -> None:
         """

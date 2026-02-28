@@ -97,8 +97,19 @@ class ChatSession:
             on_response_end=self._handle_response_end,
             on_user_transcript=self._handle_user_transcript,
             on_transcript_delta=self._handle_transcript_delta,
-            on_interrupted=self._handle_interrupted
+            on_interrupted=self._handle_interrupted,
+            on_tool_call=self._handle_tool_call
         )
+
+    async def _handle_tool_call(self, name: str, arguments: dict) -> None:
+        """Handle AI tool call request to trigger an action on the client."""
+        logger.info(f"Session {self.session_id}: Forwarding tool call '{name}' to client via WebSocket")
+        await self.send_json({
+            "type": "trigger_action",
+            "function_name": name,
+            "arguments": arguments,
+            "timestamp": int(time.time() * 1000)
+        })
 
     async def start(self) -> None:
         """Initialize connection to agent."""

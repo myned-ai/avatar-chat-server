@@ -15,6 +15,7 @@ Features:
 import asyncio
 import copy
 import json
+import uuid
 from collections.abc import Callable
 from typing import Any
 
@@ -178,12 +179,15 @@ class RealtimeClient(RealtimeEventHandler):
         
         async def call_tool(tool: dict[str, Any]):
             """Call a registered tool and send the result."""
+            tool_name = tool.get('name')
+            call_id = tool.get('call_id') or f"call_{uuid.uuid4().hex[:16]}"
+            
             try:
                 arguments = json.loads(tool.get('arguments', '{}'))
-                tool_config = self.tools.get(tool['name'])
+                tool_config = self.tools.get(tool_name)
                 
                 if not tool_config:
-                    raise ValueError(f'Tool "{tool["name"]}" has not been added')
+                    raise ValueError(f'Tool "{tool_name}" has not been added')
                 
                 result = tool_config['handler'](arguments)
                 
@@ -194,7 +198,7 @@ class RealtimeClient(RealtimeEventHandler):
                 self.realtime.send('conversation.item.create', {
                     'item': {
                         'type': 'function_call_output',
-                        'call_id': tool['call_id'],
+                        'call_id': call_id,
                         'output': json.dumps(result),
                     }
                 })
@@ -202,7 +206,7 @@ class RealtimeClient(RealtimeEventHandler):
                 self.realtime.send('conversation.item.create', {
                     'item': {
                         'type': 'function_call_output',
-                        'call_id': tool['call_id'],
+                        'call_id': call_id,
                         'output': json.dumps({'error': str(e)}),
                     }
                 })

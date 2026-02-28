@@ -118,3 +118,5 @@ dmypy.json
 
 # Claude
 .claude
+ngrok.yml
+devtunnel.exe

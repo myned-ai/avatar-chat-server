@@ -15,6 +15,7 @@ from core.settings import get_settings
 from services.knowledge_service import KnowledgeService
 
 from ..base_agent import BaseAgent, ConversationState
+from ..tools import OPENAI_NYX_ACTIONS
 from .openai_settings import get_openai_settings
 from .realtime_client import RealtimeClient
 
@@ -48,6 +49,7 @@ class SampleOpenAIAgent(BaseAgent):
         self._on_response_end: Callable | None = None
         self._on_user_transcript: Callable | None = None
         self._on_interrupted: Callable | None = None
+        self._on_tool_call: Callable | None = None
         self._on_error: Callable[[Any], Awaitable[None]] | None = None
 
         # Current response item ID for cancellation
@@ -86,6 +88,7 @@ class SampleOpenAIAgent(BaseAgent):
         on_response_end: Callable[[str, str | None], Awaitable[None]] | None = None,
         on_user_transcript: Callable[[str, str], Awaitable[None]] | None = None,
         on_interrupted: Callable[[], Awaitable[None]] | None = None,
+        on_tool_call: Callable[[str, dict], Awaitable[None]] | None = None,
         on_error: Callable[[Any], Awaitable[None]] | None = None,
     ) -> None:
         """
@@ -106,6 +109,7 @@ class SampleOpenAIAgent(BaseAgent):
         self._on_response_end = on_response_end
         self._on_user_transcript = on_user_transcript
         self._on_interrupted = on_interrupted
+        self._on_tool_call = on_tool_call
         self._on_error = on_error
 
     async def connect(self) -> None:
@@ -165,6 +169,8 @@ class SampleOpenAIAgent(BaseAgent):
             "output_audio_format": "pcm16",
             "input_audio_transcription": transcription_config,
             "turn_detection": turn_detection,
+            #"tools": OPENAI_NYX_ACTIONS, # Handled by add_tool below
+            "tool_choice": "auto",
         }
         # Add noise reduction if configured
         if self._openai_settings.openai_noise_reduction:
@@ -174,6 +180,19 @@ class SampleOpenAIAgent(BaseAgent):
         logger.info(f"Session configuration: {session_config}")
 
         self._client.update_session(**session_config)
+
+        # Register tools with handlers
+        def create_tool_handler(tool_name: str):
+            def handler(arguments: dict):
+                logger.info(f"==========> TOOL EXECUTED: {tool_name} <==========")
+                logger.info(f"OpenAI Agent: Executing tool {tool_name} with arguments {arguments}")
+                if self._on_tool_call:
+                    asyncio.create_task(self._on_tool_call(tool_name, arguments))
+                return {"success": True}
+            return handler
+
+        for tool_def in OPENAI_NYX_ACTIONS:
+            self._client.add_tool(tool_def, create_tool_handler(tool_def["name"]))
 
         self._connected = True
         logger.info(
@@ -199,6 +218,7 @@ class SampleOpenAIAgent(BaseAgent):
         client.on("conversation.updated", self._handle_conversation_updated)
         client.on("conversation.item.appended", self._handle_item_appended)
         client.on("conversation.item.completed", self._handle_item_completed)
+        client.on("conversation.item.created", self._handle_item_created)
         client.on("conversation.item.input_transcription.completed", self._handle_user_transcript)
         client.on("conversation.item.input_transcription.failed", self._handle_transcription_failed)
         client.on("conversation.interrupted", self._handle_interrupted)
@@ -347,6 +367,17 @@ class SampleOpenAIAgent(BaseAgent):
         if role == "assistant":
             self._current_item_id = item.get("id")
             # Note: Response start is now handled in _handle_response_started
+
+    def _handle_item_created(self, event: dict) -> None:
+        """Handle newly created conversation items (for catching tool calls)."""
+        item = event.get("item", {})
+        item_type = item.get("type", "")
+        
+        # Tool calls arrive inside the item payload for OpenAI
+        if item_type == "function_call":
+            name = item.get("name")
+            logger.info(f"OpenAI Agent: Model chose function_call: {name}. Waiting for arguments to stream.")
+            # Note: actual execution happens in RealtimeClient via the handler registered in connect()
 
     async def _wait_for_audio_done(self, timeout: float = 3.0) -> bool:
         """Wait for audio_done flag to be set, with timeout."""

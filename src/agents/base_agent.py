@@ -78,6 +78,7 @@ class BaseAgent(ABC):
         on_response_end: Callable[[str, str | None], Awaitable[None]] | None = None,
         on_user_transcript: Callable[[str, str], Awaitable[None]] | None = None,
         on_interrupted: Callable[[], Awaitable[None]] | None = None,
+        on_tool_call: Callable[[str, dict], Awaitable[None]] | None = None,
         on_error: Callable[[Any], Awaitable[None]] | None = None,
     ) -> None:
         """
@@ -90,6 +91,7 @@ class BaseAgent(ABC):
             on_response_end: Called when agent finishes responding (with full transcript)
             on_user_transcript: Called with transcribed user speech
             on_interrupted: Called when user interrupts
+            on_tool_call: Called when the agent wants to trigger an action (name, arguments)
             on_error: Called on errors
         """
         pass

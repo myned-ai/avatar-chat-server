@@ -67,8 +67,6 @@ FROM dependencies AS production
 
 # Copy application code (already running as appuser)
 COPY --chown=appuser:appuser ./src ./src
-COPY --chown=appuser:appuser ./data ./data
-RUN mv ./pretrained_models/ ./src/
 
 # Environment variables
 ENV SERVER_HOST=0.0.0.0 \
@@ -92,7 +90,6 @@ FROM dependencies AS development
 
 # Copy application code
 COPY --chown=appuser:appuser ./src ./src
-RUN mv ./pretrained_models/ ./src/
 
 # Mount point for source code (overrides the COPY above when mounted)
 VOLUME ["/app"]

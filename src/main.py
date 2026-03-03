@@ -60,6 +60,7 @@ async def lifespan(app: FastAPI):
     if settings.auth_enabled:
         allowed_origins = get_allowed_origins()
         logger.info(f"Allowed Origins: {', '.join(allowed_origins)}")
+    logger.info(f"Knowledge base: {settings.knowledge_base_source or 'None'}")
     logger.info("=" * 60)
 
     # Initialize services (lazy loading - will connect on first request)

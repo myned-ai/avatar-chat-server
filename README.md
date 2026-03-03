@@ -362,7 +362,6 @@ docker run -d \
   --name avatar-chat-server \
   -p 8080:8080 \
   --env-file .env \
-  -v $(pwd)/src/pretrained_models:/app/pretrained_models:ro \
   --restart unless-stopped \
   avatar-chat-server
 
@@ -385,6 +384,21 @@ curl http://localhost:8080/health
   - Hot reload enabled
   - Source code mounted as volume
   - Debug logging enabled
+
+### Knowledge Base
+
+You can give the assistant custom knowledge to use when answering questions. Set `KNOWLEDGE_BASE_SOURCE` to a URL — the content is fetched at runtime and injected into the assistant's system prompt:
+
+```bash
+docker run -d \
+  --name avatar-chat-server \
+  -p 8080:8080 \
+  --env-file .env \
+  -e KNOWLEDGE_BASE_SOURCE=https://example.com/my-knowledge.md \
+  avatar-chat-server
+```
+
+For local development (without Docker), you can also use a local file path (e.g. `KNOWLEDGE_BASE_SOURCE=data/knowledge.md`).
 
 ## Authentication
 

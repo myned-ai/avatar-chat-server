@@ -11,6 +11,8 @@ from fastapi import WebSocket
 from core.logger import get_logger
 from core.settings import Settings
 from services import Wav2ArkitService, create_agent_instance
+from utils.thumbnail import get_link_thumbnail
+import json
 
 logger = get_logger(__name__)
 
@@ -98,18 +100,40 @@ class ChatSession:
             on_user_transcript=self._handle_user_transcript,
             on_transcript_delta=self._handle_transcript_delta,
             on_interrupted=self._handle_interrupted,
-            on_tool_call=self._handle_tool_call
+            on_tool_call=self._handle_tool_call,
+            on_server_event=self._handle_server_event
         )
 
     async def _handle_tool_call(self, name: str, arguments: dict) -> None:
         """Handle AI tool call request to trigger an action on the client."""
         logger.info(f"Session {self.session_id}: Forwarding tool call '{name}' to client via WebSocket")
+        
+        # Intercept send_rich_content to inject auto-generated thumbnails
+        if name == "send_rich_content" and arguments.get("content_type") == "link_card":
+            payload_json = arguments.get("payload_json", "{}")
+            try:
+                payload = json.loads(payload_json)
+                url = payload.get("url")
+                # Auto-generate a thumbnail if missing
+                if url and "thumbnail" not in payload:
+                    thumb_url = await get_link_thumbnail(url)
+                    if thumb_url:
+                        payload["thumbnail"] = thumb_url
+                        arguments["payload_json"] = json.dumps(payload)
+                        logger.info(f"Session {self.session_id}: Auto-injected thumbnail for link_card: {thumb_url}")
+            except Exception as e:
+                logger.warning(f"Session {self.session_id}: Error processing link_card payload for thumbnail generation: {e}")
+
         await self.send_json({
             "type": "trigger_action",
             "function_name": name,
             "arguments": arguments,
             "timestamp": int(time.time() * 1000)
         })
+
+    async def _handle_server_event(self, name: str, data: dict[str, Any] | None = None) -> None:
+        """Handle a generic server event intended to be sent to the client."""
+        await self.send_server_event(name, data)
 
     async def start(self) -> None:
         """Initialize connection to agent."""
@@ -172,6 +196,52 @@ class ChatSession:
                 logger.debug(f"Socket closed while sending to {self.session_id}: {e}")
             else:
                 logger.error(f"Error sending to client {self.session_id}: {e}")
+
+    async def send_server_event(self, name: str, data: dict[str, Any] | None = None) -> None:
+        """
+        Send a generic standalone server event to the client.
+        
+        Args:
+            name: The name/type of the event
+            data: Optional payload for the event
+        """
+        msg = {
+            "type": "server_event",
+            "name": name,
+            "timestamp": int(time.time() * 1000)
+        }
+        if data:
+            msg["data"] = data
+        await self.send_json(msg)
+
+    async def send_rich_content(
+        self,
+        item_id: str,
+        content_type: str,
+        payload: dict[str, Any],
+        subtype: str | None = None,
+        action: str = 'replace'
+    ) -> None:
+        """
+        Send a rich content block to the client.
+        
+        Args:
+           item_id: The unique ID of the rich item
+           content_type: The type of content to render (e.g., 'table', 'card')
+           payload: The data for the renderer
+           subtype: Optional sub-type to define variant rendering
+           action: 'replace', 'append', 'remove'
+        """
+        item = {
+            "type": content_type,
+            "item_id": item_id,
+            "action": action,
+            "payload": payload
+        }
+        if subtype:
+            item["subtype"] = subtype
+            
+        await self.send_server_event("rich_content", {"items": [item]})
 
     async def _drain_queue(self, queue: asyncio.Queue) -> None:
         """Helper to flush an asyncio queue."""
@@ -670,7 +740,9 @@ class ChatSession:
         msg_type = data.get("type")
 
         if msg_type == "text":
-            self.agent.send_text_message(data.get("data", ""))
+            text = data.get("data", "")
+            attachments = data.get("attachments")
+            self.agent.send_text_message(text, attachments)
 
         elif msg_type == "audio_stream_start":
             self.is_streaming_audio = True
@@ -695,9 +767,27 @@ class ChatSession:
 
                     self.agent.append_audio(audio_bytes)
 
+        elif msg_type == "audio_stream_end":
+            logger.info(f"Session {self.session_id}: Received audio_stream_end from client")
+            if self.is_streaming_audio:
+                self.is_streaming_audio = False
+                # Explicitly commit the audio to generate a response.
+                self.agent.commit_audio()
+
         elif msg_type == "interrupt":
             logger.info(f"Session {self.session_id}: Received explicit interrupt command from client")
             await self._handle_interrupted()
+
+        elif msg_type == "client_event":
+            logger.info(f"Session {self.session_id}: Received client event {data.get('name')}")
+            if hasattr(self.agent, 'handle_client_event'):
+                await self.agent.handle_client_event(
+                    name=data.get("name", ""),
+                    data=data.get("data", {}),
+                    directive=data.get("directive"),
+                    request_id=data.get("request_id"),
+                    attachments=data.get("attachments")
+                )
 
         elif msg_type == "ping":
             await self.send_json({

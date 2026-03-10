@@ -50,11 +50,13 @@ class SampleOpenAIAgent(BaseAgent):
         self._on_user_transcript: Callable | None = None
         self._on_interrupted: Callable | None = None
         self._on_tool_call: Callable | None = None
+        self._on_server_event: Callable | None = None
         self._on_error: Callable[[Any], Awaitable[None]] | None = None
 
         # Current response item ID for cancellation
         self._current_item_id: str | None = None
         self._response_cancelled: bool = False
+        self._pending_screen_context_future: asyncio.Future | None = None
         
         #  Thread safety and re-entry prevention
         self._response_processing_lock = asyncio.Lock()
@@ -89,6 +91,7 @@ class SampleOpenAIAgent(BaseAgent):
         on_user_transcript: Callable[[str, str], Awaitable[None]] | None = None,
         on_interrupted: Callable[[], Awaitable[None]] | None = None,
         on_tool_call: Callable[[str, dict], Awaitable[None]] | None = None,
+        on_server_event: Callable[[str, dict | None], Awaitable[None]] | None = None,
         on_error: Callable[[Any], Awaitable[None]] | None = None,
     ) -> None:
         """
@@ -110,6 +113,7 @@ class SampleOpenAIAgent(BaseAgent):
         self._on_user_transcript = on_user_transcript
         self._on_interrupted = on_interrupted
         self._on_tool_call = on_tool_call
+        self._on_server_event = on_server_event
         self._on_error = on_error
 
     async def connect(self) -> None:
@@ -183,11 +187,24 @@ class SampleOpenAIAgent(BaseAgent):
 
         # Register tools with handlers
         def create_tool_handler(tool_name: str):
-            def handler(arguments: dict):
+            async def handler(arguments: dict):
                 logger.info(f"==========> TOOL EXECUTED: {tool_name} <==========")
                 logger.info(f"OpenAI Agent: Executing tool {tool_name} with arguments {arguments}")
                 if self._on_tool_call:
                     asyncio.create_task(self._on_tool_call(tool_name, arguments))
+                
+                if tool_name == "request_screen_context":
+                    logger.info(f"Deferring tool response for {tool_name} (waiting for screen_context_provided event)")
+                    
+                    # Strictly cancel ongoing filler response and notify client
+                    self.cancel_response()
+                    if self._on_interrupted:
+                        asyncio.create_task(self._on_interrupted())
+
+                    loop = asyncio.get_running_loop()
+                    self._pending_screen_context_future = loop.create_future()
+                    return await self._pending_screen_context_future
+                    
                 return {"success": True}
             return handler
 
@@ -515,12 +532,13 @@ class SampleOpenAIAgent(BaseAgent):
             logger.error(f"Session {self._state.session_id}: Unexpected error during interruption handling: {e}", exc_info=True)
             self._interruption_in_progress = False
 
-    def send_text_message(self, text: str) -> None:
+    def send_text_message(self, text: str, attachments: list[dict[str, Any]] | None = None) -> None:
         """
-        Send a text message to the assistant.
+        Send a text message to the assistant, optionally with file attachments.
 
         Args:
             text: Text message content
+            attachments: List of dicts containing filename, mime_type, and base64 content
         """
         if not self._connected or not self._client:
             return
@@ -529,8 +547,100 @@ class SampleOpenAIAgent(BaseAgent):
         if self._state.is_responding:
             self.cancel_response()
 
-        logger.debug(f"User text: {text}")
-        self._client.send_user_message_content([{"type": "input_text", "text": text}])
+        logger.debug(f"User text: {text}, Attachments: {len(attachments or [])}")
+        
+        content = []
+        if text:
+            content.append({"type": "input_text", "text": text})
+            
+        if attachments:
+            for attachment in attachments:
+                mime_type = attachment.get("mime_type", "")
+                content_b64 = attachment.get("content", "")
+                
+                # OpenAI Realtime does not strictly support arbitrary file parts in this endpoint like Gemini yet.
+                # But if we were sending images to a vision capable mode, we could append an image_url part here.
+                # content.append({"type": "image_url", "image_url": {"url": f"data:{mime_type};base64,{content_b64}"}})
+                pass
+                
+        if content:
+            self._client.send_user_message_content(content)
+
+    async def handle_client_event(
+        self,
+        name: str,
+        data: dict[str, Any] | None = None,
+        directive: str | None = None,
+        request_id: str | None = None,
+        attachments: list[dict[str, Any]] | None = None
+    ) -> None:
+        """
+        Process incoming generic client events by mapping them to LLM system prompts.
+        """
+        if not self._connected or not self._client:
+            return
+
+        logger.info(f"Handling client event '{name}' (directive: {directive})")
+
+        event_str = f"SYSTEM EVENT: '{name}' occurred on the client."
+        
+        # PROMPT INJECTION DEFENSE:
+        # Validate data is a dictionary and force-cast to string schema to strip execution attempts
+        if data:
+            import json
+            if isinstance(data, dict):
+                # We specifically use XML fencing here which was commanded in the Core Settings
+                # to be treated purely as static descriptive data.
+                safe_json = json.dumps(data, indent=2)
+                event_str += f"\nEVENT DATA:\n<client_data>\n{safe_json}\n</client_data>"
+            else:
+                logger.warning(f"Discarding invalid client_event data payload (expected dict, got {type(data)})")
+
+        # Add protocol reminder from settings
+        event_str += f"\n\n{self._settings.prompt_client_events}"
+
+        # Add specific directive reminder
+        if directive == "context":
+            event_str += "\n\nREMINDER: This is a 'context' directive. Absorb SILENTLY. No spoken response."
+        elif directive == "speak":
+            event_str += "\n\nREMINDER: This is a 'speak' directive. Acknowledge naturally."
+        elif directive == "trigger":
+            event_str += "\n\nREMINDER: This is a 'trigger' directive. Act immediately."
+
+        # Build message content including image attachments
+        content = [{"type": "input_text", "text": event_str}]
+        if attachments:
+            for attachment in attachments:
+                mime_type = attachment.get("mime_type", "")
+                content_b64 = attachment.get("content", "")
+                if mime_type and content_b64:
+                    content.append({"type": "image_url", "image_url": {"url": f"data:{mime_type};base64,{content_b64}"}})
+
+        # Fulfill pending screen context tool call if this is the screenshot
+        if name == "screen_context_provided" and self._pending_screen_context_future and not self._pending_screen_context_future.done():
+            logger.info("Fulfilling deferred tool response for request_screen_context")
+            # Send the user message with the image context first
+            self._client.send_user_message_content(content)
+            # Resume the tool call execution
+            self._pending_screen_context_future.set_result({"result": "Screenshot provided in current user message."})
+            self._pending_screen_context_future = None
+            return  # Skip the default send below
+
+        # Cancel ongoing voice if it's meant to be an immediate trigger
+        if directive in ["trigger", "speak"] and self._state.is_responding and name != "screen_context_provided":
+            self.cancel_response()
+
+        if directive == "context":
+            # Just append the item softly to the context without triggering AI to respond
+            self._client.realtime.send('conversation.item.create', {
+                'item': {
+                    'type': 'message',
+                    'role': 'user',
+                    'content': content,
+                }
+            })
+        else:
+            self._client.send_user_message_content(content)
 
     def cancel_response(self) -> None:
         """
@@ -551,6 +661,14 @@ class SampleOpenAIAgent(BaseAgent):
         
         # Note: We do NOT trigger _on_interrupted here recursively
         # because this method is called BY the handler that handles interruption
+
+    def commit_audio(self) -> None:
+        """Explicitly commit the audio buffer to generate a response."""
+        if not self._connected or not self._client:
+            return
+            
+        logger.info("Explicitly committing audio to generate OpenAI response")
+        self._client.create_response()
 
     def append_audio(self, audio_bytes: bytes) -> None:
         """

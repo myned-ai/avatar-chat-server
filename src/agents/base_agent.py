@@ -79,6 +79,7 @@ class BaseAgent(ABC):
         on_user_transcript: Callable[[str, str], Awaitable[None]] | None = None,
         on_interrupted: Callable[[], Awaitable[None]] | None = None,
         on_tool_call: Callable[[str, dict], Awaitable[None]] | None = None,
+        on_server_event: Callable[[str, dict | None], Awaitable[None]] | None = None,
         on_error: Callable[[Any], Awaitable[None]] | None = None,
     ) -> None:
         """
@@ -92,6 +93,7 @@ class BaseAgent(ABC):
             on_user_transcript: Called with transcribed user speech
             on_interrupted: Called when user interrupts
             on_tool_call: Called when the agent wants to trigger an action (name, arguments)
+            on_server_event: Called when the agent wants to emit a standalone server event
             on_error: Called on errors
         """
         pass
@@ -102,12 +104,32 @@ class BaseAgent(ABC):
         pass
 
     @abstractmethod
-    def send_text_message(self, text: str) -> None:
+    def send_text_message(self, text: str, attachments: list[dict[str, Any]] | None = None) -> None:
         """
-        Send a text message to the agent.
+        Send a text message to the agent, optionally with file attachments.
 
         Args:
             text: Text message content
+            attachments: List of dicts containing filename, mime_type, and base64 content
+        """
+        pass
+
+    async def handle_client_event(
+        self,
+        name: str,
+        data: dict[str, Any] | None = None,
+        directive: str | None = None,
+        request_id: str | None = None,
+        attachments: list[dict[str, Any]] | None = None
+    ) -> None:
+        """
+        Handle a generic client event sent from the widget.
+        
+        Args:
+            name: Event name
+            data: Optional event payload
+            directive: Instruction on how to handle ('context', 'speak', 'trigger', None)
+            request_id: Optional tracking ID
         """
         pass
 
@@ -126,6 +148,14 @@ class BaseAgent(ABC):
 
         Args:
             audio_bytes: PCM16 audio bytes
+        """
+        pass
+
+    def commit_audio(self) -> None:
+        """
+        Explicitly commit the audio buffer and trigger a response.
+        Used when the user manually stops the microphone, preventing VAD stalls.
+        Optional implementation - base does nothing.
         """
         pass
 

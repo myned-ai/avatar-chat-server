@@ -68,6 +68,7 @@ class SampleGeminiAgent(BaseAgent):
         self._vad_start_sensitivity = self._gemini_settings.gemini_vad_start_sensitivity
         self._vad_end_sensitivity = self._gemini_settings.gemini_vad_end_sensitivity
         self._reconnect_requested = False
+        self._suppress_next_response = False  # Suppress response lifecycle for context events
 
         # Background tasks
         self._receive_task: asyncio.Task | None = None
@@ -141,6 +142,7 @@ class SampleGeminiAgent(BaseAgent):
         on_user_transcript: Callable | None = None,
         on_interrupted: Callable | None = None,
         on_tool_call: Callable | None = None,
+        on_server_event: Callable | None = None,
         on_error: Callable | None = None,
     ) -> None:
         """
@@ -154,6 +156,7 @@ class SampleGeminiAgent(BaseAgent):
             on_user_transcript: Called with transcribed user speech
             on_interrupted: Called when user interrupts
             on_tool_call: Called when the agent wants to trigger an action (name, arguments)
+            on_server_event: Called when the agent wants to emit a standalone server event
             on_error: Called on errors
         """
         self._on_audio_delta = on_audio_delta
@@ -163,6 +166,7 @@ class SampleGeminiAgent(BaseAgent):
         self._on_user_transcript = on_user_transcript
         self._on_interrupted = on_interrupted
         self._on_tool_call = on_tool_call
+        self._on_server_event = on_server_event
         self._on_error = on_error
 
     async def connect(self) -> None:
@@ -350,6 +354,14 @@ class SampleGeminiAgent(BaseAgent):
                 "thinking_config": {
                      "include_thoughts": False
                 }
+            },
+            
+            # Best Practice: Audio tokens accumulate at ~25/sec, compress for long sessions
+            "context_window_compression": {
+                "trigger_tokens": 25000,
+                "sliding_window": {
+                    "target_tokens": 12500
+                }
             }
         }
         
@@ -368,12 +380,14 @@ class SampleGeminiAgent(BaseAgent):
 
         try:
             # Handle tool calls returned directly by the Live API
-            tool_call = getattr(response, 'tool_call', None)
-            if tool_call and hasattr(tool_call, 'function_calls'):
+            if response.tool_call:
                 function_responses = []
-                for fc in tool_call.function_calls:
+                for fc in response.tool_call.function_calls:
                     name = fc.name
                     args = fc.args
+                    
+                    # Convert args to dict safely
+                    args_dict = {}
                     if hasattr(args, 'items'):
                         args_dict = dict(args.items())
                     elif isinstance(args, dict):
@@ -387,14 +401,23 @@ class SampleGeminiAgent(BaseAgent):
                     if self._on_tool_call:
                         asyncio.create_task(self._on_tool_call(name, args_dict))
                         
-                    tool_resp = types.FunctionResponse(
-                        id=fc.id,
-                        name=fc.name,
-                        response={"result": "ok"}
-                    )
-                    function_responses.append(tool_resp)
+                    # If this is a screen context request, we MUST NOT answer "ok" immediately.
+                    # We defer the response so the AI pauses and waits for the actual image.
+                    if name == "request_screen_context":
+                        logger.info(f"Deferring tool response for {name} (waiting for screen_context_provided event)")
+                        self._pending_screen_context_id = fc.id
+                        # Force cancel the remaining audio generation so it doesn't speak while waiting
+                        self.cancel_response()
+                        asyncio.create_task(self._handle_interruption_signal())
+                    else:
+                        tool_resp = types.FunctionResponse(
+                            id=fc.id,
+                            name=fc.name,
+                            response={"result": "ok"}
+                        )
+                        function_responses.append(tool_resp)
                 
-                # Acknowledge all calls
+                # Acknowledge all calls (except deferred ones)
                 if function_responses:
                     await self._session.send_tool_response(function_responses=function_responses)
                     logger.debug(f"Sent {len(function_responses)} tool responses to Gemini")
@@ -450,21 +473,30 @@ class SampleGeminiAgent(BaseAgent):
             # If we are not responding, and we receive content, we must start a new turn.
             # This handles the case where text arrives before audio after an interruption.
             if (model_turn or output_transcription) and not self._state.is_responding:
-                # [USER TURN COMPLETE]
-                # Since the model is responding, the user's turn is effectively over.
-                # Send the accumulated user transcript as "final" to close the user bubble.
-                if self._current_user_transcript and self._on_user_transcript:
-                        logger.debug(f"Finalizing User Transcript: {self._current_user_transcript}")
-                        await self._on_user_transcript(self._current_user_transcript)
-                        self._current_user_transcript = ""
+                # If this response was triggered by a context event, suppress it entirely
+                if self._suppress_next_response:
+                    logger.info("Suppressing response lifecycle from context event")
+                    # Still track state so turn_complete can clean up
+                    self._state.is_responding = True
+                    self._state.transcript_buffer = ""
+                    self._response_cancelled = False
+                    # Do NOT fire on_response_start — this prevents audio_start reaching the client
+                else:
+                    # [USER TURN COMPLETE]
+                    # Since the model is responding, the user's turn is effectively over.
+                    # Send the accumulated user transcript as "final" to close the user bubble.
+                    if self._current_user_transcript and self._on_user_transcript:
+                            logger.debug(f"Finalizing User Transcript: {self._current_user_transcript}")
+                            await self._on_user_transcript(self._current_user_transcript)
+                            self._current_user_transcript = ""
 
-                self._state.session_id = f"session_{int(time.time() * 1000)}"
-                self._current_turn_id = self._state.session_id
-                self._state.is_responding = True
-                self._state.transcript_buffer = ""
-                self._response_cancelled = False
-                if self._on_response_start:
-                    await self._on_response_start(self._state.session_id)
+                    self._state.session_id = f"session_{int(time.time() * 1000)}"
+                    self._current_turn_id = self._state.session_id
+                    self._state.is_responding = True
+                    self._state.transcript_buffer = ""
+                    self._response_cancelled = False
+                    if self._on_response_start:
+                        await self._on_response_start(self._state.session_id)
 
             if model_turn:
                 # Process parts (audio and text)
@@ -479,9 +511,9 @@ class SampleGeminiAgent(BaseAgent):
                         audio_data = inline_data.data
                         if audio_data:
                             if self._on_audio_delta and not self._response_cancelled:
-                                # logger.debug(f"Received audio chunk from Gemini ({len(audio_data)} bytes)")
-                                # Send raw 24kHz audio directly (Client expects 24kHz)
-                                await self._on_audio_delta(audio_data)
+                                if not self._suppress_next_response:
+                                    # Send raw 24kHz audio directly (Client expects 24kHz)
+                                    await self._on_audio_delta(audio_data)
 
                     # Handle text data (IGNORING: This contains "Thinking" process in preview model)
                     text = part.text
@@ -494,17 +526,21 @@ class SampleGeminiAgent(BaseAgent):
             if output_transcription:
                 text = output_transcription.text
                 if text:
-                    # logger.debug(f"[{self._state.session_id}] Gemini Output Transcription: '{text}'")
                     self._state.transcript_buffer += text
                     if self._on_transcript_delta and not self._response_cancelled:
-                        await self._on_transcript_delta(text, "assistant", self._current_turn_id, None)
+                        if not self._suppress_next_response:
+                            await self._on_transcript_delta(text, "assistant", self._current_turn_id, None)
 
             # Check for turn completion
             if server_content.turn_complete and self._state.is_responding:
                 transcript = self._state.transcript_buffer
                 self._state.is_responding = False
                 self._current_turn_id = None
-                if self._on_response_end:
+                if self._suppress_next_response:
+                    # Silently end the suppressed turn without notifying the client
+                    logger.info("Context response suppressed — turn complete, no client notification")
+                    self._suppress_next_response = False
+                elif self._on_response_end:
                     await self._on_response_end(transcript, self._current_turn_id)
                 logger.debug(f"Assistant: {transcript}")
 
@@ -596,12 +632,23 @@ class SampleGeminiAgent(BaseAgent):
             logger.info("Triggering reconnect to apply VAD settings...")
             self._reconnect_requested = True
 
-    def send_text_message(self, text: str) -> None:
+    def commit_audio(self) -> None:
         """
-        Send a text message to the agent.
+        Explicitly commit the audio stream for Gemini by sending an End-Of-Turn flag.
+        """
+        if not self._connected or not self._session:
+            return
+            
+        logger.info("Explicitly committing audio to generate Gemini response")
+        asyncio.create_task(self._session.send(end_of_turn=True))
+
+    def send_text_message(self, text: str, attachments: list[dict[str, Any]] | None = None) -> None:
+        """
+        Send a text message to the agent, optionally with file attachments.
 
         Args:
             text: Text message content
+            attachments: List of dicts containing filename, mime_type, and base64 content
         """
         if not self._connected or not self._session:
             return
@@ -611,30 +658,161 @@ class SampleGeminiAgent(BaseAgent):
             logger.debug("Cancelling ongoing response due to text message")
             asyncio.create_task(self._handle_interruption_signal())
 
-        logger.debug(f"User text: {text}")
-        asyncio.create_task(self._send_text_async(text))
+        logger.debug(f"User text: {text}, Attachments: {len(attachments or [])}")
+        asyncio.create_task(self._send_text_async(text, attachments))
+
+    async def handle_client_event(
+        self,
+        name: str,
+        data: dict[str, Any] | None = None,
+        directive: str | None = None,
+        request_id: str | None = None,
+        attachments: list[dict[str, Any]] | None = None
+    ) -> None:
+        """
+        Handle a generic client event sent from the widget.
+        
+        Args:
+            name: Event name
+            data: Optional event payload
+            directive: Instruction on how to handle ('context', 'speak', 'trigger', None)
+            request_id: Optional tracking ID
+            attachments: Optional list of file/image attachments
+        """
+        if not self._connected or not self._session:
+            return
+
+        logger.info(f"Handling client event '{name}' (directive: {directive}, attachments: {len(attachments) if attachments else 0})")
+
+        # Format the event as a system message
+        if name == "screen_context_provided":
+            event_str = "Here is the requested screen context."
+        else:
+            event_str = f"SYSTEM EVENT: '{name}' occurred on the client."
+            
+            # PROMPT INJECTION DEFENSE:
+            # Validate data is a dictionary and force-cast to string schema to strip execution attempts
+            if data:
+                import json
+                if isinstance(data, dict):
+                    # We specifically use XML fencing here which was commanded in the Core Settings
+                    # to be treated purely as static descriptive data.
+                    safe_json = json.dumps(data, indent=2)
+                    event_str += f"\nEVENT DATA:\n<client_data>\n{safe_json}\n</client_data>"
+                else:
+                    logger.warning(f"Discarding invalid client_event data payload (expected dict, got {type(data)})")
+
+        # Add protocol reminder from settings
+        event_str += f"\n\n{self._settings.prompt_client_events}"
+        
+        # Add specific directive reminder
+        if directive == "context":
+            event_str += "\n\nREMINDER: This is a 'context' directive. Absorb SILENTLY. No spoken response."
+        elif directive == "speak":
+            event_str += "\n\nREMINDER: This is a 'speak' directive. Acknowledge naturally."
+        elif directive == "trigger":
+            event_str += "\n\nREMINDER: This is a 'trigger' directive. Act immediately."
+
+        # Fulfill pending screen context tool call if this is the screenshot
+        if name == "screen_context_provided" and self._pending_screen_context_id:
+            logger.info(f"Fulfilling deferred tool response for request_screen_context (ID: {self._pending_screen_context_id})")
+            
+            # [DEBUG] Save screenshot to disk for visual verification
+            if self._settings.debug and attachments:
+                for i, att in enumerate(attachments):
+                    content_b64 = att.get("content", "")
+                    mime_type = att.get("mime_type", "image/png")
+                    if content_b64:
+                        import base64
+                        ext = "png" if "png" in mime_type else "jpg" if "jpeg" in mime_type or "jpg" in mime_type else "webp"
+                        debug_path = f"debug_screenshot_{int(time.time())}_{i}.{ext}"
+                        try:
+                            with open(debug_path, "wb") as f:
+                                f.write(base64.b64decode(content_b64))
+                            logger.info(f"[DEBUG] Screenshot saved to: {debug_path} ({len(content_b64)} chars base64, mime: {mime_type})")
+                        except Exception as e:
+                            logger.warning(f"[DEBUG] Failed to save screenshot: {e}")
+                if not attachments:
+                    logger.warning("[DEBUG] screen_context_provided received but NO attachments!")
+            
+            # CRITICAL: Send the image FIRST with end_of_turn=True so Gemini processes it into context,
+            # then send the tool response to resume the model loop properly.
+            await self._send_text_async(event_str, attachments=attachments, end_of_turn=True)
+            
+            tool_resp = types.FunctionResponse(
+                id=self._pending_screen_context_id,
+                name="request_screen_context",
+                response={"result": "Screenshot has been provided. Analyze the image and answer the user's question."}
+            )
+            await self._session.send_tool_response(function_responses=[tool_resp])
+            self._pending_screen_context_id = None
+            return  # Already sent everything, skip the generic send below
+
+        # Cancel ongoing voice if it's meant to be an immediate trigger, 
+        # BUT NOT for screen context where the agent is expecting it
+        if directive in ["trigger", "speak"] and self._state.is_responding and name != "screen_context_provided":
+            logger.debug("Cancelling ongoing response due to priority client event")
+            asyncio.create_task(self._handle_interruption_signal())
+
+        # Send text to context without triggering a turn response if it's just meant to be silent context
+        # (This avoids triggering audio_start on the client, which would clear suggestion chips)
+        end_of_turn = (directive != "context")
+        await self._send_text_async(event_str, attachments=attachments, end_of_turn=end_of_turn)
 
     # Removed duplicate append_audio and _resample_audio methods that were causing conflicts
 
-    async def _send_text_async(self, text: str) -> None:
+    async def _send_text_async(
+        self, 
+        text: str, 
+        attachments: list[dict[str, Any]] | None = None,
+        end_of_turn: bool = True
+    ) -> None:
         """
         Send text message to Gemini Live API.
         
         Args:
             text: Text content
+            attachments: List of attachment dictionaries
+            end_of_turn: Whether this message should trigger an immediate AI response
         """
         if not self._session:
             return
 
         try:
-            # Send text input
-            # Use self._session.send(..., end_of_turn=True) for text
+            parts = []
+            
+            # Add text part if present
+            if text:
+                parts.append(text)
+                
+            # Process attachments
+            if attachments:
+                for attachment in attachments:
+                    mime_type = attachment.get("mime_type", "")
+                    content_b64 = attachment.get("content", "")
+                    
+                    if mime_type and content_b64:
+                        # Decode base64 to raw bytes for the Blob
+                        import base64
+                        raw_bytes = base64.b64decode(content_b64)
+                        
+                        parts.append(
+                            types.Part.from_bytes(
+                                data=raw_bytes,
+                                mime_type=mime_type,
+                            )
+                        )
+
+            if not parts:
+                return
+
+            # Send input using the parts array
             await self._session.send(
-                input=text,
-                end_of_turn=True
+                input=parts,
+                end_of_turn=end_of_turn
             )
         except Exception as e:
-            logger.error(f"Error sending text to Gemini: {e}")
+            logger.error(f"Error sending text/attachments to Gemini: {e}")
             if self._on_error:
                 await self._on_error({"error": str(e)})
 

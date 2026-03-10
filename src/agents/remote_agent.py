@@ -8,6 +8,7 @@ Connects to an external agent service via WebSocket and proxies calls/events.
 import asyncio
 import json
 from collections.abc import Callable
+from typing import Any
 
 import websockets
 
@@ -46,6 +47,8 @@ class RemoteAgent(BaseAgent):
         self._on_response_end: Callable | None = None
         self._on_user_transcript: Callable | None = None
         self._on_interrupted: Callable | None = None
+        self._on_tool_call: Callable | None = None
+        self._on_server_event: Callable | None = None
         self._on_error: Callable | None = None
 
     @property
@@ -71,6 +74,8 @@ class RemoteAgent(BaseAgent):
         on_response_end: Callable | None = None,
         on_user_transcript: Callable | None = None,
         on_interrupted: Callable | None = None,
+        on_tool_call: Callable | None = None,
+        on_server_event: Callable | None = None,
         on_error: Callable | None = None,
     ) -> None:
         """
@@ -91,6 +96,8 @@ class RemoteAgent(BaseAgent):
         self._on_response_end = on_response_end
         self._on_user_transcript = on_user_transcript
         self._on_interrupted = on_interrupted
+        self._on_tool_call = on_tool_call
+        self._on_server_event = on_server_event
         self._on_error = on_error
 
     async def connect(self) -> None:
@@ -168,6 +175,12 @@ class RemoteAgent(BaseAgent):
         elif event_type == "interrupted" and self._on_interrupted:
             await self._on_interrupted()
 
+        elif event_type == "tool_call" and self._on_tool_call:
+            await self._on_tool_call(event.get("name", ""), event.get("arguments", {}))
+
+        elif event_type == "server_event" and self._on_server_event:
+            await self._on_server_event(event.get("name", ""), event.get("data", {}))
+
         elif event_type == "error" and self._on_error:
             await self._on_error(event.get("error", {}))
 
@@ -179,17 +192,43 @@ class RemoteAgent(BaseAgent):
         elif event_type == "response_end" or event_type == "interrupted":
             self._state.is_responding = False
 
-    def send_text_message(self, text: str) -> None:
+    def send_text_message(self, text: str, attachments: list[dict[str, Any]] | None = None) -> None:
         """
-        Send a text message to the remote agent.
+        Send a text message to the remote agent, optionally with file attachments.
 
         Args:
             text: Text message content
+            attachments: List of dicts containing filename, mime_type, and base64 content
         """
         if not self._connected or not self._ws:
             return
 
         message = {"type": "text", "data": text}
+        if attachments:
+            message["attachments"] = attachments
+            
+        asyncio.create_task(self._send_message(message))
+
+    async def handle_client_event(
+        self,
+        name: str,
+        data: dict[str, Any] | None = None,
+        directive: str | None = None,
+        request_id: str | None = None
+    ) -> None:
+        """
+        Forward a generic client event to the remote agent.
+        """
+        if not self._connected or not self._ws:
+            return
+
+        message = {
+            "type": "client_event",
+            "name": name,
+            "data": data,
+            "directive": directive,
+            "request_id": request_id
+        }
         asyncio.create_task(self._send_message(message))
 
     def append_audio(self, audio_bytes: bytes) -> None:

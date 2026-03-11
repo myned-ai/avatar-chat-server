@@ -29,7 +29,7 @@ dependencies = [
     # Wav2Arkit model dependencies (ONNX CPU-only)
     "onnxruntime>=1.23.2",
     # AI Agent dependencies
-    "google-genai>=1.0.0",  # Google GenAI SDK for Gemini Live API
+    "google-genai>=1.66.0",  # Google GenAI SDK for Gemini Live API
 ]
 
 [dependency-groups]

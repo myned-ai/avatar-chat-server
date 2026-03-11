@@ -11,6 +11,7 @@ from collections.abc import Callable
 from typing import Any
 
 import websockets
+from websockets.asyncio.client import ClientConnection
 
 from core.logger import get_logger
 from core.settings import get_settings
@@ -35,7 +36,7 @@ class RemoteAgent(BaseAgent):
         Loads settings from environment variables.
         """
         self._settings = get_settings()
-        self._ws: websockets.WebSocketServerProtocol | None = None
+        self._ws: ClientConnection | None = None
         self._connected = False
         self._state = ConversationState()
         self._event_loop = asyncio.get_event_loop()
@@ -123,6 +124,8 @@ class RemoteAgent(BaseAgent):
 
     async def _listen_for_events(self) -> None:
         """Listen for events from remote agent and dispatch to handlers."""
+        if not self._ws:
+            return
         try:
             async for message in self._ws:
                 try:
@@ -203,7 +206,7 @@ class RemoteAgent(BaseAgent):
         if not self._connected or not self._ws:
             return
 
-        message = {"type": "text", "data": text}
+        message: dict[str, Any] = {"type": "text", "data": text}
         if attachments:
             message["attachments"] = attachments
             
@@ -214,7 +217,8 @@ class RemoteAgent(BaseAgent):
         name: str,
         data: dict[str, Any] | None = None,
         directive: str | None = None,
-        request_id: str | None = None
+        request_id: str | None = None,
+        attachments: list[dict[str, Any]] | None = None
     ) -> None:
         """
         Forward a generic client event to the remote agent.
@@ -227,7 +231,8 @@ class RemoteAgent(BaseAgent):
             "name": name,
             "data": data,
             "directive": directive,
-            "request_id": request_id
+            "request_id": request_id,
+            "attachments": attachments
         }
         asyncio.create_task(self._send_message(message))
 
@@ -249,6 +254,8 @@ class RemoteAgent(BaseAgent):
 
     async def _send_message(self, message: dict) -> None:
         """Send a message to the remote agent."""
+        if not self._ws:
+            return
         try:
             await self._ws.send(json.dumps(message))
         except Exception as e:

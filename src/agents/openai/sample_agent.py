@@ -558,10 +558,8 @@ class SampleOpenAIAgent(BaseAgent):
                 mime_type = attachment.get("mime_type", "")
                 content_b64 = attachment.get("content", "")
                 
-                # OpenAI Realtime does not strictly support arbitrary file parts in this endpoint like Gemini yet.
-                # But if we were sending images to a vision capable mode, we could append an image_url part here.
-                # content.append({"type": "image_url", "image_url": {"url": f"data:{mime_type};base64,{content_b64}"}})
-                pass
+                if mime_type.startswith("image/") and content_b64:
+                    content.append({"type": "input_image", "image_url": f"data:{mime_type};base64,{content_b64}"})
                 
         if content:
             self._client.send_user_message_content(content)
@@ -608,13 +606,13 @@ class SampleOpenAIAgent(BaseAgent):
             event_str += "\n\nREMINDER: This is a 'trigger' directive. Act immediately."
 
         # Build message content including image attachments
-        content = [{"type": "input_text", "text": event_str}]
+        content: list[dict[str, Any]] = [{"type": "input_text", "text": event_str}]
         if attachments:
             for attachment in attachments:
                 mime_type = attachment.get("mime_type", "")
                 content_b64 = attachment.get("content", "")
                 if mime_type and content_b64:
-                    content.append({"type": "image_url", "image_url": {"url": f"data:{mime_type};base64,{content_b64}"}})
+                    content.append({"type": "input_image", "image_url": f"data:{mime_type};base64,{content_b64}"})
 
         # Fulfill pending screen context tool call if this is the screenshot
         if name == "screen_context_provided" and self._pending_screen_context_future and not self._pending_screen_context_future.done():

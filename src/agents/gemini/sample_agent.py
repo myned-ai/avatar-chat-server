@@ -69,6 +69,7 @@ class SampleGeminiAgent(BaseAgent):
         self._vad_end_sensitivity = self._gemini_settings.gemini_vad_end_sensitivity
         self._reconnect_requested = False
         self._suppress_next_response = False  # Suppress response lifecycle for context events
+        self._pending_screen_context_id: str | None = None  # Deferred tool call ID for screen context
 
         # Background tasks
         self._receive_task: asyncio.Task | None = None
@@ -113,7 +114,7 @@ class SampleGeminiAgent(BaseAgent):
             audio_bytes: PCM16 audio bytes
         """
         if not self._connected or not self._session:
-            print(f"[Agent] Not connected, dropping {len(audio_bytes)} bytes")
+            logger.warning(f"Not connected, dropping {len(audio_bytes)} bytes")
             return
 
        
@@ -380,7 +381,7 @@ class SampleGeminiAgent(BaseAgent):
 
         try:
             # Handle tool calls returned directly by the Live API
-            if response.tool_call:
+            if response.tool_call and response.tool_call.function_calls:
                 function_responses = []
                 for fc in response.tool_call.function_calls:
                     name = fc.name
@@ -388,8 +389,8 @@ class SampleGeminiAgent(BaseAgent):
                     
                     # Convert args to dict safely
                     args_dict = {}
-                    if hasattr(args, 'items'):
-                        args_dict = dict(args.items())
+                    if args is not None and hasattr(args, 'items'):
+                        args_dict = dict(args.items())  # type: ignore[union-attr]
                     elif isinstance(args, dict):
                         args_dict = args
                     else:
@@ -418,7 +419,7 @@ class SampleGeminiAgent(BaseAgent):
                         function_responses.append(tool_resp)
                 
                 # Acknowledge all calls (except deferred ones)
-                if function_responses:
+                if function_responses and self._session:
                     await self._session.send_tool_response(function_responses=function_responses)
                     logger.debug(f"Sent {len(function_responses)} tool responses to Gemini")
                 return
@@ -735,9 +736,10 @@ class SampleGeminiAgent(BaseAgent):
                 if not attachments:
                     logger.warning("[DEBUG] screen_context_provided received but NO attachments!")
             
-            # CRITICAL: Send the image FIRST with end_of_turn=True so Gemini processes it into context,
-            # then send the tool response to resume the model loop properly.
-            await self._send_text_async(event_str, attachments=attachments, end_of_turn=True)
+            # Send the image as user content with end_of_turn=False (do NOT tell the model to respond yet),
+            # then send the tool response which properly resolves the pending function call and
+            # triggers the model to continue — now with the image visible in conversation context.
+            await self._send_text_async(event_str, attachments=attachments, end_of_turn=False)
             
             tool_resp = types.FunctionResponse(
                 id=self._pending_screen_context_id,
@@ -748,7 +750,7 @@ class SampleGeminiAgent(BaseAgent):
             self._pending_screen_context_id = None
             return  # Already sent everything, skip the generic send below
 
-        # Cancel ongoing voice if it's meant to be an immediate trigger, 
+        # Cancel ongoing voice if it's meant to be an immediate trigger,
         # BUT NOT for screen context where the agent is expecting it
         if directive in ["trigger", "speak"] and self._state.is_responding and name != "screen_context_provided":
             logger.debug("Cancelling ongoing response due to priority client event")
@@ -762,13 +764,16 @@ class SampleGeminiAgent(BaseAgent):
     # Removed duplicate append_audio and _resample_audio methods that were causing conflicts
 
     async def _send_text_async(
-        self, 
-        text: str, 
+        self,
+        text: str,
         attachments: list[dict[str, Any]] | None = None,
         end_of_turn: bool = True
     ) -> None:
         """
         Send text message to Gemini Live API.
+        
+        Images/media are sent via send_realtime_input (per Live API docs),
+        text is sent via session.send (wraps send_client_content).
         
         Args:
             text: Text content
@@ -779,38 +784,26 @@ class SampleGeminiAgent(BaseAgent):
             return
 
         try:
-            parts = []
-            
-            # Add text part if present
-            if text:
-                parts.append(text)
-                
-            # Process attachments
+            # Send image/media attachments via send_realtime_input (official Live API approach).
+            # Per docs: images use send_realtime_input(video=Blob), not send_client_content.
             if attachments:
+                import base64
                 for attachment in attachments:
                     mime_type = attachment.get("mime_type", "")
                     content_b64 = attachment.get("content", "")
-                    
+
                     if mime_type and content_b64:
-                        # Decode base64 to raw bytes for the Blob
-                        import base64
                         raw_bytes = base64.b64decode(content_b64)
-                        
-                        parts.append(
-                            types.Part.from_bytes(
-                                data=raw_bytes,
-                                mime_type=mime_type,
-                            )
+                        await self._session.send_realtime_input(
+                            video=types.Blob(data=raw_bytes, mime_type=mime_type)
                         )
 
-            if not parts:
-                return
-
-            # Send input using the parts array
-            await self._session.send(
-                input=parts,
-                end_of_turn=end_of_turn
-            )
+            # Send text content via session.send (wraps send_client_content, preserves ordering)
+            if text:
+                await self._session.send(
+                    input=text,
+                    end_of_turn=end_of_turn
+                )
         except Exception as e:
             logger.error(f"Error sending text/attachments to Gemini: {e}")
             if self._on_error:
@@ -819,7 +812,7 @@ class SampleGeminiAgent(BaseAgent):
     async def _send_function_response(self, name: str, call_id: str) -> None:
         """
         Send a response back to the Gemini Live session after a function/tool call.
-        (NOTE: This is now mostly handled directly inline inside _handle_response, 
+        (NOTE: This is now mostly handled directly inline inside _handle_response,
         but kept for API compatibility if needed elsewhere).
         """
         if not self._session:

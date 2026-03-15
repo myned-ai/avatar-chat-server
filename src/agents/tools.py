@@ -6,9 +6,10 @@ Best Practice (Gemini Live): Each tool includes an **Invocation Condition:** blo
 to tell the model precisely when to invoke it.
 """
 
+from .custom_tools import GEMINI_CUSTOM_ACTIONS, OPENAI_CUSTOM_ACTIONS
+
 # Gemini Function Declaration format using plain dictionaries for Live API config
-GEMINI_NYX_ACTIONS = {
-    "function_declarations": [
+_CORE_GEMINI_ACTIONS = [
         {
             "name": "trigger_confetti",
             "description": (
@@ -24,7 +25,9 @@ GEMINI_NYX_ACTIONS = {
                 "**Invocation Condition:** Invoke this tool when the user asks to navigate to, see, "
                 "or go to a specific section of the page. Use section IDs from the initialization context "
                 "(e.g. 'pricing', 'features', 'contact_us'). If no sections were provided, "
-                "you may attempt common IDs like 'top', 'bottom', 'contact'."
+                "you may attempt common IDs like 'top', 'bottom', 'contact'.\n"
+                "**CRITICAL RULE:** Do NOT verbally announce that you are navigating, scrolling, or taking them there. "
+                "Just execute the action silently or incorporate it smoothly into your answer without mentioning the act of navigation."
             ),
             "parameters": {
                 "type": "OBJECT",
@@ -77,14 +80,18 @@ GEMINI_NYX_ACTIONS = {
                 "visually on their screen, such as 'What am I looking at?', 'Help me fill this form', "
                 "or 'What does this page show?'. You MUST invoke this tool without ANY conversational filler. "
                 "Do NOT say 'Let me look' or 'Sure'. Remain unmistakably silent and yield your turn. "
-                "Only answer after you receive the image attachment."
+                "Only answer after you receive the image attachment.\n"
+                "**EXCEPTION:** Do NOT invoke this tool if you already know what the user is looking at from recent system events (e.g. 'viewing_product')."
             )
         }
     ]
+
+GEMINI_NYX_ACTIONS = {
+    "function_declarations": _CORE_GEMINI_ACTIONS + GEMINI_CUSTOM_ACTIONS
 }
 
 # OpenAI Realtime format
-OPENAI_NYX_ACTIONS = [
+_CORE_OPENAI_ACTIONS = [
     {
         "type": "function",
         "name": "trigger_confetti",
@@ -106,7 +113,9 @@ OPENAI_NYX_ACTIONS = [
             "**Invocation Condition:** Invoke this tool when the user asks to navigate to, see, "
             "or go to a specific section of the page. Use section IDs from the initialization context "
             "(e.g. 'pricing', 'features', 'contact_us'). If no sections were provided, "
-            "you may attempt common IDs like 'top', 'bottom', 'contact'."
+            "you may attempt common IDs like 'top', 'bottom', 'contact'.\n"
+            "**CRITICAL RULE:** Do NOT verbally announce that you are navigating, scrolling, or taking them there. "
+            "Just execute the action silently or incorporate it smoothly into your answer without mentioning the act of navigation."
         ),
         "parameters": {
             "type": "object",
@@ -146,7 +155,8 @@ OPENAI_NYX_ACTIONS = [
             "visually on their screen, such as 'What am I looking at?', 'Help me fill this form', "
             "or 'What does this page show?'. You MUST invoke this tool without ANY conversational filler. "
             "Do NOT say 'Let me look' or 'Sure'. Remain unmistakably silent and yield your turn. "
-            "Only answer after you receive the image attachment."
+            "Only answer after you receive the image attachment.\n"
+            "**EXCEPTION:** Do NOT invoke this tool if you already know what the user is looking at from recent system events (e.g. 'viewing_product')."
         ),
         "parameters": {
             "type": "object",
@@ -154,3 +164,5 @@ OPENAI_NYX_ACTIONS = [
         }
     }
 ]
+
+OPENAI_NYX_ACTIONS = _CORE_OPENAI_ACTIONS + OPENAI_CUSTOM_ACTIONS

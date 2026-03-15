@@ -527,12 +527,17 @@ class SampleGeminiAgent(BaseAgent):
             if output_transcription:
                 text = output_transcription.text
                 if text:
-                    self._state.transcript_buffer += text
-                    if self._on_transcript_delta and not self._response_cancelled:
-                        if not self._suppress_next_response:
-                            await self._on_transcript_delta(text, "assistant", self._current_turn_id, None)
-
-            # Check for turn completion
+                    if server_content.turn_complete:
+                        # Gemini sends the complete transcript again alongside turn_complete.
+                        # Treat it as the authoritative final text (SET, not append) to avoid
+                        # duplicating text that was already streamed as incremental deltas.
+                        self._state.transcript_buffer = text
+                        # Do NOT re-emit on_transcript_delta -- client already received the streaming deltas.
+                    else:
+                        self._state.transcript_buffer += text
+                        if self._on_transcript_delta and not self._response_cancelled:
+                            if not self._suppress_next_response:
+                                await self._on_transcript_delta(text, "assistant", self._current_turn_id, None)
             if server_content.turn_complete and self._state.is_responding:
                 transcript = self._state.transcript_buffer
                 self._state.is_responding = False
@@ -687,21 +692,26 @@ class SampleGeminiAgent(BaseAgent):
 
         # Format the event as a system message
         if name == "screen_context_provided":
-            event_str = "Here is the requested screen context."
+            event_str = (
+                "Here is the requested screen context. "
+                "CRITICAL INSTRUCTION: Analyze THIS specific screenshot and the attached DOM text very carefully. "
+                "Do NOT rely on your previous conversation history or expectations to guess what is on the screen. "
+                "Your answer must precisely reflect the exact text and numbers shown in this new image and context data."
+            )
         else:
             event_str = f"SYSTEM EVENT: '{name}' occurred on the client."
             
-            # PROMPT INJECTION DEFENSE:
-            # Validate data is a dictionary and force-cast to string schema to strip execution attempts
-            if data:
-                import json
-                if isinstance(data, dict):
-                    # We specifically use XML fencing here which was commanded in the Core Settings
-                    # to be treated purely as static descriptive data.
-                    safe_json = json.dumps(data, indent=2)
-                    event_str += f"\nEVENT DATA:\n<client_data>\n{safe_json}\n</client_data>"
-                else:
-                    logger.warning(f"Discarding invalid client_event data payload (expected dict, got {type(data)})")
+        # PROMPT INJECTION DEFENSE:
+        # Validate data is a dictionary and force-cast to string schema to strip execution attempts
+        if data:
+            import json
+            if isinstance(data, dict):
+                # We specifically use XML fencing here which was commanded in the Core Settings
+                # to be treated purely as static descriptive data.
+                safe_json = json.dumps(data, indent=2)
+                event_str += f"\nEVENT DATA:\n<client_data>\n{safe_json}\n</client_data>"
+            else:
+                logger.warning(f"Discarding invalid client_event data payload (expected dict, got {type(data)})")
 
         # Add protocol reminder from settings
         event_str += f"\n\n{self._settings.prompt_client_events}"
@@ -736,15 +746,33 @@ class SampleGeminiAgent(BaseAgent):
                 if not attachments:
                     logger.warning("[DEBUG] screen_context_provided received but NO attachments!")
             
-            # Send the image as user content with end_of_turn=False (do NOT tell the model to respond yet),
-            # then send the tool response which properly resolves the pending function call and
-            # triggers the model to continue — now with the image visible in conversation context.
-            await self._send_text_async(event_str, attachments=attachments, end_of_turn=False)
+            # [CRITICAL FIX] 
+            # We must NOT send a ClientContent text message (via _send_text_async / session.send) 
+            # while the Live API is waiting for a FunctionResponse, otherwise it throws a 1011 Protocol Error.
+            # Instead, we send the media frame out-of-band via send_realtime_input, 
+            # and then fulfill the tool response.
+            if attachments:
+                import base64
+                for attachment in attachments:
+                    mime_type = attachment.get("mime_type", "")
+                    content_b64 = attachment.get("content", "")
+                    if mime_type and content_b64:
+                        raw_bytes = base64.b64decode(content_b64)
+                        await self._session.send_realtime_input(
+                            video=types.Blob(data=raw_bytes, mime_type=mime_type)
+                        )
+                
+                # Artificial delay for Google Gemini Vision Encoder to process the image frame
+                logger.info("Waiting 2.0s for Gemini Vision encoder to process the screenshot frame...")
+                await asyncio.sleep(2.0)
             
             tool_resp = types.FunctionResponse(
                 id=self._pending_screen_context_id,
                 name="request_screen_context",
-                response={"result": "Screenshot has been provided. Analyze the image and answer the user's question."}
+                response={
+                    "result": "Screenshot has been provided and injected into your vision buffer.",
+                    "event_context": event_str
+                }
             )
             await self._session.send_tool_response(function_responses=[tool_resp])
             self._pending_screen_context_id = None

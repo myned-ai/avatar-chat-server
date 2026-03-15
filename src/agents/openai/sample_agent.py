@@ -580,8 +580,17 @@ class SampleOpenAIAgent(BaseAgent):
 
         logger.info(f"Handling client event '{name}' (directive: {directive})")
 
-        event_str = f"SYSTEM EVENT: '{name}' occurred on the client."
-        
+        # Format the event as a system message
+        if name == "screen_context_provided":
+            event_str = (
+                "Here is the requested screen context. "
+                "CRITICAL INSTRUCTION: Analyze THIS specific screenshot and the attached DOM text very carefully. "
+                "Do NOT rely on your previous conversation history or expectations to guess what is on the screen. "
+                "Your answer must precisely reflect the exact text and numbers shown in this new image and context data."
+            )
+        else:
+            event_str = f"SYSTEM EVENT: '{name}' occurred on the client."
+            
         # PROMPT INJECTION DEFENSE:
         # Validate data is a dictionary and force-cast to string schema to strip execution attempts
         if data:

@@ -18,6 +18,81 @@ from core.settings import Settings, get_settings
 logger = get_logger(__name__)
 
 
+# ============================================================================
+# LOCKED tune — server-side post-processing applied to raw A2F output before
+# the weights hit the avatar widget. Edit these numbers to retune live without
+# touching the inference code.
+#
+# History: this tune was originally derived against James-NIM-1.3 output and
+# baked into outputs/44_multi.npz at generation time. Re-derived on 2026-05-17
+# for NIM 2.0 (nvidia/Audio2Face-3D-v2.3.1-James) — the raw regression output
+# is ~+18% mean amplitude vs NIM 1.3 with several channels saturating at 1.0
+# (mouthFrown / jawOpen / mouthRollUpper / mouthPucker), so those needed DAMPING
+# not amplification. See audio2face-assessment/WORKAROUNDS.md for the full audit.
+# Mirror of scripts/08_playback_server.py:170-204 over there.
+# ============================================================================
+TUNE_ZERO: set[str] = {"mouthClose"}                       # NIM semantic deviation (causes lip overlap)
+TUNE_SCALE: dict[str, float] = {
+    # Jaw lateral / forward — kill outright; NIM 2.0 fires these too aggressively.
+    "jawForward": 0.0, "jawLeft": 0.0, "jawRight": 0.0,
+    "jawOpen": 0.65,
+    # /o/ /u/ over-pursing
+    "mouthFunnel": 0.15, "mouthPucker": 0.40,
+    # Lip-roll (raw pegged at 1.0 for ~77% of frames — "lips blend together")
+    "mouthRollUpper": 0.25, "mouthRollLower": 0.20,
+    "mouthShrugLower": 0.10, "mouthShrugUpper": 0.25,
+    "mouthPressLeft": 0.20, "mouthPressRight": 0.20,
+    "mouthDimpleLeft": 0.5, "mouthDimpleRight": 0.5,
+    "mouthUpperUpLeft": 0.7, "mouthUpperUpRight": 0.7,
+    # Frown — raw pegs at 1.0 for ~65% of frames; previous tune amplified it (×2)
+    # which produced the visible "sad mouth". Damp instead.
+    "mouthFrownLeft": 0.15, "mouthFrownRight": 0.15,
+    # Vowel articulation — small boost (NIM 2.0 raw is in the 0.5 range here).
+    "mouthLowerDownLeft": 1.3, "mouthLowerDownRight": 1.3,
+    "mouthStretchLeft": 1.3, "mouthStretchRight": 1.3,
+    # Eye wide/squint — weak in NIM 2.0 raw; boost so emotion reads on the eyes.
+    "eyeWideLeft": 3.0, "eyeWideRight": 3.0,
+    "eyeSquintLeft": 2.5, "eyeSquintRight": 2.5,
+    "cheekPuff": 0.5,
+    "cheekSquintLeft": 1.0, "cheekSquintRight": 1.0,
+    "noseSneerLeft": 1.5, "noseSneerRight": 1.5,
+    # No brow scale — raw values 0.5-0.8 are already in the right range for Nyx.
+}
+
+# Optional uniform multiplier on upper-face emotion channels, applied AFTER the
+# tune above and CLIPPED to [0, 1]. Set to >1 to push emotion expression harder;
+# leave at 1.0 to disable. Mirrors --emotion-boost in the playback server.
+EMOTION_BOOST: float = 1.3
+EMOTION_BOOST_CHANNELS: set[str] = {
+    "browDownLeft", "browDownRight", "browInnerUp",
+    "browOuterUpLeft", "browOuterUpRight",
+    "eyeSquintLeft", "eyeSquintRight",
+    "eyeWideLeft", "eyeWideRight",
+    "cheekSquintLeft", "cheekSquintRight",
+    "noseSneerLeft", "noseSneerRight",
+}
+
+
+def apply_locked_tune(expression: np.ndarray, names: list[str]) -> np.ndarray:
+    """Apply TUNE_ZERO + TUNE_SCALE + EMOTION_BOOST to a (T, 52) frame array.
+    Returns a new array; input is not modified."""
+    out = expression.astype(np.float32, copy=True)
+    name_to_idx = {n: i for i, n in enumerate(names)}
+    for n in TUNE_ZERO:
+        if n in name_to_idx:
+            out[:, name_to_idx[n]] = 0.0
+    for n, factor in TUNE_SCALE.items():
+        if n in name_to_idx:
+            out[:, name_to_idx[n]] *= float(factor)
+    if EMOTION_BOOST != 1.0:
+        for n in EMOTION_BOOST_CHANNELS:
+            if n in name_to_idx:
+                out[:, name_to_idx[n]] = np.clip(
+                    out[:, name_to_idx[n]] * EMOTION_BOOST, 0.0, 1.0
+                )
+    return out
+
+
 class Wav2ArkitService:
     """
     Service for Wav2Arkit blendshape inference.
@@ -40,25 +115,50 @@ class Wav2ArkitService:
         self._initialize_model()
 
     def _initialize_model(self) -> None:
-        """Initialize the ONNX model for CPU inference."""
+        """Initialize the Audio2Face-3D port for CPU inference.
+
+        Loads two bundles from disk:
+          - settings.a2f_model_dir : the regression network + skin/tongue blendshapes
+                                     + face_params (nvidia/Audio2Face-3D-v2.3.1-James)
+          - settings.a2e_model_dir : optional Audio2Emotion model (nvidia/Audio2Emotion-v2.2)
+                                     If missing or empty, emotion stays neutral.
+        """
         try:
             from wav2arkit import Wav2ArkitInference
 
-            model_path = Path(self.settings.onnx_model_path)
-            if not model_path.exists():
-                logger.warning(f"Wav2Arkit model not found at: {model_path}")
-                logger.warning("Wav2Arkit will be unavailable")
+            a2f_dir = self.settings.a2f_model_dir_resolved
+            if not (a2f_dir / "network.onnx").exists():
+                logger.warning(f"A2F bundle not found at: {a2f_dir}")
+                logger.warning("Wav2Arkit will be unavailable. Download from "
+                               "nvidia/Audio2Face-3D-v2.3.1-James first.")
                 return
 
+            a2e_dir: Path | None = None
+            candidate = self.settings.a2e_model_dir_resolved
+            if candidate is not None:
+                if (candidate / "network.onnx").exists():
+                    a2e_dir = candidate
+                else:
+                    logger.warning(
+                        f"A2E bundle not found at: {candidate}. Continuing with "
+                        f"neutral emotion. Accept the license at "
+                        f"https://huggingface.co/nvidia/Audio2Emotion-v2.2 and "
+                        f"download it to enable emotion."
+                    )
+
             self._inference = Wav2ArkitInference(
-                model_path=str(model_path),
+                model_path=str(a2f_dir),
                 audio_sr=self.settings.wav2arkit_sample_rate,
                 fps=self.settings.blendshape_fps,
                 debug=self.settings.debug,
+                a2e_model_path=str(a2e_dir) if a2e_dir else None,
             )
 
             self._available = True
-            logger.info("Wav2Arkit model loaded (CPU-optimized)")
+            logger.info(
+                f"Wav2Arkit loaded (A2F={a2f_dir.name}, "
+                f"A2E={'enabled' if a2e_dir else 'DISABLED — neutral only'})"
+            )
 
             # Warmup pass
             self._warmup_model()
@@ -192,6 +292,17 @@ class Wav2ArkitService:
             else:
                 logger.warning("Inference returned no frames. Using fallback frames.")
             return self._create_fallback_frames(audio_bytes)
+
+        # Apply the LOCKED tune (see top of file) to the raw regression output
+        # before the weights leave this service. Keeps tuning visible/editable
+        # in one place rather than burying it inside the ONNX wrapper.
+        try:
+            expression = apply_locked_tune(
+                np.asarray(expression, dtype=np.float32),
+                self._inference.get_blendshape_names(),
+            )
+        except Exception as e:  # noqa: BLE001 — tune failures must not break audio path
+            logger.warning(f"apply_locked_tune failed (raw weights will be sent): {e}")
 
         # Pair each blendshape frame with its corresponding audio
         frames = []

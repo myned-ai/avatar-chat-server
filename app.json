@@ -100,9 +100,14 @@
       "value": "false",
       "required": false
     },
-    "ONNX_MODEL_PATH": {
-      "description": "Path to the ONNX model file.",
-      "value": "./src/pretrained_models/wav2arkit_cpu.onnx",
+    "A2F_MODEL_DIR": {
+      "description": "Directory of the NVIDIA Audio2Face-3D bundle (public HF: nvidia/Audio2Face-3D-v2.3.1-James).",
+      "value": "./src/pretrained_models/a2f",
+      "required": false
+    },
+    "A2E_MODEL_DIR": {
+      "description": "Directory of the NVIDIA Audio2Emotion bundle (gated HF: nvidia/Audio2Emotion-v2.2). Leave blank to disable emotion.",
+      "value": "./src/pretrained_models/a2e",
       "required": false
     },
     "ASSISTANT_INSTRUCTIONS": {

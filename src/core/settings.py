@@ -17,6 +17,14 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 _CONFIG_DIR = Path(__file__).parent.parent.parent
 
 
+def _resolve_models_path(p: str) -> Path:
+    """Resolve a model-bundle path against the repo root if relative."""
+    pp = Path(p)
+    if pp.is_absolute():
+        return pp
+    return (_CONFIG_DIR / pp).resolve()
+
+
 class Settings(BaseSettings):
     """
     Application settings loaded from environment variables.
@@ -35,8 +43,24 @@ class Settings(BaseSettings):
     # Assistant Configuration (shared across all agents)
     assistant_instructions: str = "You are a helpful and friendly AI assistant. Be concise in your responses."
 
-    # Wav2Arkit Model Configuration (ONNX CPU-only)
-    onnx_model_path: str = "./pretrained_models/wav2arkit_cpu.onnx"
+    # Audio2Face-3D Model Bundles (CPU-only ONNX, downloaded from HuggingFace).
+    # `a2f_model_dir` = nvidia/Audio2Face-3D-v2.3.1-James (public)
+    # `a2e_model_dir` = nvidia/Audio2Emotion-v2.2 (gated — needs HF_TOKEN once).
+    # Paths are resolved relative to the repo root (parent of src/) so they
+    # work whether you launch the server from `src/` or the repo root.
+    # Set a2e_model_dir to "" to disable A2E and run with neutral emotion only.
+    a2f_model_dir: str = "src/pretrained_models/a2f"
+    a2e_model_dir: str = "src/pretrained_models/a2e"
+
+    @property
+    def a2f_model_dir_resolved(self) -> Path:
+        return _resolve_models_path(self.a2f_model_dir)
+
+    @property
+    def a2e_model_dir_resolved(self) -> Path | None:
+        if not self.a2e_model_dir:
+            return None
+        return _resolve_models_path(self.a2e_model_dir)
 
     # Server Configuration
     server_host: str = "0.0.0.0"

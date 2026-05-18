@@ -90,10 +90,15 @@ cd avatar-chat-server
 # 3. Install dependencies
 uv sync
 
-# 4. Download the Wav2Arkit model
+# 4. Download the NVIDIA Audio2Face-3D models
+# A2F-3D is public; A2E is gated — accept the license once at
+#   https://huggingface.co/nvidia/Audio2Emotion-v2.2
+# and log in with an HF token before the A2E download.
 pip install -U "huggingface_hub[cli]"
-mkdir -p src/pretrained_models
-huggingface-cli download myned-ai/wav2arkit_cpu --local-dir src/pretrained_models
+mkdir -p src/pretrained_models/a2f src/pretrained_models/a2e
+huggingface-cli download nvidia/Audio2Face-3D-v2.3.1-James --local-dir src/pretrained_models/a2f
+huggingface-cli login                                 # paste your hf_xxx token (needed for A2E only)
+huggingface-cli download nvidia/Audio2Emotion-v2.2       --local-dir src/pretrained_models/a2e
 
 # 5. Configure environment
 cp .env.example .env
@@ -116,12 +121,17 @@ cd avatar-chat-server
 cp .env.example .env
 # Edit .env with your settings
 
-# 2. Download the ONNX model
+# 2. Download the NVIDIA Audio2Face-3D models
+# A2F-3D is public; A2E is gated — accept once at https://huggingface.co/nvidia/Audio2Emotion-v2.2
 pip install -U "huggingface_hub[cli]"
-mkdir -p src/pretrained_models
-huggingface-cli download myned-ai/wav2arkit_cpu --local-dir src/pretrained_models
+mkdir -p src/pretrained_models/a2f src/pretrained_models/a2e
+huggingface-cli download nvidia/Audio2Face-3D-v2.3.1-James --local-dir src/pretrained_models/a2f
+huggingface-cli login                                 # only needed for A2E
+huggingface-cli download nvidia/Audio2Emotion-v2.2       --local-dir src/pretrained_models/a2e
 
 # 3. Build and run (production)
+# The Docker build downloads A2F anonymously; pass HF_TOKEN only for A2E:
+#   docker build --build-arg HF_TOKEN=hf_xxx .
 docker-compose up -d
 
 # 4. View logs
@@ -183,7 +193,8 @@ At least one API key is required, depending on your chosen `AGENT_TYPE`:
 | **Assistant Configuration** |
 | `ASSISTANT_INSTRUCTIONS` | *see .env.example* | System prompt for the AI assistant |
 | **Model Configuration** |
-| `ONNX_MODEL_PATH` | `./pretrained_models/wav2arkit_cpu.onnx` | Path to ONNX model weights (CPU-only) |
+| `A2F_MODEL_DIR` | `./pretrained_models/a2f` | Directory holding `nvidia/Audio2Face-3D-v2.3.1-James` (public) |
+| `A2E_MODEL_DIR` | `./pretrained_models/a2e` | Directory holding `nvidia/Audio2Emotion-v2.2` (gated). Leave blank to disable emotion. |
 | **Server Configuration** |
 | `SERVER_HOST` | `0.0.0.0` | Server bind address |
 | `SERVER_PORT` | `8080` | Server port |

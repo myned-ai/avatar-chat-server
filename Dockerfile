@@ -35,10 +35,20 @@ RUN chown appuser:appuser /app
 # Install uv for fast package management (used throughout)
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-# Download pretrained models using huggingface_hub
+# Download pretrained models from NVIDIA's Audio2Face-3D HF repos.
+#   - nvidia/Audio2Face-3D-v2.3.1-James  : public, anonymous download
+#   - nvidia/Audio2Emotion-v2.2          : GATED — accept the license once at
+#       https://huggingface.co/nvidia/Audio2Emotion-v2.2 and pass an HF token:
+#       docker build --build-arg HF_TOKEN=hf_xxx .
+ARG HF_TOKEN
 RUN uv pip install --system huggingface_hub
-RUN mkdir -p pretrained_models \
-    && python -c "from huggingface_hub import snapshot_download; snapshot_download('myned-ai/wav2arkit_cpu', local_dir='pretrained_models')" \
+RUN mkdir -p pretrained_models/a2f pretrained_models/a2e \
+    && python -c "from huggingface_hub import snapshot_download; \
+        snapshot_download('nvidia/Audio2Face-3D-v2.3.1-James', \
+                          local_dir='pretrained_models/a2f')" \
+    && python -c "from huggingface_hub import snapshot_download; \
+        snapshot_download('nvidia/Audio2Emotion-v2.2', token='${HF_TOKEN}', \
+                          local_dir='pretrained_models/a2e')" \
     && chown -R appuser:appuser pretrained_models \
     && uv pip uninstall --system huggingface_hub
 

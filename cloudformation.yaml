@@ -137,8 +137,10 @@ Resources:
                 Value: 'false'
               - Name: DEBUG_AUDIO_CAPTURE
                 Value: 'false'
-              - Name: ONNX_MODEL_PATH
-                Value: ./src/pretrained_models/wav2arkit_cpu.onnx
+              - Name: A2F_MODEL_DIR
+                Value: ./src/pretrained_models/a2f
+              - Name: A2E_MODEL_DIR
+                Value: ./src/pretrained_models/a2e
               - Name: ASSISTANT_INSTRUCTIONS
                 Value: >-
                   You are a helpful and friendly AI assistant. Always respond in English

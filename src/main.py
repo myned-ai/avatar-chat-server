@@ -54,7 +54,8 @@ async def lifespan(app: FastAPI):
     protocol = "wss" if settings.use_ssl else "ws"
     logger.info(f"WebSocket endpoint: {protocol}://{settings.server_host}:{settings.server_port}/ws")
     logger.info(f"Agent type: {settings.agent_type}")
-    logger.info(f"Wav2Arkit model: {settings.onnx_model_path}")
+    logger.info(f"A2F bundle:  {settings.a2f_model_dir}")
+    logger.info(f"A2E bundle:  {settings.a2e_model_dir or '(disabled, neutral emotion)'}")
     logger.info(f"Debug: {settings.debug}")
     logger.info(f"Auth: {'Enabled' if settings.auth_enabled else 'Disabled'}")
     if settings.auth_enabled:

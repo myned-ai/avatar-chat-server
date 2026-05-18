@@ -18,7 +18,7 @@ Key capability: transforming raw audio streams into synchronized ARKit blendshap
 - **`main.py`**: Application entry point, middleware configuration (CORS, Auth), and lifecycle management.
 - **`routers/chat_router.py`**: Handles WebSocket connections (`/ws`), manages session state, and orchestrates data flow between the client, the AI agent, and the inference service.
 - **`agents/`**: Abstract layer (`BaseAgent`) for swappable AI backends (`sample_openai`, `sample_gemini`, `remote`).
-- **`wav2arkit/`**: Inference module (`Wav2ArkitInference`) that runs the `wav2arkit_cpu.onnx` model to generate 52 facial blendshapes from audio segments.
+- **`wav2arkit/`**: Inference module (`Wav2ArkitInference`) — CPU Python port of NVIDIA Audio2Face-3D. Combines the A2F regression network (`nvidia/Audio2Face-3D-v2.3.1-James`) and the A2E emotion classifier (`nvidia/Audio2Emotion-v2.2`) to generate 52 ARKit blendshapes from audio segments.
 
 ## 3. Interfaces & Protocols
 
@@ -54,8 +54,8 @@ Key capability: transforming raw audio streams into synchronized ARKit blendshap
 - **Low Latency**: Streaming architecture ensures minimal delay between user speech and avatar response.
 
 ### 4.2 Facial Animation Synthesis
-- **Wav2Arkit Model**: Custom ONNX model converts audio directly to ARKit blendshape coefficients.
-- **CPU Optimization**: Optimized for efficient inference on standard CPUs (AVX-512 support) without needing GPUs.
+- **Audio2Face-3D + Audio2Emotion (CPU)**: NVIDIA's A2F-3D regression network drives 52 ARKit blendshape coefficients from raw audio; A2E adds a 6-class emotion signal that conditions the regression output.
+- **CPU Optimization**: ONNX Runtime CPU execution; no GPU required.
 - **Synchronization**: Server guarantees 1:1 mapping between audio chunks and visual frames.
 
 ### 4.3 Security & Production
@@ -71,7 +71,8 @@ Configured via `.env` or Environment Variables.
 **Key Variables:**
 - `OPENAI_API_KEY` / `GEMINI_API_KEY`: Model credentials.
 - `AGENT_TYPE`: Selector (`sample_openai`, `sample_gemini`, `remote`).
-- `ONNX_MODEL_PATH`: Path to the local model file.
+- `A2F_MODEL_DIR`: Directory of the A2F-3D bundle (default `src/pretrained_models/a2f`).
+- `A2E_MODEL_DIR`: Directory of the A2E bundle (default `src/pretrained_models/a2e`). Leave blank to disable emotion.
 - `AUTH_ENABLED`: Toggle security features.
 - `DEBUG`: Toggle verbose logging.
 

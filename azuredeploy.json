@@ -222,8 +222,12 @@
               "value": "false"
             },
             {
-              "name": "ONNX_MODEL_PATH",
-              "value": "./src/pretrained_models/wav2arkit_cpu.onnx"
+              "name": "A2F_MODEL_DIR",
+              "value": "./src/pretrained_models/a2f"
+            },
+            {
+              "name": "A2E_MODEL_DIR",
+              "value": "./src/pretrained_models/a2e"
             },
             {
               "name": "ASSISTANT_INSTRUCTIONS",

@@ -4,7 +4,7 @@
 
 > **See the Avatar Chat Widget in action -> [Try Nyx](https://myned.ai)**
 
-Real-time voice-to-avatar interaction server combining AI agents (OpenAI Realtime API, Google Gemini Live API or your custom agent) with the Wav2Arkit model for synchronized avatar facial animation. This is an example server that powers the [Avatar Chat Widget](https://github.com/myned-ai/avatar-chat-widget) by processing audio streams and generating ARKit blendshapes for realistic facial animations.
+Real-time voice-to-avatar interaction server combining AI agents (OpenAI Realtime API, Google Gemini Live API or your custom agent) with a CPU port of NVIDIA **Audio2Face-3D** + **Audio2Emotion** for synchronized, emotion-aware avatar facial animation. This is an example server that powers the [Avatar Chat Widget](https://github.com/myned-ai/avatar-chat-widget) by processing audio streams and generating 52 ARKit blendshapes per frame with emotion conditioning.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.10](https://img.shields.io/badge/python-3.10-blue.svg)](https://www.python.org/downloads/)
@@ -12,7 +12,7 @@ Real-time voice-to-avatar interaction server combining AI agents (OpenAI Realtim
 ## Features
 
 - **Real-time Voice-to-Voice AI**: OpenAI Realtime API or Google Gemini Live API integration for natural conversation
-- **Facial Animation Sync**: Wav2Arkit model for ARKit-compatible blendshapes
+- **Emotion-Aware Facial Animation**: NVIDIA Audio2Face-3D regression network + BVLS solver drive 52 ARKit blendshapes; Audio2Emotion classifier adds 6-class affect conditioning (angry, disgust, fear, happy, neutral, sad)
 - **Modular Agent System**: Pluggable agents (sample OpenAI/Gemini or custom implementations)
 - **WebSocket Communication**: Low-latency bidirectional streaming
 - **CPU Acceleration**: ONNX-optimized inference for real-time performance without GPU
@@ -32,7 +32,7 @@ This server acts as the central brain between the client (Widget) and the AI (LL
 1.  **Audio In**: Receives microphone audio from the user (Client)
 2.  **Agent Processing**: Forwards audio to OpenAI/Gemini/Custom Agent
 3.  **Response Generation**: Receives audio response from Agent
-4.  **Facial Animation**: Runs Wav2Arkit model (ONNX) to generate lip-sync frames
+4.  **Facial Animation**: Runs the CPU port of NVIDIA Audio2Face-3D (regression net + BVLS solver + skin animator) plus Audio2Emotion to generate 52 ARKit blendshapes per frame with emotion conditioning
 5.  **Sync Out**: Streams synchronized Audio + Blendshape packets to Client at 30 FPS
 
 ## Table of Contents
@@ -204,9 +204,9 @@ At least one API key is required, depending on your chosen `AGENT_TYPE`:
 | **Audio Configuration** |
 | `INPUT_SAMPLE_RATE` | `24000` | Input audio sample rate (widget format) |
 | `OUTPUT_SAMPLE_RATE` | `24000` | Output audio sample rate (for playback and lip-sync) |
-| `WAV2ARKIT_SAMPLE_RATE` | `16000` | Wav2Arkit model expected sample rate |
+| `WAV2ARKIT_SAMPLE_RATE` | `16000` | Sample rate expected by the A2F-3D regression net (16 kHz) |
 | `BLENDSHAPE_FPS` | `30` | Output blendshape frame rate |
-| `AUDIO_CHUNK_DURATION` | `0.5` | Audio chunk duration in seconds for Wav2Arkit processing |
+| `AUDIO_CHUNK_DURATION` | `0.5` | Audio chunk duration in seconds for facial inference |
 | `TRANSCRIPT_CHARS_PER_SECOND` | `16.0` | Transcript timing estimation (chars/sec) |
 | **Authentication** |
 | `AUTH_ENABLED` | `false` | Enable HMAC token authentication |
@@ -253,7 +253,7 @@ ws://localhost:8080/ws?token=YOUR_AUTH_TOKEN
 | `config` | Sent on connection. Contains negotiated audio settings (see below) |
 | `audio_start` | AI started responding. Includes `sessionId`, `turnId`, `sampleRate`, `format` |
 | `sync_frame` | Synchronized audio + blendshape frame at 30 FPS (see below) |
-| `audio_chunk` | Fallback audio-only chunk when Wav2Arkit model is unavailable |
+| `audio_chunk` | Fallback audio-only chunk when facial inference is unavailable |
 | `audio_end` | AI finished responding. Includes `sessionId`, `turnId` |
 | `transcript_delta` | Streaming text fragment with timing offsets (see below) |
 | `transcript_done` | Complete transcript for a turn (`role`: `"user"` or `"assistant"`) |
@@ -299,7 +299,7 @@ ws://localhost:8080/ws?token=YOUR_AUTH_TOKEN
 }
 ```
 
-**`audio_chunk`** — Fallback when Wav2Arkit model is not available (no blendshapes):
+**`audio_chunk`** — Fallback when facial inference is not available (no blendshapes):
 ```json
 {
   "type": "audio_chunk",
@@ -642,7 +642,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Acknowledgments
 
 - [Apple ARKit](https://developer.apple.com/augmented-reality/arkit/) for the blendshape specification standard
-- [LAM Audio2Expression](https://github.com/aigc3d/LAM_Audio2Expression) for facial animation model
-- [Wav2Vec 2.0](https://ai.meta.com/blog/wav2vec-20-learning-the-structure-of-speech-from-raw-audio/) for speech representation learning
+- [NVIDIA Audio2Face-3D](https://huggingface.co/nvidia/Audio2Face-3D-v2.3.1-James) — facial animation regression network (CPU port in this repo)
+- [NVIDIA Audio2Emotion](https://huggingface.co/nvidia/Audio2Emotion-v2.2) — speech-to-emotion classifier (CPU port in this repo)
+- [Wav2Vec 2.0](https://ai.meta.com/blog/wav2vec-20-learning-the-structure-of-speech-from-raw-audio/) — backbone used by Audio2Emotion
 - [OpenAI](https://openai.com/) for Realtime API
 - [Google](https://ai.google.dev/) for Gemini Live API

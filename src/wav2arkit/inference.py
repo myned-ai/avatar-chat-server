@@ -8,7 +8,7 @@ using the combined wav2arkit ONNX model.
 import librosa
 import numpy as np
 
-from core.logger import get_logger
+from logging import getLogger as get_logger
 
 from .utils import ARKitBlendShape
 

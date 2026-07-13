@@ -23,7 +23,14 @@ class Wav2ArkitInference:
     CPU inference from raw audio to ARKit blendshapes.
     """
 
-    def __init__(self, model_path: str, audio_sr: int = 16000, fps: float = 30.0, debug: bool = False):
+    def __init__(
+        self,
+        model_path: str,
+        audio_sr: int = 16000,
+        fps: float = 30.0,
+        debug: bool = False,
+        intra_op_threads: int | None = None,
+    ):
         """
         Initialize the Wav2Arkit inference engine.
 
@@ -32,6 +39,9 @@ class Wav2ArkitInference:
             audio_sr: Audio sample rate (default 16kHz)
             fps: Frame rate for blendshape output
             debug: Enable debug logging
+            intra_op_threads: Cap the ONNX intra-op thread pool (None = ONNX
+                default). The model is small enough for real-time on 1-2
+                threads; capping avoids starving co-located inference.
         """
         import onnxruntime as ort
 
@@ -43,7 +53,12 @@ class Wav2ArkitInference:
         logger.info(f"Loading Wav2Arkit model from {model_path}...")
 
         # Load ONNX model
-        self.session = ort.InferenceSession(model_path, providers=["CPUExecutionProvider"])
+        if intra_op_threads:
+            options = ort.SessionOptions()
+            options.intra_op_num_threads = int(intra_op_threads)
+            self.session = ort.InferenceSession(model_path, options, providers=["CPUExecutionProvider"])
+        else:
+            self.session = ort.InferenceSession(model_path, providers=["CPUExecutionProvider"])
 
         # Get input/output names
         self.input_name = self.session.get_inputs()[0].name
